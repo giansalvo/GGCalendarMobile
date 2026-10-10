@@ -209,7 +209,7 @@ Stato del PC (verificato l'11/10/2026): Git c'è; mancano Android Studio, Androi
 - Fatto anche: sync di Android Studio (JVM di Gradle 21); `test`, `lint`, `assembleDebug` e `assembleRelease` riusciti; B6 (keystore di release in `Documenti\GGCalendar-keystore`, fuori dal repo, `keystore.properties` ignorato da git).
 - SHA-1 per i client OAuth Android: debug `8B:62:73:8B:07:AE:E5:51:EC:AF:6D:79:7D:B4:0C:04:9D:26:AE:B0`, release `22:40:D7:B5:CB:C0:CC:36:88:24:70:9F:8E:F2:31:B4:A5:AA:1F:07`.
 - Fatto anche: A4 (2 client OAuth Android creati); B7: login riuscito sul Samsung (11/10/2026), con consenso di GGCalendar ed elenco dei calendari.
-- Da fare per chiudere M0: primo commit, creazione del repo GitHub `giansalvo/GGCalendarMobile`, primo push e CI verde.
+- **M0 completata (11/10/2026)**: repo pubblico `giansalvo/GGCalendarMobile` creato, push di `main`, CI verde (run 38095758963).
 
 **Criterio di completamento di M0**: l'APK di debug si installa sul Samsung, il login Google mostra la schermata di consenso di GGCalendar e l'app elenca i calendari dell'account; la CI su GitHub è verde.
 
