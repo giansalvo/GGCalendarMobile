@@ -1,0 +1,28 @@
+# Gradle / Android Studio
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+.kotlin/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Firme e segreti: mai nel repository
+OAuth/
+client_secret*.json
+*.jks
+*.keystore
+keystore.properties
+google-services.json
+
+# Screenshot di riferimento con dati personali (account, eventi reali)
+img/*.jpeg
+img/*.png
+!img/GGCalendarMobile_logo.jpg
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/

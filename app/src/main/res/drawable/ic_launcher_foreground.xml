@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Simplified logo: calendar page with blue header, two rings, grid and one red day. Safe zone 21..87 of 108. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:strokeColor="#FFB0BEC5"
+        android:strokeWidth="0.8"
+        android:pathData="M32,32 h44 a4,4 0 0 1 4,4 v40 a4,4 0 0 1 -4,4 h-44 a4,4 0 0 1 -4,-4 v-40 a4,4 0 0 1 4,-4 z" />
+    <path
+        android:fillColor="@color/brand_blue"
+        android:pathData="M32,32 h44 a4,4 0 0 1 4,4 v12 h-52 v-12 a4,4 0 0 1 4,-4 z" />
+    <path
+        android:strokeColor="#FFB0BEC5"
+        android:strokeWidth="1.2"
+        android:pathData="M43,52 V76 M54,52 V76 M65,52 V76 M32,60 H76 M32,68 H76" />
+    <path
+        android:fillColor="@color/brand_red"
+        android:pathData="M55.5,61.5 h8 v5 h-8 z" />
+    <path
+        android:fillColor="#FF78909C"
+        android:pathData="M40,27 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -4,0 v-8 a2,2 0 0 1 2,-2 z M68,27 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -4,0 v-8 a2,2 0 0 1 2,-2 z" />
+</vector>

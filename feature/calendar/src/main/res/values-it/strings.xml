@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="view_schedule">Programma</string>
+    <string name="view_day">Giorno</string>
+    <string name="view_six_days">6 giorni</string>
+    <string name="view_week">Settimana</string>
+    <string name="view_month">Mese</string>
+    <string name="view_placeholder">Vista %1$s: in arrivo</string>
+    <string name="refresh">Aggiorna</string>
+    <string name="add_google_account">Aggiungi account Google</string>
+    <string name="new_event">Nuovo evento</string>
+    <string name="open_menu">Apri il menu</string>
+    <string name="search">Cerca</string>
+</resources>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Themed icon (Android 13+): same shapes in a single color. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M32,32 h44 a4,4 0 0 1 4,4 v12 h-52 v-12 a4,4 0 0 1 4,-4 z M40,27 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -4,0 v-8 a2,2 0 0 1 2,-2 z M68,27 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -4,0 v-8 a2,2 0 0 1 2,-2 z M55.5,61.5 h8 v5 h-8 z" />
+    <path
+        android:strokeColor="#FF000000"
+        android:strokeWidth="2"
+        android:pathData="M29,48 V76 a4,4 0 0 0 4,4 h42 a4,4 0 0 0 4,-4 V48 M43,52 V76 M54,52 V76 M65,52 V76 M32,60 H76 M32,68 H76" />
+</vector>

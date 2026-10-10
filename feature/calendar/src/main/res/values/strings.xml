@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_title" translatable="false">GGCalendar</string>
+    <string name="view_schedule">Schedule</string>
+    <string name="view_day">Day</string>
+    <string name="view_six_days">6 days</string>
+    <string name="view_week">Week</string>
+    <string name="view_month">Month</string>
+    <string name="view_placeholder">%1$s view: coming soon</string>
+    <string name="refresh">Refresh</string>
+    <string name="add_google_account">Add Google account</string>
+    <string name="new_event">New event</string>
+    <string name="open_menu">Open menu</string>
+    <string name="search">Search</string>
+</resources>
