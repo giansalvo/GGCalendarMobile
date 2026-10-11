@@ -70,7 +70,7 @@ class ReminderScheduler @Inject constructor(
 
     /** What the alarm icon in the status bar opens. */
     private fun openAppIntent(): PendingIntent {
-        val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
+        val launch = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: Intent()
         return PendingIntent.getActivity(context, 0, launch, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
     }
 

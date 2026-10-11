@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -59,6 +60,9 @@ internal fun MiniCalendar(
     onMonthChange: (YearMonth) -> Unit,
     onPick: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
+    /** The month and year line that opens the grid of years; off where the screen already shows the month. */
+    showHeader: Boolean = true,
+    container: Color = MaterialTheme.colorScheme.surfaceContainer,
 ) {
     val base = remember { YearMonth.from(selected) }
     val pager = rememberPagerState(initialPage = CENTER) { PAGES }
@@ -79,8 +83,8 @@ internal fun MiniCalendar(
     val locale = Locale.getDefault()
     val today = LocalDate.now()
 
-    Column(modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainer).padding(horizontal = 8.dp, vertical = 4.dp)) {
-        Row(
+    Column(modifier.fillMaxWidth().background(container).padding(horizontal = 8.dp, vertical = 4.dp)) {
+        if (showHeader) Row(
             Modifier.clip(RoundedCornerShape(8.dp)).clickable { choosingYear = !choosingYear }.padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {

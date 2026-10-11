@@ -178,7 +178,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                 )
             },
             floatingActionButton = {
-                FloatingActionButton(onClick = { viewModel.openEditor(EditorRequest.New()) }, shape = RoundedCornerShape(16.dp)) {
+                FloatingActionButton(onClick = { viewModel.openEditor(newEventRequest(state)) }, shape = RoundedCornerShape(16.dp)) {
                     Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.new_event))
                 }
             },
@@ -221,6 +221,13 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                         instances = state.instances,
                         onMonthChange = viewModel::showMonth,
                         onDayClick = viewModel::openDay,
+                    )
+                    CalendarView.MONTH_LIST -> MonthListView(
+                        date = state.date,
+                        instances = state.instances,
+                        onMonthChange = viewModel::showMonth,
+                        onDayClick = viewModel::goTo,
+                        onEventClick = viewModel::openEvent,
                     )
                     CalendarView.DAY, CalendarView.SIX_DAYS, CalendarView.WEEK -> key(state.view) {
                         TimeGridView(
@@ -398,4 +405,12 @@ private fun CalendarRow(calendar: CalendarInfo, onToggle: (String, Boolean) -> U
         val name = if (calendar.isPrimary && calendar.name == calendar.accountEmail) stringResource(R.string.my_calendar) else calendar.name
         Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge)
     }
+}
+
+/** The floating "+": in the month + list view the event starts on the selected day, otherwise at the default time. */
+private fun newEventRequest(state: CalendarUiState): EditorRequest.New {
+    if (state.view != CalendarView.MONTH_LIST) return EditorRequest.New()
+    val now = java.time.LocalDateTime.now()
+    val hour = if (state.date == now.toLocalDate()) minOf(now.hour + 1, 23) else 9
+    return EditorRequest.New(state.date.atTime(hour, 0))
 }

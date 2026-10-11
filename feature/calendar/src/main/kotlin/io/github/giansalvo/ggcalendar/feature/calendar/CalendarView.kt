@@ -2,6 +2,7 @@ package io.github.giansalvo.ggcalendar.feature.calendar
 
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CalendarViewDay
 import androidx.compose.material.icons.outlined.CalendarViewMonth
 import androidx.compose.material.icons.outlined.CalendarViewWeek
@@ -16,4 +17,5 @@ enum class CalendarView(@StringRes val label: Int, val icon: ImageVector, val da
     SIX_DAYS(R.string.view_six_days, Icons.Outlined.ViewColumn, 6),
     WEEK(R.string.view_week, Icons.Outlined.CalendarViewWeek, 7),
     MONTH(R.string.view_month, Icons.Outlined.CalendarViewMonth),
+    MONTH_LIST(R.string.view_month_list, Icons.Outlined.CalendarMonth),
 }

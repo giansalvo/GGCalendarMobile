@@ -274,7 +274,7 @@ class CalendarViewModel @Inject constructor(
     private companion object {
         /** Days loaded for the month view (three grids) and the time grids; the schedule has its own months. */
         fun range(view: CalendarView, date: LocalDate): Pair<LocalDate, LocalDate> = when (view) {
-            CalendarView.MONTH -> YearMonth.from(date).minusMonths(1).atDay(1).minusDays(7) to
+            CalendarView.MONTH, CalendarView.MONTH_LIST -> YearMonth.from(date).minusMonths(1).atDay(1).minusDays(7) to
                 YearMonth.from(date).plusMonths(1).atEndOfMonth().plusDays(14)
             // Time grids: the page with the date and its neighbours, whatever the alignment of the pages.
             else -> date.minusDays(14) to date.plusDays(21)
