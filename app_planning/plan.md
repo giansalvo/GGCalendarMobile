@@ -462,7 +462,11 @@ Stato del PC (verificato l'11/10/2026): Git c'è; mancano Android Studio, Androi
        - Poi PIN e controllo che posticipo e chiusura risultino in Room e in "Sveglie attive".
     6. **Lint, test automatici e CI verde**, poi commit e aggiornamento di plan.md.
   - **Rischi**: telefoni senza cifratura a file (il segnale pre-sblocco non esiste, vale solo il segnale dopo lo sblocco); la suoneria predefinita a telefono bloccato (provata sul Samsung, da provare su altri telefoni); l'istantanea non aggiornata se l'app non gira (l'ultima nota resta valida fino a 48 ore); doppioni tra istantanea e Room.
-- Stato: decisione presa implementare la soluzione 4, direct boot vero non ancora scritto; sonda di debug e correzione dell'avvio dell'app già fatte.
+- **Stato (11/10/2026): direct boot fatto e provato sul Samsung** (passi 1-6). Nuovi file in `:core:notifications`: `DirectBootStore` (istantanea, giornale, chiavi registrate e durata della sveglia in memoria "device protected"), `AlarmRegistrar`, `LightReminders` (ripristino, suoneria e Posticipa senza Hilt né Room), `JournalReconciler` (giornale in Room allo sblocco). `ReminderReceiver`, `AlarmService` e `AlarmActivity` sono `directBootAware` e senza iniezione; lo scheduler riscrive l'istantanea a ogni riprogrammazione e dopo ogni promemoria mostrato. Sonda di debug rimossa. 10 test nuovi (16 nel modulo), lint e test verdi.
+  - **Prova 1** (riavvio senza PIN, sveglia dopo 4 minuti): app partita da sola con `LOCKED_BOOT_COMPLETED`, schermata a tutto schermo comparsa, Posticipa 5 minuti prima del PIN arrivato in Room (riga in `reminder_snoozed`, sveglia segnata come già suonata). **Difetto trovato**: nessun suono, perché la suoneria predefinita è un contenuto del media provider, non disponibile prima dello sblocco (`user not unlocked`).
+  - **Correzione**: suoneria di riserva inclusa nell'app (`res/raw/alarm_fallback.wav`, 4 beep in loop), usata se quella di sistema non si apre.
+  - **Prova 2**: riavvio senza PIN, la sveglia delle 23:46 ha suonato con la suoneria di riserva e la schermata a tutto schermo, prima del PIN. Dopo "Ferma" e il PIN: sveglia in `reminder_fired` una sola volta, nessun posticipo pendente, giornale svuotato.
+  - Non provato: altri telefoni, Posticipa dalla notifica (non dalla schermata) a telefono bloccato, due riavvii di seguito senza sblocco.
 
 **6. Email**
 - Le invia Google (promemoria `method=email`, già scritti dall'editor in M3). Solo verifica.
