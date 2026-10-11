@@ -42,5 +42,13 @@
         <item quantity="one">%d day ago</item>
         <item quantity="other">%d days ago</item>
     </plurals>
+    <string name="about">About</string>
+    <string name="about_tagline">A calendar for Android, in sync with Google Calendar</string>
+    <string name="about_author">Author</string>
+    <string name="about_website">Website</string>
+    <string name="about_version">Version</string>
+    <string name="about_build_date">Build date</string>
+    <string name="about_license">License</string>
+    <string name="about_source">Source code</string>
     <string name="active_alarms">Active alarms</string>
 </resources>

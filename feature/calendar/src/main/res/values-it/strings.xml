@@ -41,5 +41,13 @@
         <item quantity="one">%d giorno fa</item>
         <item quantity="other">%d giorni fa</item>
     </plurals>
+    <string name="about">Informazioni</string>
+    <string name="about_tagline">Un calendario per Android, sincronizzato con Google Calendar</string>
+    <string name="about_author">Autore</string>
+    <string name="about_website">Sito web</string>
+    <string name="about_version">Versione</string>
+    <string name="about_build_date">Data di build</string>
+    <string name="about_license">Licenza</string>
+    <string name="about_source">Codice sorgente</string>
     <string name="active_alarms">Sveglie attive</string>
 </resources>

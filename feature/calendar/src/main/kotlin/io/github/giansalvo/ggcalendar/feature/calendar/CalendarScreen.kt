@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Notifications
@@ -110,6 +111,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
     var yearPickerOpen by rememberSaveable { mutableStateOf(false) }
     var notificationsOpen by rememberSaveable { mutableStateOf(false) }
     var alarmsOpen by rememberSaveable { mutableStateOf(false) }
+    var aboutOpen by rememberSaveable { mutableStateOf(false) }
 
     val pickAccount = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         viewModel.onAccountChosen(it.resultCode, it.data)
@@ -168,6 +170,10 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                 },
                 onActiveAlarms = {
                     alarmsOpen = true
+                    scope.launch { drawerState.close() }
+                },
+                onAbout = {
+                    aboutOpen = true
                     scope.launch { drawerState.close() }
                 },
             )
@@ -298,6 +304,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
         )
     }
     if (notificationsOpen) NotificationsSheet(onDismiss = { notificationsOpen = false })
+    if (aboutOpen) AboutSheet(onDismiss = { aboutOpen = false })
     if (state.pendingMove != null) {
         SeriesScopeDialog(deleting = false, onDismiss = { viewModel.confirmMove(null) }, onConfirm = viewModel::confirmMove)
     }
@@ -378,6 +385,7 @@ private fun CalendarDrawer(
     onAddAccount: () -> Unit,
     onNotifications: () -> Unit,
     onActiveAlarms: () -> Unit,
+    onAbout: () -> Unit,
 ) {
     ModalDrawerSheet {
         Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 12.dp)) {
@@ -429,6 +437,13 @@ private fun CalendarDrawer(
                 label = { Text(stringResource(R.string.add_google_account)) },
                 selected = false,
                 onClick = onAddAccount,
+            )
+            HorizontalDivider(Modifier.padding(vertical = 8.dp))
+            NavigationDrawerItem(
+                icon = { Icon(Icons.Outlined.Info, contentDescription = null) },
+                label = { Text(stringResource(R.string.about)) },
+                selected = false,
+                onClick = onAbout,
             )
             Spacer(Modifier.padding(bottom = 16.dp))
         }

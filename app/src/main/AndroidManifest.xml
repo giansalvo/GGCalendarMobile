@@ -15,6 +15,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.GGCalendar">
 
+        <meta-data
+            android:name="io.github.giansalvo.ggcalendar.BUILD_DATE"
+            android:value="${buildDate}" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
