@@ -41,4 +41,5 @@
         <item quantity="one">%d giorno fa</item>
         <item quantity="other">%d giorni fa</item>
     </plurals>
+    <string name="active_alarms">Sveglie attive</string>
 </resources>

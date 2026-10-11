@@ -50,6 +50,22 @@ class ReminderScheduler @Inject constructor(
         store.edit().putStringSet(SCHEDULED, wanted.keys.toSet()).apply()
     }
 
+    /** The alarms that will ring in the next [days] days (snoozed ones included), soonest first. */
+    suspend fun upcomingAlarms(now: Long = System.currentTimeMillis(), days: Int = 60): List<ActiveAlarm> {
+        val dao = db.reminderDao()
+        val until = now + days * 86_400_000L
+        val rows = dao.rows(now, until + Reminders.MAX_MINUTES_BEFORE * 60_000)
+        val due = ReminderCalculator.due(rows, now, until).filter { it.reminder.method == ReminderMethod.ALARM }
+        val fired = due.map { it.key }.chunked(500).flatMap { dao.fired(it) }.toSet()
+        val planned = due.filter { it.key !in fired }.map {
+            ActiveAlarm(it.fireAt, it.row.eventId, it.row.beginUtc, it.row.title, it.reminder.minutes, snoozed = false, allDay = it.row.allDay)
+        }
+        val snoozed = dao.snoozed().filter { it.method == ReminderMethod.ALARM.name }.mapNotNull { s ->
+            dao.row(s.eventId, s.beginUtc)?.let { ActiveAlarm(maxOf(s.fireAt, now), it.eventId, it.beginUtc, it.title, s.minutes, snoozed = true, allDay = it.allDay) }
+        }
+        return (planned + snoozed).sortedBy { it.fireAt }.take(MAX_ACTIVE_ALARMS)
+    }
+
     private fun register(key: String, slot: Slot) {
         val fire = pendingIntent(key)
         if (slot.alarm) {
@@ -79,5 +95,17 @@ class ReminderScheduler @Inject constructor(
 
     private companion object {
         const val SCHEDULED = "keys"
+        const val MAX_ACTIVE_ALARMS = 300
     }
 }
+
+/** An alarm that has not rung yet: when it rings (fireAt), for which occurrence, and how long before it starts. */
+data class ActiveAlarm(
+    val fireAt: Long,
+    val eventId: String,
+    val beginUtc: Long,
+    val title: String,
+    val minutesBefore: Int,
+    val snoozed: Boolean,
+    val allDay: Boolean,
+)

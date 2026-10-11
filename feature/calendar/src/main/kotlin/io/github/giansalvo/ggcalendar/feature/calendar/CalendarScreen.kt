@@ -30,8 +30,10 @@ import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.PersonAdd
+import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Refresh
+import io.github.giansalvo.ggcalendar.core.notifications.ActiveAlarmsSheet
 import io.github.giansalvo.ggcalendar.core.notifications.NotificationsSheet
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
@@ -107,6 +109,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
     var miniOpen by rememberSaveable { mutableStateOf(false) }
     var yearPickerOpen by rememberSaveable { mutableStateOf(false) }
     var notificationsOpen by rememberSaveable { mutableStateOf(false) }
+    var alarmsOpen by rememberSaveable { mutableStateOf(false) }
 
     val pickAccount = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         viewModel.onAccountChosen(it.resultCode, it.data)
@@ -161,6 +164,10 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                 onAddAccount = { pickAccount.launch(viewModel.chooseAccountIntent()) },
                 onNotifications = {
                     notificationsOpen = true
+                    scope.launch { drawerState.close() }
+                },
+                onActiveAlarms = {
+                    alarmsOpen = true
                     scope.launch { drawerState.close() }
                 },
             )
@@ -284,6 +291,12 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
             },
         )
     }
+    if (alarmsOpen) {
+        ActiveAlarmsSheet(
+            onDismiss = { alarmsOpen = false },
+            onOpenEvent = { eventId, beginUtc -> viewModel.openLink(EventLink(eventId, beginUtc)) },
+        )
+    }
     if (notificationsOpen) NotificationsSheet(onDismiss = { notificationsOpen = false })
     if (state.pendingMove != null) {
         SeriesScopeDialog(deleting = false, onDismiss = { viewModel.confirmMove(null) }, onConfirm = viewModel::confirmMove)
@@ -364,6 +377,7 @@ private fun CalendarDrawer(
     onToggleCalendar: (String, Boolean) -> Unit,
     onAddAccount: () -> Unit,
     onNotifications: () -> Unit,
+    onActiveAlarms: () -> Unit,
 ) {
     ModalDrawerSheet {
         Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 12.dp)) {
@@ -392,6 +406,12 @@ private fun CalendarDrawer(
                 label = { Text(stringResource(R.string.notifications_alarms)) },
                 selected = false,
                 onClick = onNotifications,
+            )
+            NavigationDrawerItem(
+                icon = { Icon(Icons.Outlined.Alarm, contentDescription = null) },
+                label = { Text(stringResource(R.string.active_alarms)) },
+                selected = false,
+                onClick = onActiveAlarms,
             )
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             state.accounts.forEach { account ->

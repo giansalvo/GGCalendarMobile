@@ -39,4 +39,15 @@
     <string name="alarm_help">Stop turns the sound off and closes the alarm. Snooze rings again after the chosen time.</string>
     <string name="snooze_for">Snooze for</string>
     <string name="snooze_choice">%d min</string>
+    <string name="active_alarms_title">Active alarms</string>
+    <string name="active_alarms_empty">No alarms are scheduled.</string>
+    <string name="snoozed">Snoozed</string>
+    <plurals name="minutes_before">
+        <item quantity="one">%d minute before</item>
+        <item quantity="other">%d minutes before</item>
+    </plurals>
+    <string name="remaining_less_than_minute">&lt; 1 min</string>
+    <string name="remaining_minutes">%d min</string>
+    <string name="remaining_hours_minutes">%d h %d min</string>
+    <string name="remaining_days_hours">%d d %d h</string>
 </resources>

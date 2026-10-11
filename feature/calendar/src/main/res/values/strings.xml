@@ -42,4 +42,5 @@
         <item quantity="one">%d day ago</item>
         <item quantity="other">%d days ago</item>
     </plurals>
+    <string name="active_alarms">Active alarms</string>
 </resources>

@@ -105,6 +105,18 @@ class ReminderEngineTest {
     }
 
     @Test
+    fun activeAlarmsListsOnlyAlarmsThatHaveNotRungYetSoonestFirst() = runTest {
+        val now = System.currentTimeMillis()
+        addEvent("late", now + 300 * minute, now + 360 * minute, Reminder(ReminderMethod.ALARM, 30), Reminder(ReminderMethod.POPUP, 5))
+        addEvent("soon", now + 100 * minute, now + 160 * minute, Reminder(ReminderMethod.ALARM, 10))
+        addEvent("past", now - 100 * minute, now + 60 * minute, Reminder(ReminderMethod.ALARM, 10))
+        val list = scheduler.upcomingAlarms(now)
+        assertEquals(listOf("soon", "late"), list.map { it.eventId })
+        assertEquals(now + 90 * minute, list[0].fireAt)
+        assertEquals(10, list[0].minutesBefore)
+    }
+
+    @Test
     fun theNextRemindersAreRegisteredWithAlarmManager() = runTest {
         val now = System.currentTimeMillis()
         addEvent("n", now + 60 * minute, now + 120 * minute, Reminder(ReminderMethod.POPUP, 10), Reminder(ReminderMethod.ALARM, 30))

@@ -39,4 +39,15 @@
     <string name="alarm_help">Ferma spegne la suoneria e chiude la sveglia. Posticipa la fa suonare di nuovo dopo il tempo scelto.</string>
     <string name="snooze_for">Posticipa di</string>
     <string name="snooze_choice">%d min</string>
+    <string name="active_alarms_title">Sveglie attive</string>
+    <string name="active_alarms_empty">Nessuna sveglia programmata.</string>
+    <string name="snoozed">Posticipata</string>
+    <plurals name="minutes_before">
+        <item quantity="one">%d minuto prima</item>
+        <item quantity="other">%d minuti prima</item>
+    </plurals>
+    <string name="remaining_less_than_minute">&lt; 1 min</string>
+    <string name="remaining_minutes">%d min</string>
+    <string name="remaining_hours_minutes">%d h %d min</string>
+    <string name="remaining_days_hours">%d g %d h</string>
 </resources>
