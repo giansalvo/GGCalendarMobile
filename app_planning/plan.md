@@ -520,6 +520,26 @@ Stato del PC (verificato l'11/10/2026): Git c'è; mancano Android Studio, Androi
   - Sul telefono: consentire l'installazione da origini sconosciute all'app da cui si apre il file; Play Protect può mostrare un avviso ("app non riconosciuta"), si sceglie "Installa comunque".
   - Al primo accesso Google mostra l'avviso "app non verificata" (lo scope `calendar` non è ancora verificato): "Avanzate" → "Vai a GGCalendar". Vale il limite di 100 utenti condivisi con il desktop; **gli account dei tester vanno aggiunti come utenti di test se il progetto torna in Testing**, altrimenti il login funziona già in Production.
   - I tester devono sapere che l'app scrive sul loro vero Google Calendar: per le prove usare eventi creati apposta o un account di prova.
+- **Messaggio WhatsApp da mandare insieme al file** (bozza del 12/10/2026, per amici e conoscenti che provano l'app; si manda dopo il file, o come didascalia). Il testo tra parentesi quadre si sostituisce prima di inviare:
+
+```
+Ciao! Ti mando GGCalendar, un calendario per Android che ho scritto io e che si sincronizza con Google Calendar. È una versione di prova (0.4.0): mi aiuti a provarla?
+
+Per installarla:
+1) Tocca il file e consenti l'installazione da questa app quando Android lo chiede.
+2) Se compare l'avviso di Play Protect, scegli "Installa comunque".
+3) Aprila, tocca ☰ → "Aggiungi account Google" e scegli il tuo account.
+4) Google dirà che l'app non è verificata: è normale, perché è ancora in prova. Tocca "Avanzate" → "Vai a GGCalendar" e consenti.
+
+Attenzione: l'app lavora sul tuo vero Google Calendar, quindi per le prove crea eventi di prova e cancellali dopo.
+
+Se qualcosa non va, scrivimi: modello del telefono, versione di Android e cosa è successo. Grazie! 🙏
+
+(Per controllare che il file non sia stato alterato, l'impronta SHA-256 è: [SHA-256 del file])
+```
+
+  - Se WhatsApp rifiuta o rinomina il file `.apk`: mandarlo come documento, o in formato ZIP da estrarre, oppure con un link (Google Drive).
+  - Prima di inviare: sostituire l'SHA-256 con quello del file consegnato (`dist/GGCalendar-0.4.0.apk.sha256`, da rigenerare a ogni build) e controllare che versione e data in "Informazioni" coincidano.
 - Aggiornamenti: la v0.4.1 si installa sopra la precedente (stessa firma e stesso pacchetto); i dati restano. Gli aggiornamenti in-app arrivano in M6.
 - Raccolta dei problemi: i tester scrivono a te (WhatsApp) con modello del telefono, versione Android e una descrizione; per i crash si valuta in M6 un pulsante "Invia log".
 - Verifica: installazione pulita su un secondo telefono (anche non Samsung), login con un altro account Google, sincronizzazione, una notifica e una sveglia, aggiornamento sopra la versione precedente.
