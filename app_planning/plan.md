@@ -444,9 +444,25 @@ Stato del PC (verificato l'11/10/2026): Git c'è; mancano Android Studio, Androi
   - **Azioni fatte a telefono bloccato** (Posticipa, Ferma, Chiudi): si registrano in un giornale nella stessa memoria "device protected" (posticipi con ora, chiavi già mostrate o chiuse) e si riportano in Room appena il telefono è sbloccato (`ACTION_USER_UNLOCKED`), prima di riscrivere l'istantanea.
   - **Dopo lo sblocco**: ripristino completo da Room (già presente: `BOOT_COMPLETED`, contatore di avvio, recupero dei promemoria persi nelle ultime 24 ore) più riconciliazione con il giornale; evitare doppioni con la chiave del promemoria e la tabella dei già mostrati.
   - **Avvio dell'app prima dello sblocco**: già fatto (iniezione `Lazy` in `GGCalendarApp` e avvio rimandato a `ACTION_USER_UNLOCKED`). Va verificato che nessun altro componente creato dalla classe `Application` apra Room, DataStore o WorkManager.
-  - **Passi di lavoro**: (1) istantanea e giornale con test unitari (serializzazione, scrittura atomica, riconciliazione, posticipi); (2) livello leggero: ricevitore di avvio e degli allarmi, notifica e servizio senza Room, `AlarmActivity` con dati dall'istantanea; (3) collegamento con il livello completo (scrittura dell'istantanea a ogni riprogrammazione, riconciliazione allo sblocco); (4) rimozione della sonda di debug; (5) verifica sul Samsung: riavvio senza inserire il PIN con una sveglia in arrivo (schermata a tutto schermo sopra il blocco, suoneria, Posticipa e Ferma prima del PIN), poi PIN e controllo che posticipo e chiusura risultino in Room e in "Sveglie attive"; (6) lint, test, CI verde.
+  - **Passi di lavoro**:
+    1. **Istantanea e giornale, con test unitari.**
+       - Istantanea: file JSON nella memoria "device protected" con i promemoria delle prossime 48 ore (chiave, ora, metodo, titolo, orari, luogo, descrizione abbreviata, link Meet) e i posticipi in corso; scritta in modo atomico (file temporaneo e rinomina).
+       - Giornale: registro delle azioni fatte a telefono bloccato (Posticipa, Ferma, Chiudi) e delle chiavi già mostrate.
+       - Test: serializzazione, scrittura atomica, riconciliazione con Room, posticipi.
+    2. **Livello leggero, senza Hilt né Room.**
+       - Ricevitore di avvio (`LOCKED_BOOT_COMPLETED`, `BOOT_COMPLETED`, `MY_PACKAGE_REPLACED`, cambio di ora e di fuso) e ricevitore degli allarmi, dichiarati `directBootAware`.
+       - Notifica, servizio e suoneria che leggono solo l'istantanea.
+       - `AlarmActivity` con i dati dall'istantanea e durata della sveglia in memoria "device protected".
+    3. **Collegamento con il livello completo.**
+       - L'istantanea si riscrive a ogni riprogrammazione (sync, modifica, avvio, cambio di ora o fuso).
+       - Allo sblocco (`ACTION_USER_UNLOCKED`) il giornale si riporta in Room, senza doppioni, e l'istantanea si riscrive.
+    4. **Rimozione della sonda di debug** (`BootProbe`, ricevitori di prova e relativo manifest di debug).
+    5. **Verifica sul Samsung.**
+       - Riavvio senza inserire il PIN con una sveglia in arrivo: schermata a tutto schermo sopra il blocco, suoneria, Posticipa e Ferma prima del PIN.
+       - Poi PIN e controllo che posticipo e chiusura risultino in Room e in "Sveglie attive".
+    6. **Lint, test automatici e CI verde**, poi commit e aggiornamento di plan.md.
   - **Rischi**: telefoni senza cifratura a file (il segnale pre-sblocco non esiste, vale solo il segnale dopo lo sblocco); la suoneria predefinita a telefono bloccato (provata sul Samsung, da provare su altri telefoni); l'istantanea non aggiornata se l'app non gira (l'ultima nota resta valida fino a 48 ore); doppioni tra istantanea e Room.
-- Stato: decisione A presa, direct boot vero non ancora scritto; sonda di debug e correzione dell'avvio dell'app già fatte.
+- Stato: decisione presa implementare la soluzione 4, direct boot vero non ancora scritto; sonda di debug e correzione dell'avvio dell'app già fatte.
 
 **6. Email**
 - Le invia Google (promemoria `method=email`, già scritti dall'editor in M3). Solo verifica.

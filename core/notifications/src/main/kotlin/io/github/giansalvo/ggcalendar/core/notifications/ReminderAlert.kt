@@ -5,6 +5,7 @@ import io.github.giansalvo.ggcalendar.core.data.DueReminder
 import io.github.giansalvo.ggcalendar.core.database.ReminderRow
 import io.github.giansalvo.ggcalendar.core.model.Reminder
 import io.github.giansalvo.ggcalendar.core.model.ReminderMethod
+import org.json.JSONObject
 
 /** A reminder being shown: what the notification, the alarm screen and their actions need. */
 data class ReminderAlert(
@@ -29,6 +30,11 @@ data class ReminderAlert(
         .putExtra(KEY, key).putExtra(EVENT, eventId).putExtra(BEGIN, beginUtc).putExtra(END, endUtc)
         .putExtra(ALL_DAY, allDay).putExtra(TITLE, title).putExtra(LOCATION, location).putExtra(DESCRIPTION, description).putExtra(MEET, meetLink)
         .putExtra(METHOD, method.name).putExtra(MINUTES, minutes)
+
+    fun toJson(): JSONObject = JSONObject()
+        .put("key", key).put("event", eventId).put("begin", beginUtc).put("end", endUtc).put("allDay", allDay)
+        .put("title", title).put("location", location).put("description", description).put("meet", meetLink)
+        .put("method", method.name).put("minutes", minutes)
 
     companion object {
         private const val KEY = "reminder.key"
@@ -56,6 +62,22 @@ data class ReminderAlert(
         )
 
         private fun due(row: ReminderRow, reminder: Reminder) = DueReminder.keyOf(row.eventId, row.beginUtc, reminder)
+
+        fun fromJson(json: JSONObject): ReminderAlert? = runCatching {
+            ReminderAlert(
+                key = json.getString("key"),
+                eventId = json.getString("event"),
+                beginUtc = json.getLong("begin"),
+                endUtc = json.getLong("end"),
+                allDay = json.getBoolean("allDay"),
+                title = json.optString("title"),
+                location = json.optString("location"),
+                description = json.optString("description"),
+                meetLink = if (json.isNull("meet")) null else json.getString("meet"),
+                method = runCatching { ReminderMethod.valueOf(json.optString("method")) }.getOrDefault(ReminderMethod.POPUP),
+                minutes = json.optInt("minutes"),
+            )
+        }.getOrNull()
 
         fun from(intent: Intent): ReminderAlert? {
             val key = intent.getStringExtra(KEY) ?: return null

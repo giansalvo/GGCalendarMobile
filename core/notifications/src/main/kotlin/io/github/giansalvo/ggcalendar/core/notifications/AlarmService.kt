@@ -15,8 +15,6 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
-import dagger.hilt.android.AndroidEntryPoint
-import io.github.giansalvo.ggcalendar.core.data.AppPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -24,21 +22,20 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * Rings an alarm like the system Clock: the ringtone loops as a system alarm (so it also rings in silent mode and in
  * Do Not Disturb) with vibration, until the user closes or snoozes it or the set duration (1 to 10 minutes) passes;
  * then it stops and leaves a "missed alarm" notification. Alarms that arrive together ring one after the other.
+ * Direct boot aware: it uses no injection and reads the duration from the [DirectBootStore], so it also rings
+ * after a reboot, before the first unlock.
  */
-@AndroidEntryPoint
 class AlarmService : Service() {
-    @Inject lateinit var notifier: ReminderNotifier
+    private val notifier by lazy { ReminderNotifier(this) }
 
-    @Inject lateinit var prefs: AppPreferences
+    private val store by lazy { DirectBootStore(this) }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val queue = ArrayDeque<ReminderAlert>()
@@ -109,7 +106,7 @@ class AlarmService : Service() {
         (getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator)?.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 700, 500), 0))
         timeout?.cancel()
         timeout = scope.launch {
-            delay(prefs.alarmMinutes.first() * 60_000L)
+            delay(store.alarmMinutes() * 60_000L)
             if (current?.key == alert.key) finishCurrent(missed = true)
         }
     }

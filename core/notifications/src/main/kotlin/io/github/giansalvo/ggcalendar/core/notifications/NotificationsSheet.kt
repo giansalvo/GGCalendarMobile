@@ -52,10 +52,12 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class NotificationsViewModel @Inject constructor(private val prefs: AppPreferences) : ViewModel() {
+class NotificationsViewModel @Inject constructor(private val prefs: AppPreferences, private val store: DirectBootStore) : ViewModel() {
     val alarmMinutes: StateFlow<Int> = prefs.alarmMinutes.stateIn(viewModelScope, SharingStarted.Eagerly, AppPreferences.DEFAULT_ALARM_MINUTES)
 
     fun setAlarmMinutes(minutes: Int) {
+        // The copy in the device protected storage is what the alarm uses while the phone is locked after a reboot.
+        store.setAlarmMinutes(minutes)
         viewModelScope.launch { prefs.setAlarmMinutes(minutes) }
     }
 }

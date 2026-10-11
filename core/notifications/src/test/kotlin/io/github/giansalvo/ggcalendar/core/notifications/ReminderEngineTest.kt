@@ -36,15 +36,19 @@ class ReminderEngineTest {
     private lateinit var scheduler: ReminderScheduler
     private lateinit var manager: NotificationManager
     private lateinit var prefs: AppPreferences
+    private lateinit var store: DirectBootStore
+    private lateinit var reconciler: JournalReconciler
 
     @Before
     fun setUp() = runTest {
         context = ApplicationProvider.getApplicationContext()
         db = Room.inMemoryDatabaseBuilder(context, GGCalendarDatabase::class.java).allowMainThreadQueries().build()
         val notifier = ReminderNotifier(context).also { it.createChannels() }
-        scheduler = ReminderScheduler(context, db, notifier)
         prefs = AppPreferences(context)
-        engine = ReminderEngine(context, db, prefs, scheduler, notifier)
+        store = DirectBootStore(context.filesDir.resolve("reminders"))
+        reconciler = JournalReconciler(db, store)
+        scheduler = ReminderScheduler(context, db, prefs, store, reconciler)
+        engine = ReminderEngine(context, db, prefs, scheduler, notifier, reconciler)
         // The first catch-up of a fresh install looks back from now: simulate a phone that was off for a while.
         prefs.setReminderLastCheck(System.currentTimeMillis() - 2 * 60 * minute)
         manager = context.getSystemService(NotificationManager::class.java)

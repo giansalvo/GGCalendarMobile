@@ -44,20 +44,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
-import dagger.hilt.android.AndroidEntryPoint
 import io.github.giansalvo.ggcalendar.core.data.AppPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import java.util.Date
-import javax.inject.Inject
 
-/** The alarm screen over the lock screen (mockup 7): time, title, description, the choice of the snooze, Stop. */
-@AndroidEntryPoint
+/**
+ * The alarm screen over the lock screen (mockup 7): time, title, description, the choice of the snooze, Stop.
+ * Direct boot aware: no injection, everything it shows comes from the alarm and the [DirectBootStore].
+ */
 class AlarmActivity : ComponentActivity() {
-    @Inject lateinit var engine: ReminderEngine
-
-    @Inject lateinit var prefs: AppPreferences
-
     private val alert = MutableStateFlow<ReminderAlert?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -88,19 +84,19 @@ class AlarmActivity : ComponentActivity() {
         }
         setContent {
             val current by alert.collectAsState()
-            val minutes by prefs.alarmMinutes.collectAsState(AppPreferences.DEFAULT_ALARM_MINUTES)
+            val minutes = remember { DirectBootStore(applicationContext).alarmMinutes() }
             MaterialTheme(colorScheme = darkColorScheme()) {
                 current?.let { a ->
                     AlarmScreen(
                         alert = a,
                         durationMinutes = minutes,
                         onStop = {
-                            engine.dismiss(a)
+                            ReminderActions.dismiss(applicationContext, a)
                             finish()
                         },
                         onSnooze = { m ->
                             lifecycleScope.launch {
-                                engine.snooze(a, m)
+                                ReminderActions.snooze(applicationContext, a, m)
                                 finish()
                             }
                         },

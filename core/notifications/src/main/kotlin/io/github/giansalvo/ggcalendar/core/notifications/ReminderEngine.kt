@@ -26,15 +26,18 @@ class ReminderEngine @Inject constructor(
     private val prefs: AppPreferences,
     private val scheduler: ReminderScheduler,
     private val notifier: ReminderNotifier,
+    private val reconciler: JournalReconciler,
 ) {
     private val dao get() = db.reminderDao()
 
     /** The AlarmManager alarm of [key] went off. */
     suspend fun onAlarm(key: String) {
+        reconciler.reconcile()
         val now = System.currentTimeMillis()
         if (key.startsWith(SNOOZE_PREFIX)) {
-            val snoozed = dao.snoozed().firstOrNull { it.id == key.removePrefix(SNOOZE_PREFIX).toLongOrNull() } ?: return
-            fireSnoozed(snoozed, now)
+            val snoozed = dao.snoozed().firstOrNull { it.id == key.removePrefix(SNOOZE_PREFIX).toLongOrNull() }
+            // A snooze made while the phone was locked has a Room id only after the reconciliation above: catch it up.
+            if (snoozed == null) catchUp() else fireSnoozed(snoozed, now)
             return
         }
         val (eventId, begin, method, minutes) = parse(key) ?: return
@@ -51,6 +54,7 @@ class ReminderEngine @Inject constructor(
      * back): the boot counter tells that the phone restarted since the last time. Cheap when nothing changed.
      */
     suspend fun restoreAfterBoot() {
+        reconciler.reconcile()
         val boot = Settings.Global.getInt(context.contentResolver, Settings.Global.BOOT_COUNT, -1)
         if (prefs.handledBootCount() == boot) return
         catchUp()
@@ -59,6 +63,7 @@ class ReminderEngine @Inject constructor(
 
     /** Shows the reminders missed in the last 24 hours (only for events not over) and the snoozes that came due. */
     suspend fun catchUp() {
+        reconciler.reconcile()
         val now = System.currentTimeMillis()
         val after = maxOf(prefs.reminderLastCheck() ?: now, now - CATCH_UP)
         val rows = dao.rows(now, now + Reminders.MAX_MINUTES_BEFORE * 60_000)
@@ -84,13 +89,7 @@ class ReminderEngine @Inject constructor(
         present(ReminderAlert.of(row, Reminder(method, snoozed.minutes)))
     }
 
-    private fun present(alert: ReminderAlert) {
-        if (alert.isAlarm) {
-            if (!AlarmService.start(context, alert)) notifier.showPopup(alert)
-        } else {
-            notifier.showPopup(alert)
-        }
-    }
+    private fun present(alert: ReminderAlert) = presentAlert(context, notifier, alert)
 
     /** "Snooze": the reminder comes back in [minutes], also after a restart. */
     suspend fun snooze(alert: ReminderAlert, minutes: Int) {
@@ -115,10 +114,7 @@ class ReminderEngine @Inject constructor(
     }
 
     /** The user closed the reminder: its notification goes away and, for an alarm, the ringing stops. */
-    fun dismiss(alert: ReminderAlert) {
-        notifier.cancel(alert)
-        if (alert.isAlarm) AlarmService.stop(alert.key)
-    }
+    fun dismiss(alert: ReminderAlert) = dismissAlert(context, alert)
 
     companion object {
         private const val SNOOZE_PREFIX = "snooze|"
