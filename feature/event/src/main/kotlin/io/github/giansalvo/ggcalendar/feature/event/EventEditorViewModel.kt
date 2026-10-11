@@ -119,15 +119,14 @@ class EventEditorViewModel @Inject constructor(private val repository: EventRepo
     }
 
     private suspend fun newDraft(request: EditorRequest.New): Draft {
-        val cals = repository.writableCalendars.first()
-        val calendar = cals.firstOrNull { it.isPrimary } ?: cals.first()
+        val calendarId = repository.defaultCalendarId() ?: repository.writableCalendars.first().first().id
         // Next full hour, one hour long (as in the desktop app).
         val start = request.start ?: LocalDateTime.now().truncatedTo(ChronoUnit.HOURS).plusHours(1)
         val end = start.plusHours(1)
         original = null
         return Draft(
             id = UUID.randomUUID().toString(),
-            calendarId = calendar.id,
+            calendarId = calendarId,
             allDay = request.allDay,
             startDate = start.toLocalDate(),
             startTime = start.toLocalTime(),

@@ -6,6 +6,7 @@ import io.github.giansalvo.ggcalendar.core.database.GGCalendarDatabase
 import io.github.giansalvo.ggcalendar.core.model.Attendee
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
@@ -33,6 +34,14 @@ class EventRepository @Inject constructor(
 
     /** Calendars where the user can create events. */
     val writableCalendars: Flow<List<CalendarEntity>> = db.calendarDao().observeAll().map { list -> list.filter { it.canWrite } }
+
+    /** Where new events go: the primary calendar of the first account added, else any writable calendar. */
+    suspend fun defaultCalendarId(): String? {
+        val writable = db.calendarDao().observeAll().first().filter { it.canWrite }
+        val accounts = db.accountDao().getAll().map { it.email }
+        return accounts.firstNotNullOfOrNull { email -> writable.firstOrNull { it.accountEmail == email && it.isPrimary } }?.id
+            ?: writable.firstOrNull()?.id
+    }
 
     /** Every guest of the stored events, by address, for the editor's suggestions. */
     suspend fun knownAttendees(): List<Attendee> {
