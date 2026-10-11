@@ -160,7 +160,10 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                     MiniCalendar(
                         selected = state.date,
                         eventDays = state.eventDays,
-                        onMonthChange = viewModel::showMiniMonth,
+                        onMonthChange = {
+                            viewModel.showMiniMonth(it)
+                            viewModel.showMonth(it)
+                        },
                         onPick = {
                             viewModel.goTo(it)
                             miniOpen = false

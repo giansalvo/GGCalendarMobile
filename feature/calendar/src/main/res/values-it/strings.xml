@@ -22,4 +22,5 @@
     <string name="show_more">Mostra altri</string>
     <string name="show_less">Mostra meno</string>
     <string name="birthday">Compleanno</string>
+    <string name="choose_year">Scegli l\'anno</string>
 </resources>
