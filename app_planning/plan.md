@@ -198,7 +198,7 @@ I test xUnit (`tests/GGCalendar.Core.Tests`) vengono tradotti in JUnit con gli s
   - Stato all'11/10/2026 (in corso): passi 1-5 e 7 fatti, CI verde fino al commit 98db86f. Provati sul Samsung: popup all'ora giusta; sveglia con suoneria in loop come allarme di sistema (`setAlarmClock` + servizio in primo piano di tipo `systemExempted`); schermata a tutto schermo che si apre anche a telefono in uso e a schermo spento (titolo, ora, luogo, descrizione, scelta del posticipo 5/10/15/30/60 minuti, "Ferma la sveglia", testi grandi e centrati, "si ferma da sola dopo N minuti"); posticipo che torna a suonare all'ora giusta; due sveglie insieme in coda; schermata "Notifiche e sveglie" dal menu laterale (stato dei permessi, durata da 1 a 10 minuti); avviso nel dettaglio dell'evento se le notifiche sono bloccate; tocco sulla notifica che apre il dettaglio, anche di un calendario nascosto. 13 test automatici (calcolo dei promemoria, recupero dei persi, posticipo, riprogrammazione con AlarmManager).
   - Provati il 11/10/2026 sul Samsung: sveglia con app chiusa (processo ucciso, come dalle recenti) che suona comunque; dopo 2 minuti senza risposta la suoneria si ferma e resta la notifica "Sveglia persa" (sulla schermata di blocco di questo telefono compare solo l'icona, perché è impostato "solo icone" per le notifiche: è una scelta di Android/Samsung, non dell'app).
   - Da provare ancora sul telefono: (1) Doze profondo vero (con adb non si riesce, il sensore di movimento lo impedisce: sveglia tra circa un'ora, telefono fermo e non in carica); (2) riavvio del telefono, vedi "Ripristino dopo il riavvio" nella sezione M4 (prova del 11/10/2026 non superata sul Samsung, soluzione in valutazione); (3) cambio di fuso; (4) evento in due account (regola: tutti i promemoria suonano, gli identici una volta sola, da provare con un invito vero); (5) email di promemoria inviata da Google; (6) tocco sulla notifica e pulsante "Partecipa con Meet". Poi plan.md, CI verde e chiusura di M4.
-- **M4bis** Vista "Mese + Programma" e APK di prova da condividere (anche via WhatsApp) prima della pubblicazione ufficiale. Dettaglio nella sezione "M4bis: piano dettagliato".
+- **M4bis** Vista "Mese + Programma" e APK di prova da condividere (anche via WhatsApp) prima della pubblicazione ufficiale, più la scheda informativa dell'app (autore, sito, versione 0.4.0 e data di build). Dettaglio nella sezione "M4bis: piano dettagliato".
 - **M5** Condivisione, esportazione `.ics`/CSV, stampa PDF, ACL dei calendari.
 - **M6** Impostazioni, calendari locali, calendario "Compleanni" dalla rubrica del telefono (`READ_CONTACTS`, vedi M2), importazione `.ics`, suoni personalizzati, secondo fuso orario, rifinitura i18n, aggiornamenti in-app; aggiornamento del desktop C# per `ggAlarm`.
 - **M7** Landing page completa e release v1.0. La privacy policy estesa ad Android si pubblica già in M0; la verifica dello scope `calendar` si invia in parallelo, prima possibile.
@@ -518,6 +518,16 @@ Stato del PC (verificato l'11/10/2026): Git c'è; mancano Android Studio, Androi
 - Raccolta dei problemi: i tester scrivono a te (WhatsApp) con modello del telefono, versione Android e una descrizione; per i crash si valuta in M6 un pulsante "Invia log".
 - Verifica: installazione pulita su un secondo telefono (anche non Samsung), login con un altro account Google, sincronizzazione, una notifica e una sveglia, aggiornamento sopra la versione precedente.
 - La landing page e il canale ufficiale (GitHub Releases) restano in M7; questo è solo un test chiuso con amici.
+
+**3. Scheda informativa dell'app** (richiesta del 12/10/2026)
+- Voce "Informazioni" nel menu laterale (c'è già, ora senza contenuto) che apre una scheda con:
+  - nome e icona dell'app;
+  - **Autore**: Giansalvo Gusinu;
+  - **Sito web**: https://profgusinu.altervista.org/GGCalendar/ (tocco: apre il browser);
+  - **Versione**: 0.4.0, con la **data di build** (12/10/2026 per questa consegna);
+  - licenza GPL-3.0 e link al codice su GitHub (giansalvo/GGCalendarMobile), come già deciso per il progetto.
+- Versione e data non si scrivono a mano nel testo: la versione viene da `BuildConfig.VERSION_NAME`, la data di build da un campo `BuildConfig` generato da Gradle a ogni build, così non resta indietro rispetto all'APK consegnato (la versione e la data della scheda devono coincidere con quelle del nome del file, vedi punto 2).
+- Testi in italiano e inglese. Verifica: apertura dal menu laterale, tocco sul sito, tema chiaro e scuro, versione e data uguali a quelle dell'APK installato (`dumpsys package`).
 
 ## Verifica
 - Test unitari: SyncEngine (syncToken, 410, 412 → conflitto), espansione RRULE, mapping dei DTO, scrittore ICS, scheduler degli allarmi. Le chiamate API sono simulate con MockWebServer.
