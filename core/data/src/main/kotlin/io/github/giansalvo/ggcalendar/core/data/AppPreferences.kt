@@ -45,6 +45,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         val alarmMinutes = intPreferencesKey("alarm_minutes")
         val reminderLastCheck = longPreferencesKey("reminder_last_check")
         val askedNotifications = booleanPreferencesKey("asked_notifications")
+        val bootCount = intPreferencesKey("handled_boot_count")
     }
 
     /** How long an alarm rings before it stops by itself and becomes a "missed alarm", in minutes (1 to 10). */
@@ -59,6 +60,13 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
 
     suspend fun setReminderLastCheck(at: Long) {
         context.dataStore.edit { it[Keys.reminderLastCheck] = at }
+    }
+
+    /** The boot (Settings.Global.BOOT_COUNT) after which the reminders were last restored; null on a fresh install. */
+    suspend fun handledBootCount(): Int? = context.dataStore.data.first()[Keys.bootCount]
+
+    suspend fun setHandledBootCount(count: Int) {
+        context.dataStore.edit { it[Keys.bootCount] = count }
     }
 
     /** The notification permission is asked once by itself; afterwards only from the "Notifications and alarms" screen. */

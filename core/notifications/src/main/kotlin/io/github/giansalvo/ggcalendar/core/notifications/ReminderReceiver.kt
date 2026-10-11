@@ -45,7 +45,7 @@ class ReminderReceiver : BroadcastReceiver() {
             }
             Reminders.ACTION_DISMISS -> ReminderAlert.from(intent)?.let { engine.dismiss(it) }
             Intent.ACTION_BOOT_COMPLETED, Intent.ACTION_MY_PACKAGE_REPLACED -> {
-                engine.catchUp()
+                engine.restoreAfterBoot()
                 scheduler.reschedule()
             }
             Intent.ACTION_TIMEZONE_CHANGED -> {

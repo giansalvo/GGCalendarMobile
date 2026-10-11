@@ -1,6 +1,7 @@
 package io.github.giansalvo.ggcalendar.core.notifications
 
 import android.content.Context
+import android.provider.Settings
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.giansalvo.ggcalendar.core.data.AppPreferences
 import io.github.giansalvo.ggcalendar.core.data.DueReminder
@@ -43,6 +44,17 @@ class ReminderEngine @Inject constructor(
         if (row.endUtc <= now) return
         dao.insertFired(ReminderFiredEntity(key, row.beginUtc - minutes * 60_000L))
         present(ReminderAlert.of(row, reminder))
+    }
+
+    /**
+     * Restores the reminders after a reboot, even when the system did not deliver BOOT_COMPLETED (some phones hold it
+     * back): the boot counter tells that the phone restarted since the last time. Cheap when nothing changed.
+     */
+    suspend fun restoreAfterBoot() {
+        val boot = Settings.Global.getInt(context.contentResolver, Settings.Global.BOOT_COUNT, -1)
+        if (prefs.handledBootCount() == boot) return
+        catchUp()
+        if (boot >= 0) prefs.setHandledBootCount(boot)
     }
 
     /** Shows the reminders missed in the last 24 hours (only for events not over) and the snoozes that came due. */

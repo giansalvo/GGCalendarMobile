@@ -24,14 +24,16 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** Daily: moves the 48-hour window of registered reminders forward, even if the app is never opened. */
+/** Once a day: moves the 48-hour window of registered reminders forward, even if the app is never opened. */
 @HiltWorker
 class ReminderWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val scheduler: ReminderScheduler,
+    private val engine: ReminderEngine,
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
+        engine.restoreAfterBoot()
         scheduler.reschedule()
         return Result.success()
     }
@@ -50,21 +52,26 @@ class ReminderStartup @Inject constructor(
     fun start() {
         notifier.createChannels()
         scope.launch {
-            engine.catchUp()
+            engine.restoreAfterBoot()
             scheduler.reschedule()
         }
+        val work = WorkManager.getInstance(context)
+        work.cancelUniqueWork("reminders-check") // an experiment with a 15-minute check, dropped: polling gives no guarantee
         val daily = PeriodicWorkRequestBuilder<ReminderWorker>(1, TimeUnit.DAYS).build()
-        WorkManager.getInstance(context).enqueueUniquePeriodicWork("reminders-daily", ExistingPeriodicWorkPolicy.KEEP, daily)
+        work.enqueueUniquePeriodicWork("reminders-daily", ExistingPeriodicWorkPolicy.KEEP, daily)
     }
 }
 
 /** Registers the reminders again after the data layer reports changed events (sync, local edits). */
 @Singleton
-class RescheduleHook @Inject constructor(private val scheduler: ReminderScheduler) : ReminderHook {
+class RescheduleHook @Inject constructor(private val scheduler: ReminderScheduler, private val engine: ReminderEngine) : ReminderHook {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     override fun remindersChanged() {
-        scope.launch { scheduler.reschedule() }
+        scope.launch {
+            engine.restoreAfterBoot()
+            scheduler.reschedule()
+        }
     }
 }
 
