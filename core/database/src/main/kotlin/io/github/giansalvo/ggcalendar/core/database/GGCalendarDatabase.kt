@@ -17,8 +17,9 @@ import kotlinx.serialization.json.Json
         EventEntity::class,
         InstanceEntity::class,
         SyncMessageEntity::class,
+        OutboxEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -28,6 +29,7 @@ abstract class GGCalendarDatabase : RoomDatabase() {
     abstract fun eventDao(): EventDao
     abstract fun instanceDao(): InstanceDao
     abstract fun syncMessageDao(): SyncMessageDao
+    abstract fun outboxDao(): OutboxDao
 
     companion object {
         const val NAME = "ggcalendar.db"
@@ -44,6 +46,19 @@ abstract class GGCalendarDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE events ADD COLUMN event_type TEXT NOT NULL DEFAULT 'default'")
                 db.execSQL("UPDATE calendars SET sync_token = NULL")
+            }
+        }
+
+        /** v4: outbox of the local changes waiting to be sent to Google (milestone M3). */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `outbox` (`seq` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`event_id` TEXT NOT NULL, `calendar_id` TEXT NOT NULL, `operation` TEXT NOT NULL, `payload` TEXT, " +
+                        "`base` TEXT, `send_updates` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, " +
+                        "`attempts` INTEGER NOT NULL, `last_error` TEXT)",
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_outbox_event_id` ON `outbox` (`event_id`)")
             }
         }
     }

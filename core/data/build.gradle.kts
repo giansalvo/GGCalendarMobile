@@ -3,12 +3,21 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
     namespace = "io.github.giansalvo.ggcalendar.core.data"
     compileSdk = 36
     defaultConfig { minSdk = 26 }
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        // Robolectric downloads Android at test time: on Windows trust the system certificates (HTTPS inspection
+        // by antivirus software would otherwise fail the download).
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            unitTests.all { it.systemProperty("javax.net.ssl.trustStoreType", "Windows-ROOT") }
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -26,6 +35,7 @@ dependencies {
     implementation(project(":core:auth"))
 
     implementation(libs.lib.recur)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.datastore.preferences)
     api(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)
@@ -34,4 +44,9 @@ dependencies {
     ksp(libs.hilt.compiler)
 
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.okhttp)
+    testImplementation(libs.okhttp.mockwebserver)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

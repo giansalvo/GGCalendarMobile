@@ -23,8 +23,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Read sync with Google Calendar (milestone M1), ported from the desktop app's GoogleSyncService: calendar list, then
- * each calendar's events through its sync token. The push of local changes (outbox) arrives with the editor in M3.
+ * Two-way sync with Google Calendar, ported from the desktop app's GoogleSyncService: for each account the calendar
+ * list, the push of the queued local changes ([OutboxPusher]), each calendar's events through its sync token, then
+ * again the push of the "(conflict)" copies created meanwhile.
  */
 @Singleton
 class SyncEngine @Inject constructor(
@@ -32,6 +33,7 @@ class SyncEngine @Inject constructor(
     private val api: GoogleCalendarApi,
     private val authorizer: GoogleAuthorizer,
     private val prefs: AppPreferences,
+    private val pusher: OutboxPusher,
 ) {
     private val mutex = Mutex()
     private val _syncing = MutableStateFlow(false)
@@ -83,6 +85,7 @@ class SyncEngine @Inject constructor(
             // Calendars removed or unsubscribed on Google.
             (existing.keys - current.map { it.id }.toSet()).forEach { calendars.delete(it) }
 
+            val conflicts = pusher.push(email, token, ::recomputeInstances)
             current.forEach { cal ->
                 try {
                     pullCalendar(cal, token)
@@ -91,6 +94,8 @@ class SyncEngine @Inject constructor(
                     messages.insert(SyncMessageEntity(accountEmail = email, kind = "error", text = "${cal.name}: ${e.message}"))
                 }
             }
+            // Conflict copies are queued during the push: send them now rather than at the next sync.
+            if (conflicts) pusher.push(email, token, ::recomputeInstances)
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
             messages.insert(SyncMessageEntity(accountEmail = email, kind = "error", text = e.message ?: e.toString()))
@@ -143,13 +148,17 @@ class SyncEngine @Inject constructor(
         if (syncToken == null) known.filter { it.remoteId !in seen }.mapTo(deletes) { it.id }
 
         db.withTransaction {
-            if (upserts.isNotEmpty()) events.upsert(upserts)
-            if (deletes.isNotEmpty()) events.deleteWithSeries(deletes)
+            // Local edits still waiting for the push win over Google's version until they are sent.
+            val pending = db.outboxDao().pendingEventIds().toSet()
+            val apply = upserts.filter { it.id !in pending }
+            val drop = deletes.filter { it !in pending }
+            if (apply.isNotEmpty()) events.upsert(apply)
+            if (drop.isNotEmpty()) events.deleteWithSeries(drop)
             calendars.setSyncToken(cal.id, page.nextSyncToken)
             val affected = if (syncToken == null) {
                 events.getForCalendar(cal.id).map { it.seriesMasterId ?: it.id }.toSet()
             } else {
-                upserts.map { it.seriesMasterId ?: it.id }.toSet()
+                apply.map { it.seriesMasterId ?: it.id }.toSet()
             }
             affected.forEach { recomputeInstances(it) }
         }
@@ -176,6 +185,9 @@ class SyncEngine @Inject constructor(
         }
         prefs.setInstanceWindow(plan.window)
     }
+
+    /** Rebuilds the instances of an event after a local change (see [EventWriter]). */
+    suspend fun recompute(eventId: String) = db.withTransaction { recomputeInstances(eventId) }
 
     /** Rebuilds the instances of an event and of its exceptions (a series' modified or cancelled occurrences). */
     private suspend fun recomputeInstances(eventId: String) {

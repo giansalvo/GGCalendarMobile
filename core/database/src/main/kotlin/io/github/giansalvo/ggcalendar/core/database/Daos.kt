@@ -71,12 +71,49 @@ interface EventDao {
     @Upsert
     suspend fun upsert(events: List<EventEntity>)
 
+    @Query("UPDATE events SET remote_id = :remoteId, etag = :etag WHERE id = :id")
+    suspend fun setRemote(id: String, remoteId: String, etag: String?)
+
+    /** Attendees of every event, to suggest addresses in the editor. */
+    @Query("SELECT attendees FROM events WHERE attendees != '[]'")
+    suspend fun allAttendees(): List<String>
+
     /** Deletes an event together with the modified or cancelled occurrences of its series. */
     @Query("DELETE FROM events WHERE id IN (:ids) OR series_master_id IN (:ids)")
     suspend fun deleteWithSeries(ids: List<String>)
 }
 
 data class RemoteLink(val remoteId: String, val id: String)
+
+@Dao
+interface OutboxDao {
+    @Insert
+    suspend fun insert(item: OutboxEntity): Long
+
+    @Query("SELECT * FROM outbox ORDER BY seq")
+    suspend fun getAll(): List<OutboxEntity>
+
+    @Query("SELECT * FROM outbox WHERE event_id = :eventId ORDER BY seq")
+    suspend fun getFor(eventId: String): List<OutboxEntity>
+
+    @Query("SELECT DISTINCT event_id FROM outbox")
+    suspend fun pendingEventIds(): List<String>
+
+    @Query("SELECT COUNT(*) FROM outbox")
+    fun observeCount(): Flow<Int>
+
+    @Query("SELECT EXISTS(SELECT 1 FROM outbox WHERE event_id = :eventId AND seq > :seq)")
+    suspend fun hasPendingAfter(eventId: String, seq: Long): Boolean
+
+    @Query("DELETE FROM outbox WHERE seq = :seq")
+    suspend fun complete(seq: Long)
+
+    @Query("DELETE FROM outbox WHERE event_id = :eventId")
+    suspend fun discardFor(eventId: String)
+
+    @Query("UPDATE outbox SET attempts = attempts + 1, last_error = :error WHERE seq = :seq")
+    suspend fun failed(seq: Long, error: String?)
+}
 
 @Dao
 interface InstanceDao {

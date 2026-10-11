@@ -5,6 +5,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
 import io.github.giansalvo.ggcalendar.core.model.Attendee
 import io.github.giansalvo.ggcalendar.core.model.Reminder
 
@@ -50,6 +51,7 @@ data class CalendarEntity(
     foreignKeys = [ForeignKey(CalendarEntity::class, ["id"], ["calendar_id"], onDelete = ForeignKey.CASCADE)],
     indices = [Index("calendar_id"), Index("remote_id"), Index("series_master_id"), Index("ical_uid")],
 )
+@Serializable
 data class EventEntity(
     @PrimaryKey val id: String,
     @ColumnInfo(name = "calendar_id") val calendarId: String,
@@ -107,6 +109,34 @@ data class InstanceEntity(
     @ColumnInfo(name = "end_day") val endDay: Long,
     @ColumnInfo(name = "all_day") val allDay: Boolean,
 )
+
+/**
+ * A local change waiting to be sent to Google, as in the desktop outbox. [payload] is the event as saved (JSON of
+ * [EventEntity]) for create and update, the destination calendar id for move, the Google id for delete. [base] is the
+ * Google version the edit started from (JSON of [EventEntity]): a 412 is a real conflict only if Google's current
+ * version differs from it.
+ */
+@Entity(tableName = "outbox", indices = [Index("event_id")])
+data class OutboxEntity(
+    @PrimaryKey(autoGenerate = true) val seq: Long = 0,
+    @ColumnInfo(name = "event_id") val eventId: String,
+    @ColumnInfo(name = "calendar_id") val calendarId: String,
+    /** "create", "update", "move" or "delete". */
+    val operation: String,
+    val payload: String?,
+    val base: String? = null,
+    @ColumnInfo(name = "send_updates") val sendUpdates: Boolean = true,
+    @ColumnInfo(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
+    val attempts: Int = 0,
+    @ColumnInfo(name = "last_error") val lastError: String? = null,
+) {
+    companion object {
+        const val CREATE = "create"
+        const val UPDATE = "update"
+        const val MOVE = "move"
+        const val DELETE = "delete"
+    }
+}
 
 @Entity(tableName = "sync_messages")
 data class SyncMessageEntity(

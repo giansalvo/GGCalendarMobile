@@ -47,7 +47,8 @@ class SyncScheduler @Inject constructor(@ApplicationContext context: Context) {
             .setConstraints(network)
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .build()
-        work.enqueueUniqueWork(NOW, ExistingWorkPolicy.KEEP, request)
+        // A change saved while a sync runs must still be pushed: queue another sync after the current one.
+        work.enqueueUniqueWork(NOW, ExistingWorkPolicy.APPEND_OR_REPLACE, request)
     }
 
     private companion object {

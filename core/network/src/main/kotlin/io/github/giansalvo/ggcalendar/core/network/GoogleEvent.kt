@@ -171,9 +171,16 @@ object GoogleEventMapper {
      * Request body for an insert or a patch, ported from the desktop ToGoogle. Reminders: null keeps the calendar's
      * defaults; alarms travel as popups listed in `extendedProperties.private.ggAlarm` ([GoogleEvent.alarmMinutes]).
      * In a [patch] Google merges objects with what it has, so fields being cleared are sent as null: the unused form of
-     * start/end (all-day ⇄ timed), the color, the recurrence of a former series and the alarm property.
+     * start/end (all-day ⇄ timed), the color, the recurrence of a former series, the alarm property and, with
+     * [removeMeet], the conference.
      */
-    fun toGoogle(ev: GoogleEvent, includeMeetRequest: Boolean, patch: Boolean, defaultZone: ZoneId = ZoneId.systemDefault()): JsonObject =
+    fun toGoogle(
+        ev: GoogleEvent,
+        includeMeetRequest: Boolean,
+        patch: Boolean,
+        defaultZone: ZoneId = ZoneId.systemDefault(),
+        removeMeet: Boolean = false,
+    ): JsonObject =
         buildJsonObject {
             put("summary", ev.title)
             put("location", ev.location)
@@ -246,6 +253,7 @@ object GoogleEventMapper {
                 // A former series becoming a single event; occurrences of a series never carry a recurrence.
                 put("recurrence", JsonArray(emptyList()))
             }
+            if (removeMeet && patch) put("conferenceData", JsonNull)
             if (includeMeetRequest) {
                 putJsonObject("conferenceData") {
                     putJsonObject("createRequest") {

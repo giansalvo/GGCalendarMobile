@@ -95,6 +95,6 @@ object DatabaseModule {
     @Singleton
     fun database(@ApplicationContext context: Context): GGCalendarDatabase =
         Room.databaseBuilder(context, GGCalendarDatabase::class.java, GGCalendarDatabase.NAME)
-            .addMigrations(GGCalendarDatabase.MIGRATION_1_2, GGCalendarDatabase.MIGRATION_2_3)
+            .addMigrations(GGCalendarDatabase.MIGRATION_1_2, GGCalendarDatabase.MIGRATION_2_3, GGCalendarDatabase.MIGRATION_3_4)
             .build()
 }
