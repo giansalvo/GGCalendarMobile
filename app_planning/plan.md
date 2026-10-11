@@ -193,7 +193,7 @@ I test xUnit (`tests/GGCalendar.Core.Tests`) vengono tradotti in JUnit con gli s
   - Meet provato: il link arriva subito dopo il salvataggio, con il pulsante "Partecipa con Google Meet" anche nella copia dell'invitato. Corretto: le copie degli inviti (organizzatore diverso, invitati senza permesso di modifica) sono in sola lettura.
   - **M3 completata (11/10/2026)**.
   - Nota per la build su questo PC: l'antivirus ispeziona HTTPS, quindi Gradle scarica le dipendenze nuove solo con `-Djavax.net.ssl.trustStoreType=Windows-ROOT` (i test Robolectric lo impostano da soli su Windows).
-- **M4** Notifiche: popup, sveglia di 2 minuti, promemoria email, riavvio, onboarding dei permessi. Dettaglio nella sezione "M4: piano dettagliato".
+- **M4** Notifiche: popup, sveglia (durata impostabile da 1 a 10 minuti, predefinita 2), promemoria email, riavvio, onboarding dei permessi. Dettaglio nella sezione "M4: piano dettagliato".
 - **M5** Condivisione, esportazione `.ics`/CSV, stampa PDF, ACL dei calendari.
 - **M6** Impostazioni, calendari locali, calendario "Compleanni" dalla rubrica del telefono (`READ_CONTACTS`, vedi M2), importazione `.ics`, suoni personalizzati, secondo fuso orario, rifinitura i18n, aggiornamenti in-app; aggiornamento del desktop C# per `ggAlarm`.
 - **M7** Landing page completa e release v1.0. La privacy policy estesa ad Android si pubblica già in M0; la verifica dello scope `calendar` si invia in parallelo, prima possibile.
@@ -363,7 +363,8 @@ Stato del PC (verificato l'11/10/2026): Git c'è; mancano Android Studio, Androi
 **Decisioni (11/10/2026)**
 - Notifiche per **tutti i calendari**, anche quelli nascosti nel menu laterale: nascondere serve a pulire la vista.
 - **Posticipa**: 10 minuti, con un menu per 5, 15 o 30. Nella notifica popup c'è l'azione "Posticipa 10 min". Il valore predefinito diventa un'impostazione in M6.
-- **Sveglia** come l'app Orologio: a telefono bloccato schermo intero (anche a schermo spento); a telefono sbloccato una notifica in primo piano con Chiudi e Posticipa. In entrambi i casi la suoneria va in loop fino a 2 minuti, poi si ferma e lascia una notifica di "sveglia persa". Toccando la notifica si apre lo schermo intero.
+- **Sveglia** come l'app Orologio: a telefono bloccato schermo intero (anche a schermo spento); a telefono sbloccato una notifica in primo piano con Chiudi e Posticipa. In entrambi i casi la suoneria va in loop per la durata impostata, poi si ferma e lascia una notifica di "sveglia persa". Toccando la notifica si apre lo schermo intero.
+- **Durata della sveglia**: parametro da 1 a 10 minuti, predefinito 2 (richiesta dell'11/10/2026). Si salva in DataStore e si regola nella schermata "Notifiche e sveglie"; in M6 entra nelle Impostazioni.
 - **Un evento presente in due account** (un invito tra profgusinu e itiangioy): una sola notifica. Lo riconosco da iCalUID e inizio, e preferisco la copia con la sveglia, poi quella dell'organizzatore.
 - I promemoria "calendario predefinito" (reminders null) usano i promemoria predefiniti del calendario, come Google.
 - Suoni: la notifica usa il suono predefinito del canale, la sveglia la suoneria della sveglia di sistema. I suoni per promemoria arrivano in M6.
@@ -385,14 +386,14 @@ Stato del PC (verificato l'11/10/2026): Git c'è; mancano Android Studio, Androi
 **4. Sveglia**
 - Canale "Sveglie" senza suono proprio: la suoneria la riproduce un foreground service con `AudioAttributes.USAGE_ALARM`, in loop, con vibrazione, così suona anche in modalità silenziosa e Non disturbare come le sveglie di sistema. Il tipo di foreground service (`mediaPlayback` o `shortService`) si sceglie in implementazione, con i limiti di Android 14–16.
 - Notifica con full-screen intent verso `AlarmActivity` (`showWhenLocked`, `turnScreenOn`), come il mockup 7: ora, titolo, "tra 30 minuti", luogo, Posticipa (10 min ▾) e Chiudi, "si ferma da sola dopo 2:00".
-- Dopo 120 secondi senza risposta la suoneria si ferma e resta una notifica di "sveglia persa". Più sveglie insieme si mettono in fila.
+- Dopo la durata impostata (1–10 minuti, predefinito 2) senza risposta la suoneria si ferma e resta una notifica di "sveglia persa". Il mockup 7 mostra "si ferma da sola dopo N:00". Più sveglie insieme si mettono in fila.
 
 **5. Permessi e onboarding**
 - `POST_NOTIFICATIONS` (Android 13 e successivi), chiesto la prima volta che c'è un promemoria da programmare o dalla schermata dei permessi.
 - Allarmi esatti: `USE_EXACT_ALARM` (concesso alle app di calendario) più `SCHEDULE_EXACT_ALARM` per Android 12 (fino all'API 32).
 - Schermo intero: su Android 14 e successivi `USE_FULL_SCREEN_INTENT` va abilitato dall'utente; se manca, la sveglia resta una notifica in primo piano con la suoneria, e l'app spiega come attivarlo.
 - Batteria: richiesta di esclusione dall'ottimizzazione e guida per togliere GGCalendar dalle "app in sospensione" di Samsung.
-- Una schermata "Notifiche e sveglie" (dal menu laterale) mostra lo stato di ogni permesso con il pulsante per sistemarlo. Nel dettaglio dell'evento, sotto i promemoria, compare l'avviso del mockup 5 se un permesso blocca quel promemoria.
+- Una schermata "Notifiche e sveglie" (dal menu laterale) mostra lo stato di ogni permesso con il pulsante per sistemarlo, e il cursore della durata della sveglia (1–10 minuti). Nel dettaglio dell'evento, sotto i promemoria, compare l'avviso del mockup 5 se un permesso blocca quel promemoria.
 
 **6. Email**
 - Le invia Google (promemoria `method=email`, già scritti dall'editor in M3). Solo verifica.
@@ -402,16 +403,16 @@ Stato del PC (verificato l'11/10/2026): Git c'è; mancano Android Studio, Androi
 2. Room v5 (`reminder_fired`, `reminder_snoozed`) e modulo `:core:notifications`.
 3. Scheduler con AlarmManager e receiver; riprogrammazione dopo sync, modifiche, avvio, riavvio, aggiornamento, cambio di ora e worker giornaliero.
 4. Notifica popup con le azioni (apri, posticipa, Meet).
-5. Sveglia: foreground service con la suoneria, `AlarmActivity`, stop dopo 2 minuti, sveglia persa, Posticipa con menu.
+5. Sveglia: foreground service con la suoneria, `AlarmActivity`, stop dopo la durata impostata, sveglia persa, Posticipa con menu.
 6. Recupero dei promemoria persi.
-7. Permessi: richieste, schermata "Notifiche e sveglie", avviso nel dettaglio.
+7. Permessi: richieste, schermata "Notifiche e sveglie" con la durata della sveglia, avviso nel dettaglio.
 8. Verifica e commit.
 
 **8. Verifica di M4**
 - Unit test: calcolo (predefiniti del calendario, doppioni, giornata intera, eventi finiti, eccezioni ed EXDATE), recupero, posticipo, pulizia delle chiavi.
 - Sul Samsung, con eventi di prova creati apposta nel calendario principale di profgusinu a pochi minuti da adesso:
   - notifica all'ora giusta a schermo acceso e spento;
-  - sveglia a telefono bloccato (schermo intero) e sbloccato (notifica), con Chiudi, Posticipa e stop dopo 2 minuti;
+  - sveglia a telefono bloccato (schermo intero) e sbloccato (notifica), con Chiudi, Posticipa e stop dopo la durata impostata (provata con 1 minuto);
   - sveglia in Doze (`adb shell dumpsys deviceidle force-idle`);
   - promemoria ancora attivi dopo il riavvio del telefono e con l'app chiusa dalle recenti;
   - cambio di fuso;
