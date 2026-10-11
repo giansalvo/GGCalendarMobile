@@ -7,6 +7,7 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -50,6 +51,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -92,6 +95,11 @@ private const val PLACEHOLDER_MINUTES = 60
 /** A timed event's piece on one day, in minutes from midnight. */
 private data class Segment(val instance: EventInstance, val from: Int, val to: Int)
 
+/** An event being dragged: where it started ([dayIndex], [from], [to]) and how far the finger moved, in pixels. */
+private data class Drag(val instance: EventInstance, val dayIndex: Int, val from: Int, val to: Int, val resize: Boolean, val dx: Float = 0f, val dy: Float = 0f)
+
+private const val SNAP_MINUTES = 15
+
 /**
  * Giorno, 6 giorni and Settimana: [dayCount] columns of 24 hours that swipe horizontally, as in Google Calendar.
  * The week starts on the locale's first day; the day and 6-day views start from the selected date.
@@ -111,6 +119,8 @@ internal fun TimeGridView(
     onCreateAt: (LocalDateTime) -> Unit,
     /** Start of the new event being edited, drawn as "(New event)" until it is saved or discarded. */
     pendingStart: LocalDateTime?,
+    /** A drag ended: the event's new start and end. */
+    onEventMoved: (EventInstance, Instant, Instant) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val firstDay = firstDayOfWeek()
@@ -153,8 +163,10 @@ internal fun TimeGridView(
         mutableIntStateOf(with(density) { (hourHeight.dp * firstHour).roundToPx() })
     }
     var zoomTarget by remember { mutableStateOf<Int?>(null) }
+    var drag by remember { mutableStateOf<Drag?>(null) }
+    val moved by rememberUpdatedState(onEventMoved)
 
-    HorizontalPager(pager, modifier.fillMaxSize(), beyondViewportPageCount = 1) { page ->
+    HorizontalPager(pager, modifier.fillMaxSize(), beyondViewportPageCount = 1, userScrollEnabled = drag == null) { page ->
         val start = pageStart(page)
         val days = remember(start) { List(dayCount) { start.plusDays(it.toLong()) } }
         val scroll = rememberScrollState(sharedScroll.intValue)
@@ -176,10 +188,20 @@ internal fun TimeGridView(
             DayHeader(days, today, onDayClick)
             AllDayStrip(days, instances, now, dimPast, onEventClick)
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            Row(
+            var gridWidth by remember { mutableIntStateOf(0) }
+            val hourPx = with(density) { hourDp.toPx() }
+            val columnPx = (gridWidth - with(density) { HOUR_COLUMN.toPx() }) / dayCount
+            // Snapped move of the drag: minutes and days.
+            fun snapped(d: Drag): Pair<Int, Int> {
+                val minutes = ((d.dy / hourPx * 60) / SNAP_MINUTES).roundToInt() * SNAP_MINUTES
+                val days = if (d.resize || columnPx <= 0) 0 else (d.dx / columnPx).roundToInt().coerceIn(-d.dayIndex, dayCount - 1 - d.dayIndex)
+                return minutes to days
+            }
+            Box(
                 Modifier
                     .weight(1f)
                     .fillMaxWidth()
+                    .onSizeChanged { gridWidth = it.width }
                     .pinchToZoom(
                         onZoom = { factor, focusY ->
                             val old = hour
@@ -194,8 +216,9 @@ internal fun TimeGridView(
                     )
                     .verticalScroll(scroll),
             ) {
+              Row {
                 HourLabels(hourDp)
-                days.forEach { day ->
+                days.forEachIndexed { index, day ->
                     DayColumn(
                         day = day,
                         instances = instances,
@@ -207,8 +230,48 @@ internal fun TimeGridView(
                         placeholder = pendingStart?.takeIf { it.toLocalDate() == day }?.let { it.hour * 60 + it.minute },
                         onEmptyTap = { minute -> onCreateAt(day.atStartOfDay().plusMinutes(minute.toLong())) },
                         onEventClick = onEventClick,
+                        dragging = drag?.instance?.takeIf { page == pager.currentPage },
+                        onDragStart = { s, resize -> drag = Drag(s.instance, index, s.from, s.to, resize) },
+                        onDrag = { dx, dy -> drag = drag?.let { it.copy(dx = it.dx + dx, dy = it.dy + dy) } },
+                        onDragEnd = {
+                            drag?.let { d ->
+                                val (minutes, shiftDays) = snapped(d)
+                                if (minutes != 0 || shiftDays != 0) {
+                                    val zone = ZoneId.systemDefault()
+                                    val begin = d.instance.begin.atZone(zone).plusDays(shiftDays.toLong()).plusMinutes(if (d.resize) 0L else minutes.toLong())
+                                    var end = d.instance.end.atZone(zone).plusDays(shiftDays.toLong()).plusMinutes(minutes.toLong())
+                                    if (!end.isAfter(begin.plusMinutes(SNAP_MINUTES - 1L))) end = begin.plusMinutes(SNAP_MINUTES.toLong())
+                                    moved(d.instance, begin.toInstant(), end.toInstant())
+                                }
+                            }
+                            drag = null
+                        },
+                        onDragCancel = { drag = null },
                         modifier = Modifier.weight(1f),
                     )
+                }
+              }
+                // The dragged event follows the finger, snapped to quarter hours and columns.
+                drag?.takeIf { page == pager.currentPage }?.let { d ->
+                    val (minutes, shiftDays) = snapped(d)
+                    val from = if (d.resize) d.from else (d.from + minutes).coerceIn(0, 24 * 60 - SNAP_MINUTES)
+                    val to = if (d.resize) maxOf(d.to + minutes, d.from + SNAP_MINUTES).coerceAtMost(24 * 60) else from + (d.to - d.from)
+                    val columnDp = with(density) { columnPx.toDp() }
+                    val color = parseColor(d.instance.colorHex)
+                    Box(
+                        Modifier
+                            .offset(x = HOUR_COLUMN + columnDp * (d.dayIndex + shiftDays), y = hourDp * from / 60)
+                            .width(columnDp - 2.dp)
+                            .height(maxOf(hourDp * (to - from) / 60, MIN_EVENT_HEIGHT))
+                            .shadow(8.dp, RoundedCornerShape(6.dp))
+                            .background(color, RoundedCornerShape(6.dp))
+                            .border(2.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(6.dp))
+                            .padding(horizontal = 4.dp, vertical = 2.dp),
+                    ) {
+                        val zone = ZoneId.systemDefault()
+                        val label = d.instance.begin.atZone(zone).toLocalDate().atStartOfDay().plusMinutes(from.toLong()).toLocalTime().format(DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.SHORT))
+                        Text("$label ${d.instance.title}", color = contentColorOn(color), fontSize = 12.sp, lineHeight = 14.sp, fontWeight = FontWeight.Medium)
+                    }
                 }
             }
         }
@@ -385,6 +448,11 @@ private fun DayColumn(
     placeholder: Int?,
     onEmptyTap: (minute: Int) -> Unit,
     onEventClick: (EventInstance) -> Unit,
+    dragging: EventInstance?,
+    onDragStart: (Segment, resize: Boolean) -> Unit,
+    onDrag: (dx: Float, dy: Float) -> Unit,
+    onDragEnd: () -> Unit,
+    onDragCancel: () -> Unit,
     modifier: Modifier,
 ) {
     val zone = ZoneId.systemDefault()
@@ -422,12 +490,26 @@ private fun DayColumn(
                 instance = s.instance,
                 day = day,
                 showTime = showTime && s.to - s.from >= 45,
-                dimmed = dimPast && s.instance.end < now,
+                dimmed = dimPast && s.instance.end < now || s.instance == dragging,
                 onClick = { onEventClick(s.instance) },
                 modifier = Modifier
                     .offset(x = width * p.column / p.columnCount + 1.dp, y = hour * s.from / 60 + 1.dp)
                     .width(width / p.columnCount - 2.dp)
-                    .height(maxOf(hour * (s.to - s.from) / 60 - 2.dp, MIN_EVENT_HEIGHT)),
+                    .height(maxOf(hour * (s.to - s.from) / 60 - 2.dp, MIN_EVENT_HEIGHT))
+                    .then(
+                        if (!s.instance.canWrite) Modifier else Modifier.pointerInput(s.instance) {
+                            detectDragGesturesAfterLongPress(
+                                // From the lower quarter of a block taller than half an hour: change the duration.
+                                onDragStart = { at -> onDragStart(s, at.y > size.height * 0.75f && s.to - s.from >= 30) },
+                                onDrag = { change, amount ->
+                                    change.consume()
+                                    onDrag(amount.x, amount.y)
+                                },
+                                onDragEnd = onDragEnd,
+                                onDragCancel = onDragCancel,
+                            )
+                        },
+                    ),
             )
         }
         if (placeholder != null) {

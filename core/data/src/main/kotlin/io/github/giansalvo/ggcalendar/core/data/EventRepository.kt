@@ -24,6 +24,7 @@ class EventRepository @Inject constructor(
     private val db: GGCalendarDatabase,
     val writer: EventWriter,
     val series: SeriesEditor,
+    val contacts: ContactsSource,
 ) {
     fun observe(id: String): Flow<EventDetail?> =
         combine(db.eventDao().observe(id), db.calendarDao().observeAll()) { event, calendars -> event to calendars }
@@ -33,8 +34,12 @@ class EventRepository @Inject constructor(
                 EventDetail(event, calendar, event.seriesMasterId?.let { db.eventDao().get(it) })
             }
 
-    /** Calendars where the user can create events. */
-    val writableCalendars: Flow<List<CalendarEntity>> = db.calendarDao().observeAll().map { list -> list.filter { it.canWrite } }
+    /** Calendars where the user can create events, account by account in the order they were added. */
+    val writableCalendars: Flow<List<CalendarEntity>> =
+        combine(db.accountDao().observeAll(), db.calendarDao().observeAll()) { accounts, calendars ->
+            val order = accounts.mapIndexed { i, a -> a.email to i }.toMap()
+            calendars.filter { it.canWrite }.sortedBy { order[it.accountEmail] ?: Int.MAX_VALUE }
+        }
 
     /** Where new events go: the primary calendar of the first account added, else any writable calendar. */
     suspend fun defaultCalendarId(): String? {
@@ -44,11 +49,11 @@ class EventRepository @Inject constructor(
             ?: writable.firstOrNull()?.id
     }
 
-    /** Every guest of the stored events, by address, for the editor's suggestions. */
+    /** The guests of the stored events and the phone's contacts (if allowed), by address, for the editor. */
     suspend fun knownAttendees(): List<Attendee> {
         val json = Json { ignoreUnknownKeys = true }
-        return db.eventDao().allAttendees()
-            .flatMap { runCatching { json.decodeFromString<List<Attendee>>(it) }.getOrDefault(emptyList()) }
+        return (db.eventDao().allAttendees().flatMap { runCatching { json.decodeFromString<List<Attendee>>(it) }.getOrDefault(emptyList()) } + contacts.emails())
+            .map { Attendee(it.email, displayName = it.displayName) }
             .groupBy { it.email.lowercase() }
             .map { (_, same) -> same.firstOrNull { it.displayName != null } ?: same.first() }
             .sortedBy { (it.displayName ?: it.email).lowercase() }

@@ -1,5 +1,7 @@
 package io.github.giansalvo.ggcalendar.feature.event
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -77,9 +79,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -165,7 +169,19 @@ fun EventEditorSheet(
                 }
             }
             if (draft != null) {
-                EditorFields(draft, calendars, viewModel.isNew, viewModel.suggestions, viewModel::update)
+                val askContacts = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+                    if (granted) viewModel.reloadSuggestions()
+                }
+                var askedContacts by rememberSaveable { mutableStateOf(false) }
+                EditorFields(
+                    draft, calendars, viewModel.isNew, viewModel.suggestions, viewModel::update,
+                    onGuestsFocused = {
+                        if (viewModel.needsContacts && !askedContacts) {
+                            askedContacts = true
+                            askContacts.launch(android.Manifest.permission.READ_CONTACTS)
+                        }
+                    },
+                )
             }
         }
     }
@@ -198,6 +214,7 @@ private fun EditorFields(
     isNew: Boolean,
     suggestions: List<Attendee>,
     update: ((Draft) -> Draft) -> Unit,
+    onGuestsFocused: () -> Unit,
 ) {
     val res = LocalContext.current.resources
     val locale = Locale.getDefault()
@@ -235,7 +252,7 @@ private fun EditorFields(
         }
         Divider()
 
-        Guests(draft, suggestions, update)
+        Guests(draft, suggestions, update, onGuestsFocused)
         Divider()
 
         FieldRow(Icons.Outlined.Videocam, onClick = { update { it.copy(addMeet = !it.addMeet) } }) {
@@ -316,7 +333,8 @@ private fun CalendarChooser(calendars: List<CalendarEntity>, selectedId: String,
             readOnly = true,
             singleLine = true,
             label = { Text(stringResource(R.string.calendar)) },
-            supportingText = selected?.accountEmail?.takeIf { it != selected.name }?.let { { Text(it) } },
+            // The account always shows: "My calendar" and calendar names can repeat across accounts.
+            supportingText = selected?.accountEmail?.let { { Text(it) } },
             leadingIcon = { Box(Modifier.size(14.dp).background(parseColor(selected?.color), CircleShape)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(open) },
             modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
@@ -331,7 +349,14 @@ private fun CalendarChooser(calendars: List<CalendarEntity>, selectedId: String,
                 )
                 list.forEach { cal ->
                     DropdownMenuItem(
-                        text = { Text(calendarLabel(cal), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        text = {
+                            Column {
+                                Text(calendarLabel(cal), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                cal.accountEmail?.let {
+                                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                }
+                            }
+                        },
                         leadingIcon = { Box(Modifier.size(14.dp).background(parseColor(cal.color), CircleShape)) },
                         onClick = {
                             onSelect(cal.id)
@@ -403,7 +428,7 @@ private fun zoneLabel(zone: ZoneId, locale: Locale): String {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Guests(draft: Draft, suggestions: List<Attendee>, update: ((Draft) -> Draft) -> Unit) {
+private fun Guests(draft: Draft, suggestions: List<Attendee>, update: ((Draft) -> Draft) -> Unit, onFocused: () -> Unit) {
     var text by remember { mutableStateOf("") }
     var error by remember { mutableStateOf(false) }
     fun add(email: String, name: String? = null) {
@@ -443,7 +468,7 @@ private fun Guests(draft: Draft, suggestions: List<Attendee>, update: ((Draft) -
                         focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent,
                     ),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().onFocusChanged { if (it.isFocused) onFocused() },
                 )
                 DropdownMenu(expanded = matches.isNotEmpty(), onDismissRequest = { text = "" }, properties = androidx.compose.ui.window.PopupProperties(focusable = false)) {
                     matches.forEach { s ->

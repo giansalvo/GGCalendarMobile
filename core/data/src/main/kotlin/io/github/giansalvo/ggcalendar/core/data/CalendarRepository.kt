@@ -58,7 +58,7 @@ class CalendarRepository @Inject constructor(
                     colorHex = it.colorHex, allDay = it.allDay,
                     begin = Instant.ofEpochMilli(it.beginUtc), end = Instant.ofEpochMilli(it.endUtc),
                     startDay = LocalDate.ofEpochDay(it.startDay), endDay = LocalDate.ofEpochDay(it.endDay),
-                    hasMeet = it.hasMeet, hasAlarm = it.hasAlarm, isRecurring = it.isRecurring, isBirthday = it.isBirthday,
+                    hasMeet = it.hasMeet, hasAlarm = it.hasAlarm, isRecurring = it.isRecurring, isBirthday = it.isBirthday, canWrite = it.canWrite,
                 )
             }
         }.collect { send(it) }

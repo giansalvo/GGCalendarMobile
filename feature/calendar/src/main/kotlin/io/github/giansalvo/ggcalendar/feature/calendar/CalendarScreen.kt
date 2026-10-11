@@ -70,6 +70,7 @@ import androidx.compose.ui.unit.dp
 import io.github.giansalvo.ggcalendar.feature.event.EditorRequest
 import io.github.giansalvo.ggcalendar.feature.event.EventDetailSheet
 import io.github.giansalvo.ggcalendar.feature.event.EventEditorSheet
+import io.github.giansalvo.ggcalendar.feature.event.SeriesScopeDialog
 import io.github.giansalvo.ggcalendar.feature.event.occurrence
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -206,6 +207,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                             onEventClick = viewModel::openEvent,
                             onCreateAt = { start -> viewModel.openEditor(EditorRequest.New(start)) },
                             pendingStart = (state.editing as? EditorRequest.New)?.start,
+                            onEventMoved = viewModel::moveEvent,
                         )
                     }
                 }
@@ -219,6 +221,9 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
             onDismiss = { viewModel.openEvent(null) },
             onEdit = { detail, shown -> viewModel.openEditor(EditorRequest.Edit(detail.event.id, shown.occurrence())) },
         )
+    }
+    if (state.pendingMove != null) {
+        SeriesScopeDialog(deleting = false, onDismiss = { viewModel.confirmMove(null) }, onConfirm = viewModel::confirmMove)
     }
     state.editing?.let { request ->
         EventEditorSheet(request = request, onDismiss = { viewModel.openEditor(null) })

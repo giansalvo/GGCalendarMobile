@@ -126,6 +126,13 @@ class EventEditorViewModel @Inject constructor(private val repository: EventRepo
         }
     }
 
+    /** Whether to ask for the contacts permission when the guest field is first used. */
+    val needsContacts: Boolean get() = !repository.contacts.granted
+
+    fun reloadSuggestions() {
+        viewModelScope.launch { suggestions = repository.knownAttendees() }
+    }
+
     fun update(transform: (Draft) -> Draft) {
         draft = draft?.let(transform)
     }

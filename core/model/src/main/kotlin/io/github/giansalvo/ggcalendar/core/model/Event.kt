@@ -49,4 +49,6 @@ data class EventInstance(
     val hasAlarm: Boolean,
     val isRecurring: Boolean,
     val isBirthday: Boolean = false,
+    /** The calendar can be written and the event is an ordinary one (not a birthday): it can be edited and dragged. */
+    val canWrite: Boolean = false,
 )

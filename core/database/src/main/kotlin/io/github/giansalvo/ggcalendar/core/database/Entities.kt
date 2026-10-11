@@ -165,4 +165,5 @@ data class InstanceRow(
     val hasAlarm: Boolean,
     val isRecurring: Boolean,
     val isBirthday: Boolean,
+    val canWrite: Boolean,
 )

@@ -134,7 +134,8 @@ interface InstanceDao {
                i.start_day AS startDay, i.end_day AS endDay,
                (e.meet_link IS NOT NULL OR e.add_meet) AS hasMeet, e.has_alarm AS hasAlarm,
                (e.rrule IS NOT NULL OR e.series_master_id IS NOT NULL) AS isRecurring,
-               (e.event_type = 'birthday') AS isBirthday
+               (e.event_type = 'birthday') AS isBirthday,
+               (c.access_role IN ('owner', 'writer') AND e.event_type = 'default') AS canWrite
         FROM instances i
         JOIN events e ON e.id = i.event_id
         JOIN calendars c ON c.id = e.calendar_id

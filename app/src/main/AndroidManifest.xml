@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Optional: guest suggestions in the editor (and birthdays in M6). -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
 
     <application
         android:name=".GGCalendarApp"

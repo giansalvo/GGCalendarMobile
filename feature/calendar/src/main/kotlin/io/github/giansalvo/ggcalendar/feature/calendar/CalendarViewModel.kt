@@ -12,6 +12,10 @@ import io.github.giansalvo.ggcalendar.core.data.CalendarRepository
 import io.github.giansalvo.ggcalendar.core.database.SyncMessageEntity
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
 import io.github.giansalvo.ggcalendar.feature.event.EditorRequest
+import io.github.giansalvo.ggcalendar.feature.event.occurrence
+import io.github.giansalvo.ggcalendar.core.data.EventRepository
+import io.github.giansalvo.ggcalendar.core.data.SeriesScope
+import java.time.Instant
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -49,12 +53,16 @@ data class CalendarUiState(
     val selected: EventInstance? = null,
     /** The editor, when open. */
     val editing: EditorRequest? = null,
+    /** A dragged occurrence of a series, waiting for the scope. */
+    val pendingMove: PendingMove? = null,
     val busy: Boolean = false,
     /** Set when Google needs the user's consent; the screen launches it and calls [CalendarViewModel.onConsentResult]. */
     val consent: AuthorizationOutcome.NeedsConsent? = null,
     val error: String? = null,
     val message: SyncMessageEntity? = null,
 )
+
+data class PendingMove(val instance: EventInstance, val begin: Instant, val end: Instant)
 
 private data class Navigation(
     val view: CalendarView,
@@ -70,6 +78,7 @@ private data class Navigation(
 private data class Transient(
     val selected: EventInstance? = null,
     val editing: EditorRequest? = null,
+    val pendingMove: PendingMove? = null,
     val busy: Boolean = false,
     val consent: AuthorizationOutcome.NeedsConsent? = null,
     val error: String? = null,
@@ -80,6 +89,7 @@ private data class Transient(
 class CalendarViewModel @Inject constructor(
     private val authorizer: GoogleAuthorizer,
     private val repository: CalendarRepository,
+    private val events: EventRepository,
 ) : ViewModel() {
     private val navigation = MutableStateFlow(Navigation(CalendarView.SCHEDULE, LocalDate.now()))
     private val transient = MutableStateFlow(Transient())
@@ -112,7 +122,7 @@ class CalendarViewModel @Inject constructor(
         CalendarUiState(
             view = nav.view, date = nav.date, scheduleFrom = nav.scheduleFrom, scheduleTo = nav.scheduleTo, accounts = accounts, instances = list, syncing = syncing,
             hourHeight = g.hourHeight, dayStartHour = g.dayStartHour, dimPast = g.dimPast, eventDays = days,
-            selected = t.selected, editing = t.editing, busy = t.busy, consent = t.consent, error = t.error, message = message,
+            selected = t.selected, editing = t.editing, pendingMove = t.pendingMove, busy = t.busy, consent = t.consent, error = t.error, message = message,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CalendarUiState())
 
@@ -174,6 +184,29 @@ class CalendarViewModel @Inject constructor(
     fun refresh() = repository.syncNow()
 
     fun openEvent(instance: EventInstance?) = transient.update { it.copy(selected = instance) }
+
+    /** A drag in a time grid ended: save the new times, asking the scope first for a series. */
+    fun moveEvent(instance: EventInstance, begin: Instant, end: Instant) {
+        viewModelScope.launch {
+            val event = events.observe(instance.eventId).first()?.event ?: return@launch
+            if (event.rrule != null) {
+                transient.update { it.copy(pendingMove = PendingMove(instance, begin, end)) }
+            } else {
+                events.writer.save(event.copy(startUtc = begin.toEpochMilli(), endUtc = end.toEpochMilli()))
+            }
+        }
+    }
+
+    /** The scope for [CalendarUiState.pendingMove], or null to cancel the move. */
+    fun confirmMove(scope: SeriesScope?) {
+        val move = transient.value.pendingMove ?: return
+        transient.update { it.copy(pendingMove = null) }
+        if (scope == null) return
+        viewModelScope.launch {
+            val event = events.observe(move.instance.eventId).first()?.event ?: return@launch
+            events.series.save(event.id, move.instance.occurrence(), event.copy(startUtc = move.begin.toEpochMilli(), endUtc = move.end.toEpochMilli()), scope)
+        }
+    }
 
     /** Opens the editor (closing the details) or closes it with null. */
     fun openEditor(request: EditorRequest?) = transient.update { it.copy(editing = request, selected = if (request != null) null else it.selected) }
