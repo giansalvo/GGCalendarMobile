@@ -1,5 +1,6 @@
 package io.github.giansalvo.ggcalendar.core.network
 
+import io.github.giansalvo.ggcalendar.core.model.Reminder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -19,7 +20,12 @@ data class GoogleCalendarEntry(
     val colorHex: String,
     val isPrimary: Boolean,
     val canWrite: Boolean,
+    val accessRole: String = if (canWrite) "owner" else "reader",
+    val timeZone: String? = null,
+    val defaultReminders: List<Reminder> = emptyList(),
 )
+
+data class GoogleSyncPage(val items: List<GoogleEvent>, val nextSyncToken: String?)
 
 class GoogleApiException(val status: Int, message: String) : Exception(message)
 
@@ -32,6 +38,10 @@ class GoogleCalendarApi(
     private val baseUrl: HttpUrl = "https://www.googleapis.com/calendar/v3/".toHttpUrl(),
 ) {
     private val json = Json { ignoreUnknownKeys = true }
+
+    private companion object {
+        val EVENT_TYPES = listOf("default", "birthday", "focusTime", "fromGmail", "outOfOffice", "workingLocation")
+    }
 
     /** The primary calendar id is the account email. */
     suspend fun primaryCalendarId(accessToken: String): String =
@@ -56,11 +66,42 @@ class GoogleCalendarApi(
                     colorHex = c.string("backgroundColor") ?: "#1A73E8",
                     isPrimary = c["primary"]?.jsonPrimitive?.boolean ?: false,
                     canWrite = role == "owner" || role == "writer",
+                    accessRole = role,
+                    timeZone = c.string("timeZone"),
+                    defaultReminders = GoogleEventMapper.parseDefaultReminders(c),
                 )
             }
             page = r.string("nextPageToken")
         } while (page != null)
         return list
+    }
+
+    /**
+     * Lists events. Without a sync token it fetches everything; with one, only the changes (including cancellations).
+     * A 410 ([GoogleApiException.status]) means the token expired: the caller must do a full sync.
+     */
+    suspend fun listEvents(calendarId: String, syncToken: String?, accessToken: String): GoogleSyncPage {
+        val items = mutableListOf<GoogleEvent>()
+        var page: String? = null
+        var next: String? = null
+        do {
+            val url = url("calendars", calendarId, "events").newBuilder()
+                .addQueryParameter("singleEvents", "false")
+                .addQueryParameter("maxResults", "250")
+                .addQueryParameter("showDeleted", "true")
+                .apply {
+                    // Contacts' birthdays (eventType "birthday") are returned only when asked for explicitly.
+                    EVENT_TYPES.forEach { addQueryParameter("eventTypes", it) }
+                    syncToken?.let { addQueryParameter("syncToken", it) }
+                    page?.let { addQueryParameter("pageToken", it) }
+                }
+                .build()
+            val r = get(url, accessToken)
+            r["items"]?.jsonArray?.forEach { item -> GoogleEventMapper.fromGoogle(item.jsonObject)?.let(items::add) }
+            page = r.string("nextPageToken")
+            r.string("nextSyncToken")?.let { next = it }
+        } while (page != null)
+        return GoogleSyncPage(items, next)
     }
 
     private fun url(vararg segments: String): HttpUrl =

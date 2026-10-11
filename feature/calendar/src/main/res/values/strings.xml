@@ -12,4 +12,12 @@
     <string name="new_event">New event</string>
     <string name="open_menu">Open menu</string>
     <string name="search">Search</string>
+    <string name="all_day">All day</string>
+    <string name="untitled">(No title)</string>
+    <string name="alarm">Alarm</string>
+    <string name="no_events_today">No events today</string>
+    <string name="go_to_date">Go to date</string>
+    <string name="message_auth">Access to Google Calendar for %1$s must be granted again</string>
+    <string name="authorize">Authorize</string>
+    <string name="my_calendar">My calendar</string>
 </resources>

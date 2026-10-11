@@ -11,4 +11,12 @@
     <string name="new_event">Nuovo evento</string>
     <string name="open_menu">Apri il menu</string>
     <string name="search">Cerca</string>
+    <string name="all_day">Tutto il giorno</string>
+    <string name="untitled">(Senza titolo)</string>
+    <string name="alarm">Sveglia</string>
+    <string name="no_events_today">Nessun evento oggi</string>
+    <string name="go_to_date">Vai a una data</string>
+    <string name="message_auth">Bisogna autorizzare di nuovo l\'accesso a Google Calendar per %1$s</string>
+    <string name="authorize">Autorizza</string>
+    <string name="my_calendar">Il mio calendario</string>
 </resources>

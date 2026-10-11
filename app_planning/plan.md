@@ -29,7 +29,7 @@ Clean Architecture leggera + MVVM/UDF (ViewModel che espone `StateFlow`), con de
 - `:core:database`: Room (vedi sezione 1b)
 - `:core:network`: client della Calendar API sottile come `GoogleCalendarClient` del desktop (OkHttp + kotlinx.serialization), senza la libreria Java di Google
 - `:core:auth`: Credential Manager (identità) + `AuthorizationClient` di Play Services (scope `calendar`) per ogni account; token di accesso ottenuti in modo silenzioso, senza backend
-- `:core:sync`: SyncEngine con WorkManager
+- `:core:data`: SyncEngine, espansione delle ricorrenze, repository, WorkManager (nel piano iniziale era `:core:sync`)
 - `:core:notifications`: scheduler di allarmi, servizio sveglia, canali di notifica
 - `:feature:calendar`: le viste
 - `:feature:event`: dettaglio ed editor
@@ -177,6 +177,9 @@ I test xUnit (`tests/GGCalendar.Core.Tests`) vengono tradotti in JUnit con gli s
 ## Milestone
 - **M0** Setup: repository, scheletro multi-modulo, CI, icona e tema, client OAuth Android aggiunti al progetto Google Cloud esistente, privacy policy pubblicata su Altervista, OAuth funzionante sul Samsung.
 - **M1** Login con più account, sincronizzazione in lettura, Room, viste agenda e mese.
+  - Stato all'11/10/2026: fatto. Moduli `:core:database` (Room v2, schema esportato in `core/database/schemas`) e `:core:data` (sync, ricorrenze con lib-recur, repository, `SyncWorker` ogni 15 minuti, Hilt WorkManager). Programma e Mese verificati sul Samsung con 2 account e 21 calendari; compleanni dei contatti richiesti con `eventTypes`.
+  - Semplificazioni da sistemare in M2: nel Mese gli eventi di più giorni sono chip ripetuti (non barre continue); il Programma parte dal giorno selezionato e non scorre verso il passato; il titolo del mese apre un DatePicker invece del mini-calendario a tendina.
+  - Da indagare: alcuni compleanni visibili in Google Calendar (es. "Babbo", "Nietta") non arrivano dall'API.
 - **M2** Viste giorno, 6 giorni, settimana, con trascinamento.
 - **M3** Editor: creazione, modifica, eliminazione, invitati, Meet, ricorrenze, outbox offline, conflitti.
 - **M4** Notifiche: popup, sveglia di 2 minuti, promemoria email, riavvio, onboarding dei permessi.

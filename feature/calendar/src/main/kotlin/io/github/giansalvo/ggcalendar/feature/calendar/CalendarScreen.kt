@@ -6,13 +6,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -29,6 +29,8 @@ import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -43,17 +45,22 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -62,6 +69,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.giansalvo.ggcalendar.core.model.CalendarInfo
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
 import java.time.format.TextStyle
 import java.util.Locale
 
@@ -71,6 +81,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
+    var pickingDate by rememberSaveable { mutableStateOf(false) }
 
     val pickAccount = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         viewModel.onAccountChosen(it.resultCode, it.data)
@@ -90,6 +101,16 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
             viewModel.dismissError()
         }
     }
+    val authText = stringResource(R.string.message_auth)
+    val authAction = stringResource(R.string.authorize)
+    LaunchedEffect(state.message?.id) {
+        val message = state.message ?: return@LaunchedEffect
+        val isAuth = message.kind == "auth"
+        val text = if (isAuth) authText.format(message.accountEmail) else message.text
+        val result = snackbar.showSnackbar(text, actionLabel = if (isAuth) authAction else null, withDismissAction = !isAuth)
+        if (result == SnackbarResult.ActionPerformed) message.accountEmail?.let(viewModel::reauthorize)
+        viewModel.dismissMessage(message.id)
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -98,6 +119,10 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                 state = state,
                 onSelectView = {
                     viewModel.selectView(it)
+                    scope.launch { drawerState.close() }
+                },
+                onRefresh = {
+                    viewModel.refresh()
                     scope.launch { drawerState.close() }
                 },
                 onToggleCalendar = viewModel::toggleCalendar,
@@ -110,51 +135,94 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                 CalendarTopBar(
                     state = state,
                     onMenu = { scope.launch { drawerState.open() } },
+                    onTitle = { pickingDate = true },
                     onToday = viewModel::goToToday,
                 )
             },
             floatingActionButton = {
-                FloatingActionButton(onClick = { /* Editor: milestone M3 */ }) {
+                FloatingActionButton(onClick = { /* Editor: milestone M3 */ }, shape = RoundedCornerShape(16.dp)) {
                     Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.new_event))
                 }
             },
             snackbarHost = { SnackbarHost(snackbar) },
         ) { padding ->
             Column(Modifier.padding(padding).fillMaxSize()) {
-                if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        stringResource(R.string.view_placeholder, stringResource(state.view.label)),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                if (state.busy || state.syncing) {
+                    LinearProgressIndicator(Modifier.fillMaxWidth().height(2.dp))
+                } else {
+                    Spacer(Modifier.height(2.dp))
+                }
+                when (state.view) {
+                    CalendarView.SCHEDULE -> ScheduleView(state.date, state.instances)
+                    CalendarView.MONTH -> MonthView(
+                        date = state.date,
+                        instances = state.instances,
+                        onMonthChange = viewModel::showMonth,
+                        onDayClick = viewModel::openDay,
                     )
+                    else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            stringResource(R.string.view_placeholder, stringResource(state.view.label)),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }
+    }
+
+    if (pickingDate) {
+        JumpToDateDialog(
+            initial = state.date,
+            onPick = {
+                viewModel.goTo(it)
+                pickingDate = false
+            },
+            onDismiss = { pickingDate = false },
+        )
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CalendarTopBar(state: CalendarUiState, onMenu: () -> Unit, onToday: () -> Unit) {
-    val month = state.date.month.getDisplayName(TextStyle.FULL_STANDALONE, Locale.getDefault())
-        .replaceFirstChar { it.titlecase(Locale.getDefault()) }
+private fun JumpToDateDialog(initial: LocalDate, onPick: (LocalDate) -> Unit, onDismiss: () -> Unit) {
+    // The Material date picker works in UTC milliseconds.
+    val picker = rememberDatePickerState(initialSelectedDateMillis = initial.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli())
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                picker.selectedDateMillis?.let { onPick(Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate()) } ?: onDismiss()
+            }) { Text(stringResource(android.R.string.ok)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(android.R.string.cancel)) } },
+    ) {
+        DatePicker(picker)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CalendarTopBar(state: CalendarUiState, onMenu: () -> Unit, onTitle: () -> Unit, onToday: () -> Unit) {
+    val locale = Locale.getDefault()
+    val month = state.date.month.getDisplayName(TextStyle.FULL_STANDALONE, locale).replaceFirstChar { it.titlecase(locale) }
+    val title = if (state.date.year == LocalDate.now().year) month else "$month ${state.date.year}"
     TopAppBar(
         navigationIcon = {
             IconButton(onClick = onMenu) { Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.open_menu)) }
         },
         title = {
-            // Tapping the month will open the month picker (milestone M1).
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(month)
-                Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
+            Row(Modifier.clickable(onClick = onTitle).padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(title)
+                Icon(Icons.Filled.ArrowDropDown, contentDescription = stringResource(R.string.go_to_date))
             }
         },
         actions = {
             IconButton(onClick = { /* Search: later milestone */ }) {
                 Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.search))
             }
-            IconButton(onClick = onToday) { TodayIcon(java.time.LocalDate.now().dayOfMonth) }
+            IconButton(onClick = onToday) { TodayIcon(LocalDate.now().dayOfMonth) }
             Avatar(state.accounts.firstOrNull()?.email)
             Spacer(Modifier.width(8.dp))
         },
@@ -190,7 +258,8 @@ private fun Avatar(email: String?) {
 private fun CalendarDrawer(
     state: CalendarUiState,
     onSelectView: (CalendarView) -> Unit,
-    onToggleCalendar: (String) -> Unit,
+    onRefresh: () -> Unit,
+    onToggleCalendar: (String, Boolean) -> Unit,
     onAddAccount: () -> Unit,
 ) {
     ModalDrawerSheet {
@@ -213,7 +282,7 @@ private fun CalendarDrawer(
                 icon = { Icon(Icons.Outlined.Refresh, contentDescription = null) },
                 label = { Text(stringResource(R.string.refresh)) },
                 selected = false,
-                onClick = { /* Sync: milestone M1 */ },
+                onClick = onRefresh,
             )
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             state.accounts.forEach { account ->
@@ -238,21 +307,19 @@ private fun CalendarDrawer(
 }
 
 @Composable
-private fun CalendarRow(calendar: CalendarInfo, onToggle: (String) -> Unit) {
+private fun CalendarRow(calendar: CalendarInfo, onToggle: (String, Boolean) -> Unit) {
     val color = parseColor(calendar.colorHex)
     Row(
-        Modifier.fillMaxWidth().clickable { onToggle(calendar.id) }.padding(start = 4.dp, end = 16.dp),
+        Modifier.fillMaxWidth().clickable { onToggle(calendar.id, !calendar.isVisible) }.padding(start = 4.dp, end = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Start,
     ) {
         Checkbox(
             checked = calendar.isVisible,
-            onCheckedChange = { onToggle(calendar.id) },
+            onCheckedChange = { onToggle(calendar.id, it) },
             colors = CheckboxDefaults.colors(checkedColor = color, uncheckedColor = color),
         )
-        Text(calendar.name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge)
+        // Google names the primary calendar after the account email; show it as Google Calendar does.
+        val name = if (calendar.isPrimary && calendar.name == calendar.accountEmail) stringResource(R.string.my_calendar) else calendar.name
+        Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge)
     }
 }
-
-private fun parseColor(hex: String): Color =
-    runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrDefault(Color(0xFF1A73E8))

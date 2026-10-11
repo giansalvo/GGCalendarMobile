@@ -14,6 +14,7 @@ data class CalendarInfo(
     val colorHex: String,
     val isVisible: Boolean = true,
     val canWrite: Boolean = true,
+    val isPrimary: Boolean = false,
 ) {
     companion object {
         fun googleId(email: String, remoteId: String) = "$email|$remoteId"
