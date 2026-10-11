@@ -308,7 +308,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
     if (notificationsOpen) NotificationsSheet(onDismiss = { notificationsOpen = false })
     if (aboutOpen) AboutSheet(onDismiss = { aboutOpen = false })
     if (searchOpen) {
-        SearchScreen(search = viewModel::search, onOpen = viewModel::openEvent, onClose = { searchOpen = false })
+        SearchScreen(search = viewModel::search, refreshKey = state.selected, onOpen = viewModel::openEvent, onClose = { searchOpen = false })
     }
     if (state.pendingMove != null) {
         SeriesScopeDialog(deleting = false, onDismiss = { viewModel.confirmMove(null) }, onConfirm = viewModel::confirmMove)

@@ -50,7 +50,8 @@ import java.time.format.FormatStyle
  * full-screen window above the calendar, so the event detail opens over it and the back button returns to the results.
  */
 @Composable
-fun SearchScreen(search: suspend (String) -> List<EventInstance>, onOpen: (EventInstance) -> Unit, onClose: () -> Unit) {
+/** [refreshKey] changes when something may have changed behind the results (the detail was closed, an event deleted): the search runs again. */
+fun SearchScreen(search: suspend (String) -> List<EventInstance>, refreshKey: Any?, onOpen: (EventInstance) -> Unit, onClose: () -> Unit) {
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             var query by rememberSaveable { mutableStateOf("") }
@@ -58,11 +59,11 @@ fun SearchScreen(search: suspend (String) -> List<EventInstance>, onOpen: (Event
             val focus = remember { FocusRequester() }
             LaunchedEffect(Unit) { focus.requestFocus() }
             // The search runs shortly after the last key, so that typing does not query for every letter.
-            LaunchedEffect(query) {
+            LaunchedEffect(query, refreshKey) {
                 if (query.isBlank()) {
                     results = null
                 } else {
-                    delay(250)
+                    delay(200)
                     results = search(query)
                 }
             }
