@@ -121,4 +121,21 @@
     <string name="color_tomato">Pomodoro</string>
     <string name="calendar">Calendario</string>
     <string name="my_calendar">Il mio calendario</string>
+    <string name="scope_edit_title">Modifica evento ricorrente</string>
+    <string name="scope_delete_title">Elimina evento ricorrente</string>
+    <string name="scope_this">Solo questo evento</string>
+    <string name="scope_following">Questo e gli eventi successivi</string>
+    <string name="scope_all">Tutti gli eventi</string>
+    <string name="custom_ellipsis">Personalizzata…</string>
+    <string name="repeat_every">Ogni</string>
+    <plurals name="unit_days"><item quantity="one">giorno</item><item quantity="other">giorni</item></plurals>
+    <plurals name="unit_weeks"><item quantity="one">settimana</item><item quantity="other">settimane</item></plurals>
+    <plurals name="unit_months"><item quantity="one">mese</item><item quantity="other">mesi</item></plurals>
+    <plurals name="unit_years"><item quantity="one">anno</item><item quantity="other">anni</item></plurals>
+    <string name="monthly_on_nth">Ogni mese il %1$s %2$s</string>
+    <string name="ends">Termina</string>
+    <string name="ends_never">Mai</string>
+    <string name="ends_on">Il</string>
+    <string name="ends_after">Dopo</string>
+    <plurals name="occurrences"><item quantity="one">volta</item><item quantity="other">volte</item></plurals>
 </resources>

@@ -7,6 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.giansalvo.ggcalendar.core.data.EventRepository
+import io.github.giansalvo.ggcalendar.core.data.Occurrence
+import io.github.giansalvo.ggcalendar.core.data.SeriesScope
 import io.github.giansalvo.ggcalendar.core.database.CalendarEntity
 import io.github.giansalvo.ggcalendar.core.database.EventEntity
 import io.github.giansalvo.ggcalendar.core.model.Attendee
@@ -28,7 +30,8 @@ import javax.inject.Inject
 /** What the editor opens on: a new event (from the FAB or a tap on the grid) or an existing one. */
 sealed interface EditorRequest {
     data class New(val start: LocalDateTime? = null, val allDay: Boolean = false) : EditorRequest
-    data class Edit(val eventId: String) : EditorRequest
+    /** [occurrence]: the occurrence tapped, when the event is a series (the editor shows its date and times). */
+    data class Edit(val eventId: String, val occurrence: Occurrence? = null) : EditorRequest
 }
 
 /** The editor's fields; dates and times are wall-clock values in [zoneId]. */
@@ -92,6 +95,15 @@ class EventEditorViewModel @Inject constructor(private val repository: EventRepo
     private var initial: Draft? = null
     private var original: EventEntity? = null
     private var loadedFor: EditorRequest? = null
+    private var occurrence: Occurrence? = null
+
+    /** Saving an occurrence of a series waits for the user's choice of scope. */
+    var askScope by mutableStateOf(false)
+        private set
+
+    fun cancelScope() {
+        askScope = false
+    }
 
     var suggestions by mutableStateOf<List<Attendee>>(emptyList())
         private set
@@ -106,7 +118,7 @@ class EventEditorViewModel @Inject constructor(private val repository: EventRepo
         viewModelScope.launch {
             val d = when (request) {
                 is EditorRequest.New -> newDraft(request)
-                is EditorRequest.Edit -> editDraft(request.eventId) ?: return@launch
+                is EditorRequest.Edit -> editDraft(request.eventId, request.occurrence) ?: return@launch
             }
             initial = d
             draft = d
@@ -135,11 +147,15 @@ class EventEditorViewModel @Inject constructor(private val repository: EventRepo
         )
     }
 
-    private suspend fun editDraft(eventId: String): Draft? {
+    private suspend fun editDraft(eventId: String, occurrence: Occurrence?): Draft? {
         val detail = repository.observe(eventId).first() ?: return null
-        // A series is edited as a whole for now: the editor shows its master (scopes of a series: step 8 of M3).
-        val e = detail.event
-        original = e
+        original = detail.event
+        // A series shows the tapped occurrence; saving then asks which occurrences the edit is for.
+        this.occurrence = occurrence?.takeIf { detail.event.rrule != null }
+        val e = this.occurrence?.let { o ->
+            if (detail.event.allDay) detail.event.copy(startDay = o.startDay, endDay = o.startDay + ((detail.event.endDay ?: 0) - (detail.event.startDay ?: 0)))
+            else detail.event.copy(startUtc = o.beginUtc, endUtc = o.endUtc)
+        } ?: detail.event
         val zone = e.timeZone?.let { runCatching { ZoneId.of(it) }.getOrNull() } ?: ZoneId.systemDefault()
         val (sd, st, ed, et) = if (e.allDay) {
             val s = LocalDate.ofEpochDay(e.startDay ?: 0)
@@ -160,9 +176,14 @@ class EventEditorViewModel @Inject constructor(private val repository: EventRepo
         )
     }
 
-    /** Writes the draft (offline first) and queues it for Google. */
-    fun save(onDone: () -> Unit) {
+    /** Writes the draft (offline first) and queues it for Google; [scope] for an occurrence of a series. */
+    fun save(onDone: () -> Unit, scope: SeriesScope? = null) {
         val d = draft ?: return
+        if (occurrence != null && scope == null) {
+            askScope = true
+            return
+        }
+        askScope = false
         val base = original ?: EventEntity(id = d.id, calendarId = d.calendarId)
         val entity = if (d.allDay) {
             base.copy(allDay = true, startDay = d.startDate.toEpochDay(), endDay = d.endDate.toEpochDay() + 1, startUtc = null, endUtc = null, timeZone = null)
@@ -182,6 +203,15 @@ class EventEditorViewModel @Inject constructor(private val repository: EventRepo
             // Exclusions keep their meaning only while the series keeps its rule.
             exdates = if (d.rrule != null && d.rrule == original?.rrule) base.exdates else emptyList(),
         )
+        val occ = occurrence
+        if (occ != null && scope != null) {
+            viewModelScope.launch {
+                repository.series.save(original!!.id, occ, entity.copy(calendarId = original!!.calendarId), scope, d.sendInvites)
+                loadedFor = null
+                onDone()
+            }
+            return
+        }
         viewModelScope.launch {
             val previous = original
             var saved = entity.copy(calendarId = d.calendarId)

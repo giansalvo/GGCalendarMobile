@@ -170,6 +170,10 @@ fun EventEditorSheet(
         }
     }
 
+    if (viewModel.askScope) {
+        SeriesScopeDialog(deleting = false, onDismiss = viewModel::cancelScope) { scope -> viewModel.save(close, scope) }
+    }
+
     if (confirmDiscard) {
         AlertDialog(
             onDismissRequest = { confirmDiscard = false },
@@ -536,7 +540,7 @@ private fun ReminderRow(r: Reminder, res: android.content.res.Resources, note: S
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DateDialog(initial: LocalDate, onDismiss: () -> Unit, onPick: (LocalDate) -> Unit) {
+internal fun DateDialog(initial: LocalDate, onDismiss: () -> Unit, onPick: (LocalDate) -> Unit) {
     // The Material date picker works in UTC milliseconds.
     val state = rememberDatePickerState(initialSelectedDateMillis = initial.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli())
     DatePickerDialog(
@@ -602,9 +606,14 @@ private fun ZoneDialog(current: ZoneId, onDismiss: () -> Unit, onPick: (ZoneId) 
     }
 }
 
-/** Presets as in Google Calendar; custom rules arrive with step 7 of M3. */
+/** Presets as in Google Calendar, then "Custom…". */
 @Composable
 private fun RecurrenceDialog(draft: Draft, onDismiss: () -> Unit, onPick: (String?) -> Unit) {
+    var custom by remember { mutableStateOf(false) }
+    if (custom) {
+        CustomRecurrenceDialog(draft.startDate, draft.allDay, draft.rrule, onDismiss, onPick)
+        return
+    }
     val res = LocalContext.current.resources
     val locale = Locale.getDefault()
     val day = draft.startDate
@@ -622,8 +631,17 @@ private fun RecurrenceDialog(draft: Draft, onDismiss: () -> Unit, onPick: (Strin
         // Keep a rule the presets do not cover.
         draft.rrule?.let { current -> if (none { it.first == current }) add(current to (describe(current, res) ?: res.getString(R.string.custom_recurrence))) }
     }
-    ChoiceDialog(presets.map { it.first to it.second }, draft.rrule, onDismiss, onPick, labels = true)
+    val customLabel = res.getString(R.string.custom_ellipsis)
+    ChoiceDialog(
+        presets.map { it.first to it.second } + (CUSTOM to customLabel),
+        draft.rrule,
+        onDismiss = { if (!custom) onDismiss() },
+        onPick = { if (it == CUSTOM) custom = true else onPick(it) },
+        labels = true,
+    )
 }
+
+private const val CUSTOM = "custom"
 
 @Composable
 private fun <T> ChoiceDialog(options: List<Pair<T, Any>>, selected: T, onDismiss: () -> Unit, onPick: (T) -> Unit, labels: Boolean = false) {
@@ -636,13 +654,13 @@ private fun <T> ChoiceDialog(options: List<Pair<T, Any>>, selected: T, onDismiss
                     Row(
                         Modifier.fillMaxWidth().clickable {
                             onPick(value)
-                            onDismiss()
+                            onDismiss() // after onPick, which may keep the dialog open ("Custom…")
                         }.padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RadioButton(selected = value == selected, onClick = {
                             onPick(value)
-                            onDismiss()
+                            onDismiss() // after onPick, which may keep the dialog open ("Custom…")
                         })
                         Text(if (labels || label is String) label.toString() else stringResource(label as Int))
                     }

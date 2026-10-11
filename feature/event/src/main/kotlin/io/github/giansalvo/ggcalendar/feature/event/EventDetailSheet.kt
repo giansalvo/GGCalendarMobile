@@ -69,6 +69,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.giansalvo.ggcalendar.core.data.EventDetail
+import io.github.giansalvo.ggcalendar.core.data.SeriesScope
 import io.github.giansalvo.ggcalendar.core.model.Attendee
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
 import io.github.giansalvo.ggcalendar.core.model.ReminderMethod
@@ -85,7 +86,7 @@ import java.util.Locale
 fun EventDetailSheet(
     instance: EventInstance,
     onDismiss: () -> Unit,
-    onEdit: (EventDetail) -> Unit,
+    onEdit: (EventDetail, EventInstance) -> Unit,
     viewModel: EventDetailViewModel = hiltViewModel(key = "detail-${instance.eventId}"),
 ) {
     val detail by remember(instance.eventId) { viewModel.observe(instance.eventId) }.collectAsStateWithLifecycle(null)
@@ -96,9 +97,9 @@ fun EventDetailSheet(
                 instance = instance,
                 detail = d,
                 onClose = onDismiss,
-                onEdit = { onEdit(d) },
-                onDelete = {
-                    viewModel.delete(d.event.id)
+                onEdit = { onEdit(d, instance) },
+                onDelete = { scope ->
+                    if (scope == null) viewModel.delete(d.event.id) else viewModel.deleteOccurrence(d.event.id, instance.occurrence(), scope)
                     onDismiss()
                 },
             )
@@ -107,7 +108,7 @@ fun EventDetailSheet(
 }
 
 @Composable
-private fun DetailContent(instance: EventInstance, detail: EventDetail, onClose: () -> Unit, onEdit: () -> Unit, onDelete: () -> Unit) {
+private fun DetailContent(instance: EventInstance, detail: EventDetail, onClose: () -> Unit, onEdit: () -> Unit, onDelete: (SeriesScope?) -> Unit) {
     val event = detail.event
     val res = LocalContext.current.resources
     val uri = LocalUriHandler.current
@@ -210,15 +211,19 @@ private fun DetailContent(instance: EventInstance, detail: EventDetail, onClose:
         }
     }
 
-    if (confirmDelete) {
-        val series = event.rrule != null
+    if (confirmDelete && event.rrule != null) {
+        SeriesScopeDialog(deleting = true, onDismiss = { confirmDelete = false }) { scope ->
+            confirmDelete = false
+            onDelete(scope)
+        }
+    } else if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            text = { Text(stringResource(if (series) R.string.delete_series_question else R.string.delete_event_question)) },
+            text = { Text(stringResource(R.string.delete_event_question)) },
             confirmButton = {
                 TextButton(onClick = {
                     confirmDelete = false
-                    onDelete()
+                    onDelete(null)
                 }) { Text(stringResource(R.string.delete)) }
             },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) } },

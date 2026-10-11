@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.giansalvo.ggcalendar.core.data.EventDetail
 import io.github.giansalvo.ggcalendar.core.data.EventRepository
+import io.github.giansalvo.ggcalendar.core.data.Occurrence
+import io.github.giansalvo.ggcalendar.core.data.SeriesScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -15,5 +17,9 @@ class EventDetailViewModel @Inject constructor(private val repository: EventRepo
 
     fun delete(eventId: String) {
         viewModelScope.launch { repository.writer.delete(eventId) }
+    }
+
+    fun deleteOccurrence(masterId: String, occurrence: Occurrence, scope: SeriesScope) {
+        viewModelScope.launch { repository.series.delete(masterId, occurrence, scope) }
     }
 }

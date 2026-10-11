@@ -23,6 +23,7 @@ data class EventDetail(val event: EventEntity, val calendar: CalendarEntity, val
 class EventRepository @Inject constructor(
     private val db: GGCalendarDatabase,
     val writer: EventWriter,
+    val series: SeriesEditor,
 ) {
     fun observe(id: String): Flow<EventDetail?> =
         combine(db.eventDao().observe(id), db.calendarDao().observeAll()) { event, calendars -> event to calendars }

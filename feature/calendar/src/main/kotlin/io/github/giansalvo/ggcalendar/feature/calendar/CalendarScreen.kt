@@ -70,6 +70,7 @@ import androidx.compose.ui.unit.dp
 import io.github.giansalvo.ggcalendar.feature.event.EditorRequest
 import io.github.giansalvo.ggcalendar.feature.event.EventDetailSheet
 import io.github.giansalvo.ggcalendar.feature.event.EventEditorSheet
+import io.github.giansalvo.ggcalendar.feature.event.occurrence
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.giansalvo.ggcalendar.core.model.CalendarInfo
@@ -216,7 +217,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
         EventDetailSheet(
             instance = instance,
             onDismiss = { viewModel.openEvent(null) },
-            onEdit = { viewModel.openEditor(EditorRequest.Edit(it.event.id)) },
+            onEdit = { detail, shown -> viewModel.openEditor(EditorRequest.Edit(detail.event.id, shown.occurrence())) },
         )
     }
     state.editing?.let { request ->

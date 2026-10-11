@@ -124,4 +124,21 @@
     <string name="color_tomato">Tomato</string>
     <string name="calendar">Calendar</string>
     <string name="my_calendar">My calendar</string>
+    <string name="scope_edit_title">Edit recurring event</string>
+    <string name="scope_delete_title">Delete recurring event</string>
+    <string name="scope_this">This event</string>
+    <string name="scope_following">This and following events</string>
+    <string name="scope_all">All events</string>
+    <string name="custom_ellipsis">Custom…</string>
+    <string name="repeat_every">Every</string>
+    <plurals name="unit_days"><item quantity="one">day</item><item quantity="other">days</item></plurals>
+    <plurals name="unit_weeks"><item quantity="one">week</item><item quantity="other">weeks</item></plurals>
+    <plurals name="unit_months"><item quantity="one">month</item><item quantity="other">months</item></plurals>
+    <plurals name="unit_years"><item quantity="one">year</item><item quantity="other">years</item></plurals>
+    <string name="monthly_on_nth">Every month on the %1$s %2$s</string>
+    <string name="ends">Ends</string>
+    <string name="ends_never">Never</string>
+    <string name="ends_on">On</string>
+    <string name="ends_after">After</string>
+    <plurals name="occurrences"><item quantity="one">occurrence</item><item quantity="other">occurrences</item></plurals>
 </resources>
