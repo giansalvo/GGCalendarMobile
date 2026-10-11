@@ -7,6 +7,13 @@ import io.github.giansalvo.ggcalendar.core.model.Reminder
 import io.github.giansalvo.ggcalendar.core.model.ReminderMethod
 import io.github.giansalvo.ggcalendar.core.model.Visibility
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.addJsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
+import kotlinx.serialization.json.putJsonObject
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -22,6 +29,7 @@ import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 
 /** Start of an occurrence before it was modified (Google's originalStartTime): an instant, or a date for all-day series. */
 sealed interface OriginalStart {
@@ -148,6 +156,127 @@ object GoogleEventMapper {
             alarmMinutes = alarms,
             eventType = e.str("eventType") ?: "default",
         )
+    }
+
+    /** The colorId of one of [EVENT_COLORS], or null for the calendar color. */
+    fun colorIdOf(hex: String?): String? = hex?.let { h -> EVENT_COLORS.entries.firstOrNull { it.value.equals(h, ignoreCase = true) }?.key }
+
+    /** Id of one occurrence of a series: the master id plus the original start (UTC, or the date for all-day series). */
+    fun instanceId(masterRemoteId: String, originalStart: OriginalStart): String = masterRemoteId + "_" + when (originalStart) {
+        is OriginalStart.AllDay -> originalStart.day.format(DateTimeFormatter.BASIC_ISO_DATE)
+        is OriginalStart.Timed -> UTC_BASIC.format(originalStart.start)
+    }
+
+    /**
+     * Request body for an insert or a patch, ported from the desktop ToGoogle. Reminders: null keeps the calendar's
+     * defaults; alarms travel as popups listed in `extendedProperties.private.ggAlarm` ([GoogleEvent.alarmMinutes]).
+     * In a [patch] Google merges objects with what it has, so fields being cleared are sent as null: the unused form of
+     * start/end (all-day ⇄ timed), the color, the recurrence of a former series and the alarm property.
+     */
+    fun toGoogle(ev: GoogleEvent, includeMeetRequest: Boolean, patch: Boolean, defaultZone: ZoneId = ZoneId.systemDefault()): JsonObject =
+        buildJsonObject {
+            put("summary", ev.title)
+            put("location", ev.location)
+            put("description", ev.description)
+            when (val t = ev.time) {
+                is EventTime.AllDay -> {
+                    put("start", allDayTime(t.startDay))
+                    put("end", allDayTime(t.endDay))
+                }
+                is EventTime.Timed -> {
+                    val zone = t.zoneId?.let { runCatching { ZoneId.of(it) }.getOrNull() } ?: defaultZone
+                    put("start", timedTime(t.start, zone))
+                    put("end", timedTime(t.end, zone))
+                }
+                null -> Unit
+            }
+            put("transparency", if (ev.availability == Availability.FREE) "transparent" else "opaque")
+            put(
+                "visibility",
+                when (ev.visibility) {
+                    Visibility.PUBLIC -> "public"
+                    Visibility.PRIVATE -> "private"
+                    else -> "default"
+                },
+            )
+            val colorId = ev.colorId
+            if (colorId != null) put("colorId", colorId) else if (patch) put("colorId", JsonNull)
+            put("guestsCanModify", ev.guestsCanModify)
+            put("guestsCanInviteOthers", ev.guestsCanInvite)
+            put("guestsCanSeeOtherGuests", ev.guestsCanSeeList)
+            putJsonArray("attendees") {
+                ev.attendees.forEach { a ->
+                    addJsonObject {
+                        put("email", a.email)
+                        if (a.optional) put("optional", true)
+                    }
+                }
+            }
+            val reminders = ev.reminders
+            putJsonObject("reminders") {
+                if (reminders == null) {
+                    put("useDefault", true)
+                } else {
+                    put("useDefault", false)
+                    putJsonArray("overrides") {
+                        reminders.forEach { r ->
+                            addJsonObject {
+                                put("method", if (r.method == ReminderMethod.EMAIL) "email" else "popup")
+                                put("minutes", r.minutes)
+                            }
+                        }
+                    }
+                }
+            }
+            if (ev.alarmMinutes.isNotEmpty() || patch) {
+                putJsonObject("extendedProperties") {
+                    putJsonObject("private") {
+                        if (ev.alarmMinutes.isEmpty()) put(ALARM_PROPERTY, JsonNull)
+                        else put(ALARM_PROPERTY, ev.alarmMinutes.sorted().joinToString(","))
+                    }
+                }
+            }
+            val rrule = ev.rrule
+            if (rrule != null) {
+                putJsonArray("recurrence") {
+                    add("RRULE:$rrule")
+                    exdateLine(ev.exdates, ev.time is EventTime.AllDay)?.let { add(it) }
+                }
+            } else if (patch && ev.recurringEventId == null) {
+                // A former series becoming a single event; occurrences of a series never carry a recurrence.
+                put("recurrence", JsonArray(emptyList()))
+            }
+            if (includeMeetRequest) {
+                putJsonObject("conferenceData") {
+                    putJsonObject("createRequest") {
+                        put("requestId", UUID.randomUUID().toString())
+                        putJsonObject("conferenceSolutionKey") { put("type", "hangoutsMeet") }
+                    }
+                }
+            }
+        }
+
+    private fun allDayTime(day: LocalDate) = buildJsonObject {
+        put("date", day.toString())
+        put("dateTime", JsonNull)
+        put("timeZone", JsonNull)
+    }
+
+    private fun timedTime(at: Instant, zone: ZoneId) = buildJsonObject {
+        put("date", JsonNull)
+        put("dateTime", at.atZone(zone).toOffsetDateTime().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME))
+        put("timeZone", zone.id)
+    }
+
+    private val UTC_BASIC: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'").withZone(ZoneOffset.UTC)
+
+    private fun exdateLine(exdates: List<OriginalStart>, allDay: Boolean): String? {
+        if (exdates.isEmpty()) return null
+        return if (allDay) {
+            "EXDATE;VALUE=DATE:" + exdates.mapNotNull { (it as? OriginalStart.AllDay)?.day?.format(DateTimeFormatter.BASIC_ISO_DATE) }.joinToString(",")
+        } else {
+            "EXDATE:" + exdates.mapNotNull { (it as? OriginalStart.Timed)?.start?.let(UTC_BASIC::format) }.joinToString(",")
+        }
     }
 
     fun parseDefaultReminders(calendarListEntry: JsonObject): List<Reminder> =

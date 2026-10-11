@@ -11,6 +11,8 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
@@ -40,6 +42,7 @@ class GoogleCalendarApi(
     private val json = Json { ignoreUnknownKeys = true }
 
     private companion object {
+        val JSON_TYPE = "application/json; charset=utf-8".toMediaType()
         val EVENT_TYPES = listOf("default", "birthday", "focusTime", "fromGmail", "outOfOffice", "workingLocation")
     }
 
@@ -103,6 +106,63 @@ class GoogleCalendarApi(
         } while (page != null)
         return GoogleSyncPage(items, next)
     }
+
+    /** Creates an event; Google answers with its id, etag and, later, the Meet link. */
+    suspend fun insertEvent(calendarId: String, body: JsonObject, sendUpdates: Boolean, accessToken: String): GoogleEvent =
+        send("POST", writeUrl(sendUpdates, "calendars", calendarId, "events"), body, accessToken).toEvent()
+
+    /**
+     * Updates the fields in [body]. With [etag] the update applies only to that version: otherwise Google answers 412
+     * ([GoogleApiException.status]) and the caller decides about the conflict.
+     */
+    suspend fun patchEvent(calendarId: String, eventId: String, body: JsonObject, sendUpdates: Boolean, accessToken: String, etag: String? = null): GoogleEvent =
+        send("PATCH", writeUrl(sendUpdates, "calendars", calendarId, "events", eventId), body, accessToken, etag).toEvent()
+
+    /** Deletes an event; one that Google no longer has (404, 410) counts as deleted. */
+    suspend fun deleteEvent(calendarId: String, eventId: String, sendUpdates: Boolean, accessToken: String) {
+        try {
+            send("DELETE", writeUrl(sendUpdates, "calendars", calendarId, "events", eventId), null, accessToken)
+        } catch (e: GoogleApiException) {
+            if (e.status != 404 && e.status != 410) throw e
+        }
+    }
+
+    /** Moves an event to another calendar of the same account. */
+    suspend fun moveEvent(calendarId: String, eventId: String, destinationId: String, sendUpdates: Boolean, accessToken: String): GoogleEvent {
+        val url = writeUrl(sendUpdates, "calendars", calendarId, "events", eventId, "move").newBuilder()
+            .addQueryParameter("destination", destinationId).build()
+        return send("POST", url, null, accessToken).toEvent()
+    }
+
+    /** The current version of an event, or null if Google no longer has it. */
+    suspend fun getEvent(calendarId: String, eventId: String, accessToken: String): GoogleEvent? = try {
+        get(url("calendars", calendarId, "events", eventId), accessToken).toEvent()
+    } catch (e: GoogleApiException) {
+        if (e.status == 404 || e.status == 410) null else throw e
+    }
+
+    private fun JsonObject.toEvent(): GoogleEvent =
+        GoogleEventMapper.fromGoogle(this) ?: throw GoogleApiException(200, "Google Calendar: event without id or dates")
+
+    private fun writeUrl(sendUpdates: Boolean, vararg segments: String): HttpUrl = url(*segments).newBuilder()
+        .addQueryParameter("conferenceDataVersion", "1")
+        .addQueryParameter("sendUpdates", if (sendUpdates) "all" else "none")
+        .build()
+
+    private suspend fun send(method: String, url: HttpUrl, body: JsonObject?, accessToken: String, ifMatch: String? = null): JsonObject =
+        withContext(Dispatchers.IO) {
+            val requestBody = body?.toString()?.toRequestBody(JSON_TYPE)
+            val request = Request.Builder().url(url)
+                .header("Authorization", "Bearer $accessToken")
+                .apply { ifMatch?.let { header("If-Match", it) } }
+                .method(method, requestBody ?: if (method == "POST") ByteArray(0).toRequestBody(null) else null)
+                .build()
+            http.newCall(request).execute().use { res ->
+                val text = res.body.string()
+                if (!res.isSuccessful) throw GoogleApiException(res.code, "Google Calendar: ${res.code} $text")
+                if (text.isBlank()) JsonObject(emptyMap()) else json.parseToJsonElement(text).jsonObject
+            }
+        }
 
     private fun url(vararg segments: String): HttpUrl =
         baseUrl.newBuilder().apply { segments.forEach { addPathSegment(it) } }.build()
