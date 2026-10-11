@@ -67,6 +67,9 @@ class OutboxPusher @Inject constructor(
                 if (e.status == 400 || e.status == 403 || e.status == 404) {
                     // A permanent rejection must not block the rest of the queue.
                     outbox.complete(item.seq)
+                    // The local change will never reach Google: the next pull of this calendar is a full one, so that
+                    // the phone shows Google's version again.
+                    calendars.setSyncToken(item.calendarId, null)
                     messages.insert(SyncMessageEntity(accountEmail = email, kind = "error", text = context.getString(R.string.message_rejected, e.status, e.message)))
                 } else {
                     outbox.failed(item.seq, e.message)

@@ -23,4 +23,8 @@
     <string name="show_less">Mostra meno</string>
     <string name="birthday">Compleanno</string>
     <string name="choose_year">Scegli l\'anno</string>
+    <plurals name="pending_changes">
+        <item quantity="one">%d modifica non ancora inviata a Google</item>
+        <item quantity="other">%d modifiche non ancora inviate a Google</item>
+    </plurals>
 </resources>

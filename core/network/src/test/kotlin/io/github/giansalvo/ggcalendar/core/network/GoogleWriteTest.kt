@@ -82,7 +82,7 @@ class GoogleWriteTest {
         assertEquals(JsonNull, body["start"]!!.jsonObject["dateTime"])
         assertEquals("true", body["reminders"]!!.jsonObject["useDefault"]!!.jsonPrimitive.content)
         assertEquals(JsonNull, body["colorId"])
-        assertEquals(JsonNull, body["extendedProperties"]!!.jsonObject["private"]!!.jsonObject["ggAlarm"])
+        assertEquals("", body.str("extendedProperties", "private", "ggAlarm"))
         assertTrue(body["recurrence"]!!.jsonArray.isEmpty())
         // An occurrence of a series never carries a recurrence.
         assertFalse(GoogleEventMapper.toGoogle(allDay.copy(recurringEventId = "m"), false, patch = true).containsKey("recurrence"))

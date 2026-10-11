@@ -42,6 +42,8 @@ data class CalendarUiState(
     val accounts: List<AccountWithCalendars> = emptyList(),
     val instances: List<EventInstance> = emptyList(),
     val syncing: Boolean = false,
+    /** Changes waiting to reach Google. */
+    val pending: Int = 0,
     /** Height of one hour in the time grids, in dp (pinch to zoom). */
     val hourHeight: Float = DEFAULT_HOUR_HEIGHT,
     /** First hour shown when a time grid opens on a period without today. */
@@ -117,11 +119,11 @@ class CalendarViewModel @Inject constructor(
         repository.accounts,
         instances,
         combine(repository.syncing, transient, repository.messages.map { it.firstOrNull() }, ::Triple),
-        combine(grid, eventDays, ::Pair),
-    ) { nav, accounts, list, (syncing, t, message), (g, days) ->
+        combine(grid, eventDays, repository.pendingChanges, ::Triple),
+    ) { nav, accounts, list, (syncing, t, message), (g, days, pending) ->
         CalendarUiState(
             view = nav.view, date = nav.date, scheduleFrom = nav.scheduleFrom, scheduleTo = nav.scheduleTo, accounts = accounts, instances = list, syncing = syncing,
-            hourHeight = g.hourHeight, dayStartHour = g.dayStartHour, dimPast = g.dimPast, eventDays = days,
+            hourHeight = g.hourHeight, dayStartHour = g.dayStartHour, dimPast = g.dimPast, eventDays = days, pending = pending,
             selected = t.selected, editing = t.editing, pendingMove = t.pendingMove, busy = t.busy, consent = t.consent, error = t.error, message = message,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CalendarUiState())

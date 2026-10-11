@@ -171,7 +171,7 @@ object GoogleEventMapper {
      * Request body for an insert or a patch, ported from the desktop ToGoogle. Reminders: null keeps the calendar's
      * defaults; alarms travel as popups listed in `extendedProperties.private.ggAlarm` ([GoogleEvent.alarmMinutes]).
      * In a [patch] Google merges objects with what it has, so fields being cleared are sent as null: the unused form of
-     * start/end (all-day ⇄ timed), the color, the recurrence of a former series, the alarm property and, with
+     * start/end (all-day ⇄ timed), the color, the recurrence of a former series and, with
      * [removeMeet], the conference.
      */
     fun toGoogle(
@@ -238,7 +238,8 @@ object GoogleEventMapper {
             if (ev.alarmMinutes.isNotEmpty() || patch) {
                 putJsonObject("extendedProperties") {
                     putJsonObject("private") {
-                        if (ev.alarmMinutes.isEmpty()) put(ALARM_PROPERTY, JsonNull)
+                        // Google rejects null private properties (400 "Required"): an empty value means no alarm.
+                        if (ev.alarmMinutes.isEmpty()) put(ALARM_PROPERTY, "")
                         else put(ALARM_PROPERTY, ev.alarmMinutes.sorted().joinToString(","))
                     }
                 }

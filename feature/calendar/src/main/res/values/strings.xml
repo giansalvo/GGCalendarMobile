@@ -24,4 +24,8 @@
     <string name="show_less">Show less</string>
     <string name="birthday">Birthday</string>
     <string name="choose_year">Choose the year</string>
+    <plurals name="pending_changes">
+        <item quantity="one">%d change not yet sent to Google</item>
+        <item quantity="other">%d changes not yet sent to Google</item>
+    </plurals>
 </resources>

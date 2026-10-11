@@ -48,6 +48,9 @@ class CalendarRepository @Inject constructor(
 
     val messages: Flow<List<SyncMessageEntity>> = db.syncMessageDao().observeUnread()
 
+    /** Local changes not yet sent to Google (offline, or waiting for the next sync). */
+    val pendingChanges: Flow<Int> = db.outboxDao().observeCount()
+
     /** Visible instances overlapping the days [from, to); series are expanded further if the days need it. */
     fun instances(from: LocalDate, to: LocalDate): Flow<List<EventInstance>> = channelFlow {
         launch { engine.updateWindow(from, to) }
