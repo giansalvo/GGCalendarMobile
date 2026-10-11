@@ -82,6 +82,7 @@ internal fun ScheduleView(
     onVisibleDay: (LocalDate) -> Unit,
     onReachStart: () -> Unit,
     onReachEnd: () -> Unit,
+    onEventClick: (EventInstance) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val today = LocalDate.now()
@@ -125,7 +126,7 @@ internal fun ScheduleView(
         items(items, key = { it.key }) { item ->
             when (item) {
                 is ScheduleItem.WeekHeader -> WeekHeader(item.start)
-                is ScheduleItem.Event -> DayRow(item.day, item.firstOfDay, today) { EventCard(item.instance, item.day) }
+                is ScheduleItem.Event -> DayRow(item.day, item.firstOfDay, today) { EventCard(item.instance, item.day) { onEventClick(item.instance) } }
                 is ScheduleItem.NowLine -> DayRow(item.day, item.firstOfDay, today) { NowLine() }
                 is ScheduleItem.Empty -> DayRow(item.day, true, today) {
                     Text(
@@ -203,14 +204,14 @@ private fun DateLabel(day: LocalDate, isToday: Boolean) {
 }
 
 @Composable
-private fun EventCard(instance: EventInstance, day: LocalDate) {
+private fun EventCard(instance: EventInstance, day: LocalDate, onClick: () -> Unit) {
     val background = parseColor(instance.colorHex)
     val content = contentColorOn(background)
     Row(
         Modifier
             .fillMaxWidth()
             .background(background, RoundedCornerShape(12.dp))
-            .clickable { /* Event details: milestone M3 */ }
+            .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

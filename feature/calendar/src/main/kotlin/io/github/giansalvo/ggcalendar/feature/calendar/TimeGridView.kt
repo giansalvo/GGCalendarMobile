@@ -106,6 +106,7 @@ internal fun TimeGridView(
     onHourHeightChange: (Float) -> Unit,
     onPageChange: (start: LocalDate, days: Int) -> Unit,
     onDayClick: (LocalDate) -> Unit,
+    onEventClick: (EventInstance) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val firstDay = firstDayOfWeek()
@@ -170,7 +171,7 @@ internal fun TimeGridView(
 
         Column(Modifier.fillMaxSize()) {
             DayHeader(days, today, onDayClick)
-            AllDayStrip(days, instances, now, dimPast)
+            AllDayStrip(days, instances, now, dimPast, onEventClick)
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Row(
                 Modifier
@@ -203,6 +204,7 @@ internal fun TimeGridView(
                         placeholder = placeholder?.takeIf { it.first == day }?.second,
                         onEmptyTap = { minute -> placeholder = day to minute },
                         onPlaceholderTap = { placeholder = null },
+                        onEventClick = onEventClick,
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -264,7 +266,7 @@ private fun DayHeader(days: List<LocalDate>, today: LocalDate, onDayClick: (Loca
 
 /** All-day and multi-day events as continuous bars; two rows and "+N" until tapped. */
 @Composable
-private fun AllDayStrip(days: List<LocalDate>, instances: List<EventInstance>, now: Instant, dimPast: Boolean) {
+private fun AllDayStrip(days: List<LocalDate>, instances: List<EventInstance>, now: Instant, dimPast: Boolean, onEventClick: (EventInstance) -> Unit) {
     val lanes = remember(days.first(), instances) { Lanes.assign(barSpans(instances, days.first(), days.size)) }
     if (lanes.isEmpty()) return
     var expanded by remember { mutableStateOf(false) }
@@ -291,6 +293,7 @@ private fun AllDayStrip(days: List<LocalDate>, instances: List<EventInstance>, n
                 EventBar(
                     l.span.item,
                     dimmed = dimPast && l.span.item.end < now,
+                    onClick = { onEventClick(l.span.item) },
                     modifier = Modifier
                         .offset(x = column * l.span.startCol, y = BAR_ROW * l.lane)
                         .width(column * (l.span.endCol - l.span.startCol) - 2.dp)
@@ -322,7 +325,7 @@ internal fun EventBar(
     instance: EventInstance,
     modifier: Modifier = Modifier,
     dimmed: Boolean = false,
-    onClick: (() -> Unit)? = { /* Event details: milestone M3 */ },
+    onClick: (() -> Unit)?,
 ) {
     val background = parseColor(instance.colorHex)
     val content = contentColorOn(background)
@@ -380,6 +383,7 @@ private fun DayColumn(
     placeholder: Int?,
     onEmptyTap: (minute: Int) -> Unit,
     onPlaceholderTap: () -> Unit,
+    onEventClick: (EventInstance) -> Unit,
     modifier: Modifier,
 ) {
     val zone = ZoneId.systemDefault()
@@ -418,6 +422,7 @@ private fun DayColumn(
                 day = day,
                 showTime = showTime && s.to - s.from >= 45,
                 dimmed = dimPast && s.instance.end < now,
+                onClick = { onEventClick(s.instance) },
                 modifier = Modifier
                     .offset(x = width * p.column / p.columnCount + 1.dp, y = hour * s.from / 60 + 1.dp)
                     .width(width / p.columnCount - 2.dp)
@@ -451,7 +456,7 @@ private fun DayColumn(
 }
 
 @Composable
-private fun EventBlock(instance: EventInstance, day: LocalDate, showTime: Boolean, dimmed: Boolean, modifier: Modifier) {
+private fun EventBlock(instance: EventInstance, day: LocalDate, showTime: Boolean, dimmed: Boolean, onClick: () -> Unit, modifier: Modifier) {
     val background = parseColor(instance.colorHex)
     val content = contentColorOn(background)
     Column(
@@ -459,7 +464,7 @@ private fun EventBlock(instance: EventInstance, day: LocalDate, showTime: Boolea
             .alpha(if (dimmed) 0.6f else 1f)
             .clip(RoundedCornerShape(6.dp))
             .background(background)
-            .clickable { /* Event details: milestone M3 */ }
+            .clickable(onClick = onClick)
             .padding(horizontal = 4.dp, vertical = 2.dp),
     ) {
         Text(

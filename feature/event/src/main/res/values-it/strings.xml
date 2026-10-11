@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="close">Chiudi</string>
+    <string name="edit">Modifica</string>
+    <string name="more_options">Altre opzioni</string>
+    <string name="delete">Elimina</string>
+    <string name="duplicate">Duplica</string>
+    <string name="cancel">Annulla</string>
+    <string name="untitled">(Senza titolo)</string>
+    <string name="delete_event_question">Eliminare questo evento?</string>
+    <string name="delete_series_question">Eliminare tutti gli eventi della serie?</string>
+    <string name="join_meet">Partecipa con Google Meet</string>
+    <string name="meet_pending">Link di Google Meet in creazione…</string>
+    <string name="all_day">Tutto il giorno</string>
+    <string name="time_zone_of">Fuso orario: %1$s</string>
+    <string name="read_only">Sola lettura</string>
+    <string name="calendar_defaults">Promemoria predefiniti del calendario</string>
+
+    <plurals name="every_day">
+        <item quantity="one">Ogni giorno</item>
+        <item quantity="other">Ogni %d giorni</item>
+    </plurals>
+    <plurals name="every_week">
+        <item quantity="one">Ogni settimana</item>
+        <item quantity="other">Ogni %d settimane</item>
+    </plurals>
+    <plurals name="every_month">
+        <item quantity="one">Ogni mese</item>
+        <item quantity="other">Ogni %d mesi</item>
+    </plurals>
+    <plurals name="every_year">
+        <item quantity="one">Ogni anno</item>
+        <item quantity="other">Ogni %d anni</item>
+    </plurals>
+    <string name="on_days">" il %1$s"</string>
+    <string name="on_month_day">" il giorno %1$d"</string>
+    <string name="on_nth_weekday">" il %1$s %2$s"</string>
+    <string-array name="ordinals">
+        <item>ultimo</item>
+        <item>primo</item>
+        <item>secondo</item>
+        <item>terzo</item>
+        <item>quarto</item>
+        <item>quinto</item>
+    </string-array>
+    <plurals name="times">
+        <item quantity="one">; 1 volta</item>
+        <item quantity="other">; %d volte</item>
+    </plurals>
+    <string name="until_date">; fino al %1$s</string>
+    <string name="custom_recurrence">Ricorrenza personalizzata</string>
+
+    <plurals name="minutes_before">
+        <item quantity="one">%d minuto prima</item>
+        <item quantity="other">%d minuti prima</item>
+    </plurals>
+    <plurals name="hours_before">
+        <item quantity="one">%d ora prima</item>
+        <item quantity="other">%d ore prima</item>
+    </plurals>
+    <plurals name="days_before">
+        <item quantity="one">%d giorno prima</item>
+        <item quantity="other">%d giorni prima</item>
+    </plurals>
+    <plurals name="weeks_before">
+        <item quantity="one">%d settimana prima</item>
+        <item quantity="other">%d settimane prima</item>
+    </plurals>
+    <string name="at_start">All\'inizio</string>
+    <string name="reminder_popup">Notifica</string>
+    <string name="reminder_alarm">Sveglia</string>
+    <string name="reminder_email">Email</string>
+
+    <plurals name="guests">
+        <item quantity="one">%d invitato</item>
+        <item quantity="other">%d invitati</item>
+    </plurals>
+    <string name="guests_answers">%1$d sì, %2$d no, %3$d forse, %4$d in attesa</string>
+    <string name="organizer">Organizzatore</string>
+    <string name="optional">Facoltativo</string>
+</resources>

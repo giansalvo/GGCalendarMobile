@@ -64,6 +64,7 @@ dependencies {
     implementation(project(":core:auth"))
     implementation(project(":core:data"))
     implementation(project(":feature:calendar"))
+    implementation(project(":feature:event"))
     implementation(libs.androidx.hilt.work)
     ksp(libs.androidx.hilt.compiler)
 

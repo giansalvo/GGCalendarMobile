@@ -51,6 +51,9 @@ interface EventDao {
     @Query("SELECT * FROM events WHERE id = :id")
     suspend fun get(id: String): EventEntity?
 
+    @Query("SELECT * FROM events WHERE id = :id")
+    fun observe(id: String): Flow<EventEntity?>
+
     @Query("SELECT * FROM events WHERE calendar_id = :calendarId")
     suspend fun getForCalendar(calendarId: String): List<EventEntity>
 

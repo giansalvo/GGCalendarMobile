@@ -44,6 +44,8 @@ data class CalendarUiState(
     val dimPast: Boolean = true,
     /** Days with events around the month shown by the mini calendar (empty while it is closed). */
     val eventDays: Set<LocalDate> = emptySet(),
+    /** The occurrence whose details are open. */
+    val selected: EventInstance? = null,
     val busy: Boolean = false,
     /** Set when Google needs the user's consent; the screen launches it and calls [CalendarViewModel.onConsentResult]. */
     val consent: AuthorizationOutcome.NeedsConsent? = null,
@@ -63,6 +65,7 @@ private data class Navigation(
 }
 
 private data class Transient(
+    val selected: EventInstance? = null,
     val busy: Boolean = false,
     val consent: AuthorizationOutcome.NeedsConsent? = null,
     val error: String? = null,
@@ -105,7 +108,7 @@ class CalendarViewModel @Inject constructor(
         CalendarUiState(
             view = nav.view, date = nav.date, scheduleFrom = nav.scheduleFrom, scheduleTo = nav.scheduleTo, accounts = accounts, instances = list, syncing = syncing,
             hourHeight = g.hourHeight, dayStartHour = g.dayStartHour, dimPast = g.dimPast, eventDays = days,
-            busy = t.busy, consent = t.consent, error = t.error, message = message,
+            selected = t.selected, busy = t.busy, consent = t.consent, error = t.error, message = message,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CalendarUiState())
 
@@ -165,6 +168,8 @@ class CalendarViewModel @Inject constructor(
     }
 
     fun refresh() = repository.syncNow()
+
+    fun openEvent(instance: EventInstance?) = transient.update { it.copy(selected = instance) }
 
     fun chooseAccountIntent(): Intent = authorizer.chooseAccountIntent()
 

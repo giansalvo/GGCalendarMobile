@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="close">Close</string>
+    <string name="edit">Edit</string>
+    <string name="more_options">More options</string>
+    <string name="delete">Delete</string>
+    <string name="duplicate">Duplicate</string>
+    <string name="cancel">Cancel</string>
+    <string name="untitled">(No title)</string>
+    <string name="delete_event_question">Delete this event?</string>
+    <string name="delete_series_question">Delete all the events of this series?</string>
+    <string name="join_meet">Join with Google Meet</string>
+    <string name="meet_pending">Google Meet link being created…</string>
+    <string name="all_day">All day</string>
+    <string name="time_zone_of">Time zone: %1$s</string>
+    <string name="read_only">Read only</string>
+    <string name="calendar_defaults">Calendar\'s default reminders</string>
+
+    <!-- Recurrence, e.g. "Every 2 weeks on Monday, Thursday; 5 times" -->
+    <plurals name="every_day">
+        <item quantity="one">Every day</item>
+        <item quantity="other">Every %d days</item>
+    </plurals>
+    <plurals name="every_week">
+        <item quantity="one">Every week</item>
+        <item quantity="other">Every %d weeks</item>
+    </plurals>
+    <plurals name="every_month">
+        <item quantity="one">Every month</item>
+        <item quantity="other">Every %d months</item>
+    </plurals>
+    <plurals name="every_year">
+        <item quantity="one">Every year</item>
+        <item quantity="other">Every %d years</item>
+    </plurals>
+    <string name="on_days">" on %1$s"</string>
+    <string name="on_month_day">" on day %1$d"</string>
+    <string name="on_nth_weekday">" on the %1$s %2$s"</string>
+    <string-array name="ordinals">
+        <item>last</item>
+        <item>first</item>
+        <item>second</item>
+        <item>third</item>
+        <item>fourth</item>
+        <item>fifth</item>
+    </string-array>
+    <plurals name="times">
+        <item quantity="one">; once</item>
+        <item quantity="other">; %d times</item>
+    </plurals>
+    <string name="until_date">; until %1$s</string>
+    <string name="custom_recurrence">Custom recurrence</string>
+
+    <!-- Reminders -->
+    <plurals name="minutes_before">
+        <item quantity="one">%d minute before</item>
+        <item quantity="other">%d minutes before</item>
+    </plurals>
+    <plurals name="hours_before">
+        <item quantity="one">%d hour before</item>
+        <item quantity="other">%d hours before</item>
+    </plurals>
+    <plurals name="days_before">
+        <item quantity="one">%d day before</item>
+        <item quantity="other">%d days before</item>
+    </plurals>
+    <plurals name="weeks_before">
+        <item quantity="one">%d week before</item>
+        <item quantity="other">%d weeks before</item>
+    </plurals>
+    <string name="at_start">At the start</string>
+    <string name="reminder_popup">Notification</string>
+    <string name="reminder_alarm">Alarm</string>
+    <string name="reminder_email">Email</string>
+
+    <!-- Guests -->
+    <plurals name="guests">
+        <item quantity="one">%d guest</item>
+        <item quantity="other">%d guests</item>
+    </plurals>
+    <string name="guests_answers">%1$d yes, %2$d no, %3$d maybe, %4$d awaiting</string>
+    <string name="organizer">Organizer</string>
+    <string name="optional">Optional</string>
+</resources>

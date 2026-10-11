@@ -67,6 +67,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import io.github.giansalvo.ggcalendar.feature.event.EventDetailSheet
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.giansalvo.ggcalendar.core.model.CalendarInfo
@@ -180,6 +181,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                         onVisibleDay = viewModel::scheduleScrolled,
                         onReachStart = { viewModel.extendSchedule(past = true) },
                         onReachEnd = { viewModel.extendSchedule(past = false) },
+                        onEventClick = viewModel::openEvent,
                     )
                     CalendarView.MONTH -> MonthView(
                         date = state.date,
@@ -198,11 +200,20 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                             onHourHeightChange = viewModel::setHourHeight,
                             onPageChange = viewModel::showDays,
                             onDayClick = viewModel::openDay,
+                            onEventClick = viewModel::openEvent,
                         )
                     }
                 }
             }
         }
+    }
+
+    state.selected?.let { instance ->
+        EventDetailSheet(
+            instance = instance,
+            onDismiss = { viewModel.openEvent(null) },
+            onEdit = { /* Editor: next step of M3 */ },
+        )
     }
 }
 
