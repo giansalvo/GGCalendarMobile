@@ -141,4 +141,7 @@
     <string name="ends_on">On</string>
     <string name="ends_after">After</string>
     <plurals name="occurrences"><item quantity="one">occurrence</item><item quantity="other">occurrences</item></plurals>
+    <string name="browse_contacts">Contacts</string>
+    <string name="search_contacts">Search name or email</string>
+    <string name="no_contacts">No contacts found</string>
 </resources>

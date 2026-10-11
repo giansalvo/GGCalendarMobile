@@ -138,4 +138,7 @@
     <string name="ends_on">Il</string>
     <string name="ends_after">Dopo</string>
     <plurals name="occurrences"><item quantity="one">volta</item><item quantity="other">volte</item></plurals>
+    <string name="browse_contacts">Contatti</string>
+    <string name="search_contacts">Cerca nome o email</string>
+    <string name="no_contacts">Nessun contatto trovato</string>
 </resources>

@@ -4,6 +4,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -451,9 +453,18 @@ private fun Guests(draft: Draft, suggestions: List<Attendee>, update: ((Draft) -
                 (s.email.contains(text, ignoreCase = true) || s.displayName?.contains(text, ignoreCase = true) == true)
         }.take(6)
     }
-    Column {
-        Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Outlined.Group, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+    var browsing by remember { mutableStateOf(false) }
+    // Keep the suggestions in sight above the keyboard while typing.
+    val bringIntoView = remember { BringIntoViewRequester() }
+    LaunchedEffect(matches) { if (matches.isNotEmpty()) bringIntoView.bringIntoView() }
+    Column(Modifier.bringIntoViewRequester(bringIntoView)) {
+        Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = {
+                onFocused() // asks for the contacts permission the first time
+                browsing = true
+            }) {
+                Icon(Icons.Outlined.Group, stringResource(R.string.browse_contacts), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             Box(Modifier.weight(1f)) {
                 TextField(
                     value = text,
@@ -489,6 +500,19 @@ private fun Guests(draft: Draft, suggestions: List<Attendee>, update: ((Draft) -
                 }
             }
         }
+        if (browsing) {
+            ContactsDialog(
+                contacts = suggestions,
+                selected = draft.attendees.map { it.email.lowercase() }.toSet(),
+                onToggle = { c ->
+                    update { d ->
+                        if (d.attendees.any { it.email.equals(c.email, ignoreCase = true) }) d.copy(attendees = d.attendees.filterNot { it.email.equals(c.email, ignoreCase = true) })
+                        else d.copy(attendees = d.attendees + Attendee(c.email, displayName = c.displayName))
+                    }
+                },
+                onDismiss = { browsing = false },
+            )
+        }
         if (draft.attendees.isNotEmpty()) {
             FlowRow(Modifier.padding(start = 56.dp, end = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 draft.attendees.forEach { a ->
@@ -509,6 +533,39 @@ private fun Guests(draft: Draft, suggestions: List<Attendee>, update: ((Draft) -
             CheckRow(stringResource(R.string.guests_can_modify), draft.guestsCanModify) { v -> update { it.copy(guestsCanModify = v) } }
             CheckRow(stringResource(R.string.guests_can_invite), draft.guestsCanInvite) { v -> update { it.copy(guestsCanInvite = v) } }
             CheckRow(stringResource(R.string.guests_can_see_list), draft.guestsCanSeeList) { v -> update { it.copy(guestsCanSeeList = v) } }
+        }
+    }
+}
+
+/** Every known address (contacts and past guests), searchable and scrollable; a tap adds or removes the guest. */
+@Composable
+private fun ContactsDialog(contacts: List<Attendee>, selected: Set<String>, onToggle: (Attendee) -> Unit, onDismiss: () -> Unit) {
+    var query by remember { mutableStateOf("") }
+    val shown = remember(query, contacts) {
+        contacts.filter { query.isBlank() || it.email.contains(query, ignoreCase = true) || it.displayName?.contains(query, ignoreCase = true) == true }
+    }
+    Dialog(onDismissRequest = onDismiss) {
+        Column(Modifier.fillMaxWidth().fillMaxHeight(0.85f).background(MaterialTheme.colorScheme.surfaceContainerHigh, MaterialTheme.shapes.extraLarge).padding(16.dp)) {
+            Text(stringResource(R.string.browse_contacts), style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(query, { query = it }, placeholder = { Text(stringResource(R.string.search_contacts)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            Spacer(Modifier.height(8.dp))
+            if (shown.isEmpty()) {
+                Text(stringResource(R.string.no_contacts), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 16.dp))
+            }
+            androidx.compose.foundation.lazy.LazyColumn(Modifier.weight(1f)) {
+                items(shown, key = { it.email.lowercase() }) { c ->
+                    val checked = c.email.lowercase() in selected
+                    Row(Modifier.fillMaxWidth().clickable { onToggle(c) }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = checked, onCheckedChange = { onToggle(c) })
+                        Column {
+                            Text(c.displayName ?: c.email, style = MaterialTheme.typography.bodyMedium)
+                            if (c.displayName != null) Text(c.email, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
+            TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) { Text(stringResource(android.R.string.ok)) }
         }
     }
 }
