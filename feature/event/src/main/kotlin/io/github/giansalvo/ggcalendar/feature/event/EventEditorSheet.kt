@@ -473,18 +473,19 @@ private fun Guests(draft: Draft, suggestions: List<Attendee>, update: ((Draft) -
                     ),
                     modifier = Modifier.fillMaxWidth().onFocusChanged { if (it.isFocused) onFocused() },
                 )
-                DropdownMenu(expanded = matches.isNotEmpty(), onDismissRequest = { text = "" }, properties = androidx.compose.ui.window.PopupProperties(focusable = false)) {
-                    matches.forEach { s ->
-                        DropdownMenuItem(
-                            text = {
-                                Column {
-                                    Text(s.displayName ?: s.email)
-                                    if (s.displayName != null) Text(s.email, style = MaterialTheme.typography.bodySmall)
-                                }
-                            },
-                            onClick = { add(s.email, s.displayName) },
-                        )
-                    }
+            }
+        }
+        // Suggestions as a list under the field (a pop-up menu would steal touches and its dismissal lost the text).
+        matches.forEach { m ->
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { add(m.email, m.displayName) }
+                    .padding(start = 56.dp, end = 16.dp, top = 6.dp, bottom = 6.dp),
+            ) {
+                Text(m.displayName ?: m.email, style = MaterialTheme.typography.bodyMedium)
+                if (m.displayName != null) {
+                    Text(m.email, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
