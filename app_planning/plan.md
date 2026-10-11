@@ -155,7 +155,7 @@ Differenze rispetto a Google Calendar: nessuna icona e nessun calendario Tasks; 
 7. **Ambito della serie** (dialog): solo questo evento / questo e i successivi / tutti gli eventi.
 8. **Sveglia** (activity a schermo intero, anche con lo schermo bloccato): titolo, ora, luogo, pulsanti Chiudi e Posticipa.
 9. **Ricerca**: testo libero su titolo, luogo, descrizione e invitati, con risultati in stile agenda.
-10. **Impostazioni**, a sezioni: Generali, Calendario, Notifiche, Fusi orari, Account Google (aggiungi, scollega e revoca, risincronizza tutto), Informazioni e aggiornamenti, Privacy.
+10. **Impostazioni**, a sezioni: Generali (**tema chiaro / scuro / di sistema**, lingua, orologio a 24 ore), Calendario, Notifiche, Fusi orari, Account Google (aggiungi, scollega e revoca, risincronizza tutto), Informazioni e aggiornamenti, Privacy.
 11. **Stampa ed esportazione**: scelta del formato e dell'intervallo, poi anteprima di stampa di sistema.
 12. **Riepilogo importazione `.ics`**.
 
@@ -202,7 +202,7 @@ I test xUnit (`tests/GGCalendar.Core.Tests`) vengono tradotti in JUnit con gli s
   - **M4 completata (12/10/2026)**: notifiche, sveglia, promemoria email, direct boot, ripristino dopo il riavvio, cambio di fuso, due account. CI verde (run 38179955704, commit 613b544; i commit successivi toccano solo plan.md).
 - **M4bis** Vista "Mese + Programma" e APK di prova da condividere (anche via WhatsApp) prima della pubblicazione ufficiale, più la scheda informativa dell'app (autore, sito, versione 0.4.0 e data di build). Dettaglio nella sezione "M4bis: piano dettagliato".
 - **M5** Condivisione, esportazione `.ics`/CSV, stampa PDF, ACL dei calendari; più due punti rimasti da M4: **prova del Doze profondo** e **consensi per l'uso della batteria** (soluzione 7: richiesta di esclusione dall'ottimizzazione batteria, guida "App mai in sospensione" di Samsung, avviso nel dettaglio dell'evento e in "Notifiche e sveglie" quando l'app è limitata).
-- **M6** Impostazioni, calendari locali, calendario "Compleanni" dalla rubrica del telefono (`READ_CONTACTS`, vedi M2), importazione `.ics`, suoni personalizzati, secondo fuso orario, rifinitura i18n, aggiornamenti in-app; aggiornamento del desktop C# per `ggAlarm`.
+- **M6** Impostazioni (schermata unica a sezioni, vedi 5b; include la **scelta del tema: chiaro, scuro o come il sistema**, applicata subito e ricordata, con i colori dinamici di Android 12+ attivabili a parte), calendari locali, calendario "Compleanni" dalla rubrica del telefono (`READ_CONTACTS`, vedi M2), importazione `.ics`, suoni personalizzati, secondo fuso orario, rifinitura i18n, aggiornamenti in-app; aggiornamento del desktop C# per `ggAlarm`.
 - **M7** Landing page completa e release v1.0. La privacy policy estesa ad Android si pubblica già in M0; la verifica dello scope `calendar` si invia in parallelo, prima possibile.
 
 ## M0: passi operativi
