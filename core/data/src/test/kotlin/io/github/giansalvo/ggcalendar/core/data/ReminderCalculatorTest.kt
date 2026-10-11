@@ -80,18 +80,24 @@ class ReminderCalculatorTest {
     }
 
     @Test
-    fun theSameOccurrenceInTwoAccountsFiresOnce() {
-        val mine = row(popup(10), id = "a", uid = "u1", account = "me@x.com", organizer = "me@x.com")
-        val invite = row(alarm(10), id = "b", uid = "u1", account = "other@y.com", organizer = "me@x.com")
-        val due = ReminderCalculator.due(listOf(mine, invite), start - 60 * minute, start)
-        assertEquals(1, due.size)
-        assertEquals("b", due[0].row.eventId) // the copy with the alarm wins
-        // Without alarms the organizer's copy wins.
-        val due2 = ReminderCalculator.due(listOf(invite.copy(reminders = listOf(popup(10))), mine), start - 60 * minute, start)
-        assertEquals("a", due2.single().row.eventId)
+    fun identicalRemindersOfTheSameOccurrenceInTwoAccountsFireOnce() {
+        val mine = row(popup(10), alarm(30), id = "a", uid = "u1", account = "me@x.com", organizer = "me@x.com")
+        val invite = row(popup(10), alarm(30), id = "b", uid = "u1", account = "other@y.com", organizer = "me@x.com")
+        val due = ReminderCalculator.due(listOf(invite, mine), start - 60 * minute, start)
+        assertEquals(2, due.size)
+        assertEquals(setOf("a"), due.map { it.row.eventId }.toSet()) // the organizer's copy is the one shown
         // Other occurrences of the same series are separate.
         val next = mine.copy(beginUtc = start + 1440 * minute, endUtc = start + 1500 * minute)
-        assertEquals(2, ReminderCalculator.due(listOf(mine, next), start - 60 * minute, start + 1440 * minute).size)
+        assertEquals(4, ReminderCalculator.due(listOf(mine, next), start - 60 * minute, start + 1440 * minute).size)
+    }
+
+    @Test
+    fun differentRemindersOfTheTwoCopiesAllRing() {
+        val mine = row(popup(10), id = "a", uid = "u1", account = "me@x.com", organizer = "me@x.com")
+        val invite = row(alarm(30), alarm(10), id = "b", uid = "u1", account = "other@y.com", organizer = "me@x.com")
+        val due = ReminderCalculator.due(listOf(mine, invite), start - 60 * minute, start)
+        // popup 10 (mine), alarm 10 and alarm 30 (invited account): the same time but another type is not identical.
+        assertEquals(setOf("a|POPUP|10", "b|ALARM|10", "b|ALARM|30"), due.map { "${it.row.eventId}|${it.reminder.method}|${it.reminder.minutes}" }.toSet())
     }
 
     @Test

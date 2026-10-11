@@ -29,29 +29,26 @@ object ReminderCalculator {
         return own.filter { it.method != ReminderMethod.EMAIL }.distinct()
     }
 
-    /**
-     * One copy per occurrence: an event in two accounts (an invitation between them) has the same iCalUID and start.
-     * The copy with an alarm wins, then the organizer's.
-     */
-    fun distinctOccurrences(rows: List<ReminderRow>): List<ReminderRow> =
-        rows.groupBy { (it.iCalUid ?: "id:${it.eventId}") to it.beginUtc }.values.map { copies ->
-            copies.maxWith(
-                compareBy<ReminderRow> { r -> remindersOf(r).any { it.method == ReminderMethod.ALARM } }
-                    .thenBy { it.organizerEmail != null && (it.organizerEmail == it.accountEmail || it.organizerEmail == it.calendarRemoteId) }
-                    .thenBy { remindersOf(it).isNotEmpty() },
-            )
-        }
-
     /** Declined invitations ring no reminder, as in Google Calendar. */
     private fun declined(row: ReminderRow): Boolean =
         row.attendees.any { it.email.equals(row.accountEmail, ignoreCase = true) && it.response == "declined" }
 
-    /** Reminders firing in (after, until] whose occurrence has not ended at [after]. */
+    /**
+     * Reminders firing in (after, until] whose occurrence has not ended at [after].
+     *
+     * An event in two accounts (an invitation between them) has one copy per account, with the same iCalUID and start,
+     * and each copy has its own reminders: all of them ring. Only identical ones (same occurrence, same method, same
+     * time) are collapsed into one; then the organizer's copy is the one that is shown.
+     */
     fun due(rows: List<ReminderRow>, after: Long, until: Long): List<DueReminder> =
-        distinctOccurrences(rows).asSequence()
+        rows.asSequence()
             .filter { it.endUtc > after && !declined(it) }
             .flatMap { row -> remindersOf(row).map { DueReminder(row, it, row.beginUtc - it.minutes * 60_000L) } }
             .filter { it.fireAt > after && it.fireAt <= until }
+            .groupBy { Triple(it.row.iCalUid ?: "id:${it.row.eventId}", it.row.beginUtc, it.reminder.method to it.reminder.minutes) }
+            .values
+            .map { copies -> copies.maxWith(compareBy<DueReminder> { organizers(it.row) }) }
             .sortedBy { it.fireAt }
-            .toList()
+
+    private fun organizers(row: ReminderRow) = row.organizerEmail != null && (row.organizerEmail == row.accountEmail || row.organizerEmail == row.calendarRemoteId)
 }
