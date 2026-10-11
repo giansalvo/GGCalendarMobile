@@ -91,17 +91,12 @@ class AlarmService : Service() {
                     .setData(android.net.Uri.parse("ggcalendar://alarm/" + android.net.Uri.encode(alert.key))),
             )
         }
-        player = runCatching {
-            MediaPlayer().apply {
-                setAudioAttributes(
-                    AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build(),
-                )
-                setDataSource(this@AlarmService, uri)
-                isLooping = true
-                prepare()
-                start()
-            }
-        }.getOrNull()
+        // The system ringtone is a media provider content: before the first unlock it does not exist, and the alarm
+        // rings with the sound bundled in the app instead.
+        player = runCatching { loopingPlayer { it.setDataSource(this, uri) } }.getOrNull()
+            ?: runCatching {
+                loopingPlayer { player -> resources.openRawResourceFd(R.raw.alarm_fallback).use { player.setDataSource(it.fileDescriptor, it.startOffset, it.length) } }
+            }.getOrNull()
         @Suppress("DEPRECATION")
         (getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator)?.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 700, 500), 0))
         timeout?.cancel()
@@ -109,6 +104,23 @@ class AlarmService : Service() {
             delay(store.alarmMinutes() * 60_000L)
             if (current?.key == alert.key) finishCurrent(missed = true)
         }
+    }
+
+    private fun loopingPlayer(source: (MediaPlayer) -> Unit): MediaPlayer {
+        val player = MediaPlayer()
+        try {
+            player.setAudioAttributes(
+                AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build(),
+            )
+            source(player)
+            player.isLooping = true
+            player.prepare()
+            player.start()
+        } catch (e: Exception) {
+            player.release()
+            throw e
+        }
+        return player
     }
 
     private fun stopRinging() {
