@@ -73,6 +73,7 @@ import io.github.giansalvo.ggcalendar.core.data.SeriesScope
 import io.github.giansalvo.ggcalendar.core.model.Attendee
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
 import io.github.giansalvo.ggcalendar.core.model.ReminderMethod
+import io.github.giansalvo.ggcalendar.core.notifications.ReminderPermissionWarning
 import java.time.ZoneId
 import java.time.format.TextStyle
 import java.util.Locale
@@ -194,6 +195,9 @@ private fun DetailContent(instance: EventInstance, detail: EventDetail, onClose:
                 InfoRow(icon) { Text("${methodText(r, res)} · ${beforeText(r.minutes, res)}") }
             }
         }
+
+        val rings = (event.reminders ?: detail.calendar.defaultReminders).any { it.method != ReminderMethod.EMAIL }
+        if (rings) ReminderPermissionWarning(Modifier.padding(start = 56.dp, end = 20.dp))
 
         if (event.attendees.isNotEmpty()) Guests(event.attendees, event.organizerEmail)
 

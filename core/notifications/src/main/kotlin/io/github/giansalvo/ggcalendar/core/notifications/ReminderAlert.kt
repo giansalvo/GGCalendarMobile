@@ -15,6 +15,7 @@ data class ReminderAlert(
     val allDay: Boolean,
     val title: String,
     val location: String,
+    val description: String,
     val meetLink: String?,
     val method: ReminderMethod,
     val minutes: Int,
@@ -26,7 +27,7 @@ data class ReminderAlert(
 
     fun putInto(intent: Intent): Intent = intent
         .putExtra(KEY, key).putExtra(EVENT, eventId).putExtra(BEGIN, beginUtc).putExtra(END, endUtc)
-        .putExtra(ALL_DAY, allDay).putExtra(TITLE, title).putExtra(LOCATION, location).putExtra(MEET, meetLink)
+        .putExtra(ALL_DAY, allDay).putExtra(TITLE, title).putExtra(LOCATION, location).putExtra(DESCRIPTION, description).putExtra(MEET, meetLink)
         .putExtra(METHOD, method.name).putExtra(MINUTES, minutes)
 
     companion object {
@@ -38,6 +39,10 @@ data class ReminderAlert(
         private const val TITLE = "reminder.title"
         private const val LOCATION = "reminder.location"
         private const val MEET = "reminder.meet"
+        private const val DESCRIPTION = "reminder.description"
+
+        /** Intent extras are limited in size: a long description is cut. */
+        private const val MAX_DESCRIPTION = 1_500
         private const val METHOD = "reminder.method"
         private const val MINUTES = "reminder.minutes"
 
@@ -46,7 +51,7 @@ data class ReminderAlert(
         fun of(row: ReminderRow, reminder: Reminder) = ReminderAlert(
             key = due(row, reminder),
             eventId = row.eventId, beginUtc = row.beginUtc, endUtc = row.endUtc, allDay = row.allDay,
-            title = row.title, location = row.location, meetLink = row.meetLink,
+            title = row.title, location = row.location, description = row.description.take(MAX_DESCRIPTION), meetLink = row.meetLink,
             method = reminder.method, minutes = reminder.minutes,
         )
 
@@ -62,6 +67,7 @@ data class ReminderAlert(
                 allDay = intent.getBooleanExtra(ALL_DAY, false),
                 title = intent.getStringExtra(TITLE).orEmpty(),
                 location = intent.getStringExtra(LOCATION).orEmpty(),
+                description = intent.getStringExtra(DESCRIPTION).orEmpty(),
                 meetLink = intent.getStringExtra(MEET),
                 method = runCatching { ReminderMethod.valueOf(intent.getStringExtra(METHOD).orEmpty()) }.getOrDefault(ReminderMethod.POPUP),
                 minutes = intent.getIntExtra(MINUTES, 0),

@@ -7,6 +7,7 @@ import android.content.pm.ServiceInfo
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.media.RingtoneManager
+import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
@@ -75,9 +76,9 @@ class AlarmService : Service() {
     }
 
     private fun foreground(alert: ReminderAlert) {
-        ServiceCompat.startForeground(
-            this, alert.notificationId, notifier.alarmNotification(alert), ServiceInfo.FOREGROUND_SERVICE_TYPE_SYSTEM_EXEMPTED,
-        )
+        // The "system exempted" type exists from Android 14; before, the service has no type.
+        val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) ServiceInfo.FOREGROUND_SERVICE_TYPE_SYSTEM_EXEMPTED else 0
+        ServiceCompat.startForeground(this, alert.notificationId, notifier.alarmNotification(alert), type)
     }
 
     private fun ring() {
@@ -85,6 +86,14 @@ class AlarmService : Service() {
         val uri = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_ALARM)
             ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
             ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+        // The alarm screen opens by itself, also while the phone is in use (a notification alone would only slide in).
+        runCatching {
+            startActivity(
+                alert.putInto(Intent(this, AlarmActivity::class.java))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_USER_ACTION)
+                    .setData(android.net.Uri.parse("ggcalendar://alarm/" + android.net.Uri.encode(alert.key))),
+            )
+        }
         player = runCatching {
             MediaPlayer().apply {
                 setAudioAttributes(

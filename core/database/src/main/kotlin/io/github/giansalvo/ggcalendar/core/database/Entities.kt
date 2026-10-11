@@ -176,6 +176,7 @@ data class ReminderRow(
     val allDay: Boolean,
     val title: String,
     val location: String,
+    val description: String,
     val meetLink: String?,
     val iCalUid: String?,
     val reminders: List<Reminder>?,

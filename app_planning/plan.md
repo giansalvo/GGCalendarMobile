@@ -425,8 +425,9 @@ Stato del PC (verificato l'11/10/2026): Git c'è; mancano Android Studio, Androi
 **Obiettivo** (richiesta dell'11/10/2026): una nuova vista che unisce Mese e lista, e un APK di prova firmato che si può mandare ad altri telefoni (anche con WhatsApp) per provare l'app prima di passare per la piattaforma Google ufficiale.
 
 **1. Vista "Mese + lista"**
-- Interpretazione da confermare: in alto la griglia del mese (compatta, con un pallino colorato nei giorni con eventi, come il mini-calendario), sotto l'elenco degli eventi del giorno selezionato in stile Programma. Come la vista mese di Google Calendar su telefono. Il Mese pieno con i chip dei titoli e il Programma restano.
-- Tocco su un giorno: seleziona il giorno e aggiorna l'elenco; scorrimento orizzontale della griglia: cambia mese; tocco su un evento: dettaglio; "+" crea un evento nel giorno scelto.
+- Descrizione e mockup (`img/vista_mese_e_lista_giuli.jpeg`, indicati il 11/10/2026): in alto il mese selezionato come griglia di numeri senza celle (nome dei giorni sopra, giorni dei mesi vicini sbiaditi, un puntino sotto ogni numero, quello del giorno selezionato in un cerchio, oggi in colore di accento); sotto, separata da una maniglia, la lista degli eventi del giorno selezionato con una intestazione relativa ("Oggi", "Domani", "Tra 4 giorni"). Ogni evento è una scheda arrotondata: a sinistra ora di inizio e di fine una sotto l'altra, una barra verticale del colore del calendario, il titolo (su una riga, troncato) e le etichette (es. "Conflitto"). Per creare un evento si usa il "+" circolare sospeso in basso a destra (sopra la lista), che apre l'editor sul giorno selezionato.
+- Il Mese pieno con i chip dei titoli e il Programma restano.
+- Tocco su un giorno: seleziona il giorno e aggiorna l'elenco; scorrimento orizzontale della griglia: cambia mese; tocco su un evento: dettaglio.
 - Si aggiunge al menu laterale come sesta vista (icona e nome da decidere), riusa `MiniCalendar`, `ScheduleView` e le query di `CalendarViewModel`; l'ultima vista usata la ricorda come le altre.
 - Prova sul Samsung: cambio mese e giorno, elenco dei giorni senza eventi, eventi di tutto il giorno e di più giorni, tema scuro.
 

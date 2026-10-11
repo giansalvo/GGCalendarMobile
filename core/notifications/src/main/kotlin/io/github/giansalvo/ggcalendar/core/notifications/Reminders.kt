@@ -18,5 +18,5 @@ object Reminders {
     /** Google accepts reminders up to four weeks before an event. */
     const val MAX_MINUTES_BEFORE = 40_320L
 
-    val SNOOZE_CHOICES = listOf(5, 10, 15, 30)
+    val SNOOZE_CHOICES = listOf(5, 10, 15, 30, 60)
 }

@@ -16,4 +16,24 @@
         <item quantity="other">%d minuti</item>
     </plurals>
     <string name="now">Ora</string>
+    <string name="notifications_title">Notifiche e sveglie</string>
+    <string name="perm_notifications">Notifiche</string>
+    <string name="perm_notifications_help">Servono per mostrare promemoria e sveglie.</string>
+    <string name="perm_exact">Promemoria puntuali</string>
+    <string name="perm_exact_help">Fa arrivare i promemoria al minuto esatto, anche a schermo spento.</string>
+    <string name="perm_fullscreen">Sveglia sopra il blocco schermo</string>
+    <string name="perm_fullscreen_help">Senza, la sveglia suona e mostra una notifica, ma non apre lo schermo intero.</string>
+    <string name="perm_battery">Batteria: nessuna restrizione</string>
+    <string name="perm_battery_help">Evita che il telefono ritardi i promemoria per risparmiare energia.</string>
+    <string name="samsung_sleeping">Sui Samsung controlla anche Impostazioni > Batteria > Limiti di utilizzo in background: GGCalendar non deve essere tra le app in sospensione o in sospensione profonda.</string>
+    <string name="open_battery_settings">Apri le impostazioni della batteria</string>
+    <string name="fix">Sistema</string>
+    <string name="alarm_duration">Durata della sveglia</string>
+    <string name="alarm_duration_help">Una sveglia che nessuno chiude si ferma da sola dopo questo tempo e lascia una notifica di "sveglia persa".</string>
+    <string name="warning_notifications_off">Le notifiche sono disattivate: questo promemoria non verrà mostrato.</string>
+    <string name="warning_exact_off">Le sveglie esatte non sono consentite: questo promemoria potrebbe arrivare in ritardo.</string>
+    <string name="stop_alarm">Ferma la sveglia</string>
+    <string name="alarm_help">Ferma spegne la suoneria e chiude la sveglia. Posticipa la fa suonare di nuovo dopo il tempo scelto.</string>
+    <string name="snooze_for">Posticipa di</string>
+    <string name="snooze_choice">%d min</string>
 </resources>

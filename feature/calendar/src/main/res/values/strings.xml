@@ -28,4 +28,5 @@
         <item quantity="one">%d change not yet sent to Google</item>
         <item quantity="other">%d changes not yet sent to Google</item>
     </plurals>
+    <string name="notifications_alarms">Notifications and alarms</string>
 </resources>

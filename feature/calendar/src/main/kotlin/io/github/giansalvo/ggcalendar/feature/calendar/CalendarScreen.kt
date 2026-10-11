@@ -30,7 +30,9 @@ import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.PersonAdd
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Refresh
+import io.github.giansalvo.ggcalendar.core.notifications.NotificationsSheet
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DrawerValue
@@ -101,6 +103,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
     var miniOpen by rememberSaveable { mutableStateOf(false) }
+    var notificationsOpen by rememberSaveable { mutableStateOf(false) }
 
     val pickAccount = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         viewModel.onAccountChosen(it.resultCode, it.data)
@@ -153,6 +156,10 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                 },
                 onToggleCalendar = viewModel::toggleCalendar,
                 onAddAccount = { pickAccount.launch(viewModel.chooseAccountIntent()) },
+                onNotifications = {
+                    notificationsOpen = true
+                    scope.launch { drawerState.close() }
+                },
             )
         },
     ) {
@@ -244,6 +251,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
             onEdit = { detail, shown -> viewModel.openEditor(EditorRequest.Edit(detail.event.id, shown.occurrence())) },
         )
     }
+    if (notificationsOpen) NotificationsSheet(onDismiss = { notificationsOpen = false })
     if (state.pendingMove != null) {
         SeriesScopeDialog(deleting = false, onDismiss = { viewModel.confirmMove(null) }, onConfirm = viewModel::confirmMove)
     }
@@ -322,6 +330,7 @@ private fun CalendarDrawer(
     onRefresh: () -> Unit,
     onToggleCalendar: (String, Boolean) -> Unit,
     onAddAccount: () -> Unit,
+    onNotifications: () -> Unit,
 ) {
     ModalDrawerSheet {
         Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 12.dp)) {
@@ -344,6 +353,12 @@ private fun CalendarDrawer(
                 label = { Text(stringResource(R.string.refresh)) },
                 selected = false,
                 onClick = onRefresh,
+            )
+            NavigationDrawerItem(
+                icon = { Icon(Icons.Outlined.Notifications, contentDescription = null) },
+                label = { Text(stringResource(R.string.notifications_alarms)) },
+                selected = false,
+                onClick = onNotifications,
             )
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             state.accounts.forEach { account ->

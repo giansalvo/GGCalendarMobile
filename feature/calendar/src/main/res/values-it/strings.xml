@@ -27,4 +27,5 @@
         <item quantity="one">%d modifica non ancora inviata a Google</item>
         <item quantity="other">%d modifiche non ancora inviate a Google</item>
     </plurals>
+    <string name="notifications_alarms">Notifiche e sveglie</string>
 </resources>

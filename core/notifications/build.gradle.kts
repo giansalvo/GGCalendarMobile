@@ -15,6 +15,8 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures { compose = true }
+    // The library has no targetSdk of its own: lint must judge the permissions against the app's.
+    lint { targetSdk = 36 }
 }
 
 kotlin {

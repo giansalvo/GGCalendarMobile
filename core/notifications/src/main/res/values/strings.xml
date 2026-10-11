@@ -16,4 +16,24 @@
         <item quantity="other">%d minutes</item>
     </plurals>
     <string name="now">Now</string>
+    <string name="notifications_title">Notifications and alarms</string>
+    <string name="perm_notifications">Notifications</string>
+    <string name="perm_notifications_help">Needed to show reminders and alarms.</string>
+    <string name="perm_exact">Reminders on time</string>
+    <string name="perm_exact_help">Lets reminders arrive at the exact minute, also with the screen off.</string>
+    <string name="perm_fullscreen">Alarm over the lock screen</string>
+    <string name="perm_fullscreen_help">Without it an alarm rings and shows a notification, but does not open the full screen.</string>
+    <string name="perm_battery">Battery: no restrictions</string>
+    <string name="perm_battery_help">Keeps the phone from delaying reminders to save power.</string>
+    <string name="samsung_sleeping">On Samsung phones also check Settings > Battery > Background usage limits: GGCalendar must not be among the sleeping or deep sleeping apps.</string>
+    <string name="open_battery_settings">Open battery settings</string>
+    <string name="fix">Fix</string>
+    <string name="alarm_duration">Alarm duration</string>
+    <string name="alarm_duration_help">An alarm that nobody closes stops by itself after this time and leaves a "missed alarm" notification.</string>
+    <string name="warning_notifications_off">Notifications are turned off: this reminder will not show.</string>
+    <string name="warning_exact_off">Exact alarms are not allowed: this reminder may arrive late.</string>
+    <string name="stop_alarm">Stop alarm</string>
+    <string name="alarm_help">Stop turns the sound off and closes the alarm. Snooze rings again after the chosen time.</string>
+    <string name="snooze_for">Snooze for</string>
+    <string name="snooze_choice">%d min</string>
 </resources>

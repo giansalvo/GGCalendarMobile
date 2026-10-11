@@ -27,7 +27,7 @@ class ReminderCalculatorTest {
         organizer: String? = null,
         attendees: List<Attendee> = emptyList(),
     ) = ReminderRow(
-        eventId = id, beginUtc = begin, endUtc = end, allDay = false, title = "T", location = "", meetLink = null,
+        eventId = id, beginUtc = begin, endUtc = end, allDay = false, title = "T", location = "", description = "", meetLink = null,
         iCalUid = uid, reminders = if (own) reminders.toList() else null, hasAlarm = hasAlarm, organizerEmail = organizer,
         attendees = attendees, defaultReminders = defaults, accountEmail = account, calendarRemoteId = account,
     )
