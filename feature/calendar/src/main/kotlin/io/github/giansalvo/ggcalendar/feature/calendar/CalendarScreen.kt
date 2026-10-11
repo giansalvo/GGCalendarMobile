@@ -112,6 +112,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
     var notificationsOpen by rememberSaveable { mutableStateOf(false) }
     var alarmsOpen by rememberSaveable { mutableStateOf(false) }
     var aboutOpen by rememberSaveable { mutableStateOf(false) }
+    var searchOpen by rememberSaveable { mutableStateOf(false) }
 
     val pickAccount = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         viewModel.onAccountChosen(it.resultCode, it.data)
@@ -196,6 +197,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                     },
                     onToday = viewModel::goToToday,
                     onSync = viewModel::refresh,
+                    onSearch = { searchOpen = true },
                 )
             },
             floatingActionButton = {
@@ -305,6 +307,9 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
     }
     if (notificationsOpen) NotificationsSheet(onDismiss = { notificationsOpen = false })
     if (aboutOpen) AboutSheet(onDismiss = { aboutOpen = false })
+    if (searchOpen) {
+        SearchScreen(search = viewModel::search, onOpen = viewModel::openEvent, onClose = { searchOpen = false })
+    }
     if (state.pendingMove != null) {
         SeriesScopeDialog(deleting = false, onDismiss = { viewModel.confirmMove(null) }, onConfirm = viewModel::confirmMove)
     }
@@ -315,7 +320,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CalendarTopBar(state: CalendarUiState, miniOpen: Boolean, onMenu: () -> Unit, onTitle: () -> Unit, onToday: () -> Unit, onSync: () -> Unit) {
+private fun CalendarTopBar(state: CalendarUiState, miniOpen: Boolean, onMenu: () -> Unit, onTitle: () -> Unit, onToday: () -> Unit, onSync: () -> Unit, onSearch: () -> Unit) {
     val locale = Locale.getDefault()
     val month = state.date.month.getDisplayName(TextStyle.FULL_STANDALONE, locale).replaceFirstChar { it.titlecase(locale) }
     val title = if (state.date.year == LocalDate.now().year) month else "$month ${state.date.year}"
@@ -333,7 +338,7 @@ private fun CalendarTopBar(state: CalendarUiState, miniOpen: Boolean, onMenu: ()
             }
         },
         actions = {
-            IconButton(onClick = { /* Search: later milestone */ }) {
+            IconButton(onClick = onSearch) {
                 Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.search))
             }
             if (state.pending > 0) {

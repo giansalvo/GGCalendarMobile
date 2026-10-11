@@ -184,6 +184,32 @@ interface InstanceDao {
     )
     fun observeRange(fromDay: Long, toDay: Long): Flow<List<InstanceRow>>
 
+    /**
+     * Occurrences of the visible calendars whose event matches [pattern] (a LIKE pattern, `!` escapes) in title, place,
+     * description or guests (names and emails), soonest first; only the days the instances table covers.
+     */
+    @Query(
+        """
+        SELECT i.event_id AS eventId, e.calendar_id AS calendarId, e.title AS title, e.location AS location,
+               COALESCE(e.color, c.color) AS colorHex, i.all_day AS allDay, i.begin_utc AS beginUtc, i.end_utc AS endUtc,
+               i.start_day AS startDay, i.end_day AS endDay,
+               (e.meet_link IS NOT NULL OR e.add_meet) AS hasMeet, e.has_alarm AS hasAlarm,
+               (e.rrule IS NOT NULL OR e.series_master_id IS NOT NULL) AS isRecurring,
+               (e.event_type = 'birthday') AS isBirthday,
+               (c.access_role IN ('owner', 'writer') AND e.event_type = 'default' AND (e.organizer_email IS NULL
+                   OR e.organizer_email IN (c.remote_id, c.account_email) OR e.guests_can_modify)) AS canWrite
+        FROM instances i
+        JOIN events e ON e.id = i.event_id
+        JOIN calendars c ON c.id = e.calendar_id
+        WHERE c.is_visible = 1 AND e.is_cancelled = 0
+          AND (e.title LIKE :pattern ESCAPE '!' OR e.location LIKE :pattern ESCAPE '!'
+               OR e.description LIKE :pattern ESCAPE '!' OR e.attendees LIKE :pattern ESCAPE '!')
+        ORDER BY i.begin_utc, e.title
+        LIMIT :limit
+        """,
+    )
+    suspend fun search(pattern: String, limit: Int): List<InstanceRow>
+
     /** One occurrence, also of a hidden calendar (a reminder opens it). */
     @Query(
         """

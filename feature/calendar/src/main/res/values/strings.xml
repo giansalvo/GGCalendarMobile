@@ -42,6 +42,11 @@
         <item quantity="one">%d day ago</item>
         <item quantity="other">%d days ago</item>
     </plurals>
+    <string name="search_hint">Search events</string>
+    <string name="search_prompt">Type to search title, place, description or guests</string>
+    <string name="search_empty">No events found</string>
+    <string name="back">Back</string>
+    <string name="clear">Clear</string>
     <string name="about">About</string>
     <string name="about_tagline">A calendar for Android, in sync with Google Calendar</string>
     <string name="about_author">Author</string>

@@ -60,6 +60,14 @@ class CalendarRepository @Inject constructor(
         }.collect { send(it) }
     }
 
+    /** Occurrences matching [query] in title, place, description or guests (visible calendars, works offline). */
+    suspend fun search(query: String, limit: Int = 300): List<EventInstance> {
+        val text = query.trim()
+        if (text.isEmpty()) return emptyList()
+        val escaped = text.replace("!", "!!").replace("%", "!%").replace("_", "!_")
+        return db.instanceDao().search("%$escaped%", limit).map { it.toInstance() }
+    }
+
     /** The occurrence of [eventId] starting at [beginUtc], from any calendar (a reminder notification opens it). */
     suspend fun instance(eventId: String, beginUtc: Long): EventInstance? = db.instanceDao().get(eventId, beginUtc)?.toInstance()
 

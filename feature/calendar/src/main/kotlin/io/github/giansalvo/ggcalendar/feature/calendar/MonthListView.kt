@@ -87,7 +87,7 @@ internal fun MonthListView(
 }
 
 @Composable
-private fun EventCard(instance: EventInstance, onClick: () -> Unit) {
+internal fun EventCard(instance: EventInstance, onClick: () -> Unit) {
     val context = LocalContext.current
     val time = remember(context) { DateFormat.getTimeFormat(context) }
     Row(

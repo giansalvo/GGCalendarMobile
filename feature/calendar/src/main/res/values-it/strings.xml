@@ -41,6 +41,11 @@
         <item quantity="one">%d giorno fa</item>
         <item quantity="other">%d giorni fa</item>
     </plurals>
+    <string name="search_hint">Cerca eventi</string>
+    <string name="search_prompt">Scrivi per cercare in titolo, luogo, descrizione o invitati</string>
+    <string name="search_empty">Nessun evento trovato</string>
+    <string name="back">Indietro</string>
+    <string name="clear">Cancella</string>
     <string name="about">Informazioni</string>
     <string name="about_tagline">Un calendario per Android, sincronizzato con Google Calendar</string>
     <string name="about_author">Autore</string>

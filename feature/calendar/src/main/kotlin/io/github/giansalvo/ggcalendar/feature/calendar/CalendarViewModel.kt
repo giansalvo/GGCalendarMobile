@@ -190,6 +190,8 @@ class CalendarViewModel @Inject constructor(
         viewModelScope.launch { repository.instance(link.eventId, link.beginUtc)?.let { openEvent(it) } }
     }
 
+    suspend fun search(query: String): List<EventInstance> = repository.search(query)
+
     fun openEvent(instance: EventInstance?) = transient.update { it.copy(selected = instance) }
 
     /** A drag in a time grid ended: save the new times, asking the scope first for a series. */
