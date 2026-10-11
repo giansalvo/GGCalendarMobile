@@ -3,7 +3,10 @@ name: CI
 on:
   push:
     branches: [main]
+    # The plan, mockups and other documents do not affect the build.
+    paths-ignore: ["app_planning/**", "**.md", "img/**"]
   pull_request:
+    paths-ignore: ["app_planning/**", "**.md", "img/**"]
 
 concurrency:
   group: ci-${{ github.ref }}
