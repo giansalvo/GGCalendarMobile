@@ -15,7 +15,10 @@ import javax.inject.Singleton
 
 /** An event with its calendar and, for a modified occurrence, the series it belongs to. */
 data class EventDetail(val event: EventEntity, val calendar: CalendarEntity, val series: EventEntity?) {
-    val canWrite: Boolean get() = calendar.canWrite && event.eventType == "default"
+    /** A writable calendar, an ordinary event, and the organizer is this calendar (or guests may modify it). */
+    val canWrite: Boolean
+        get() = calendar.canWrite && event.eventType == "default" &&
+            (event.organizerEmail == null || event.organizerEmail == calendar.remoteId || event.organizerEmail == calendar.accountEmail || event.guestsCanModify)
 }
 
 /** Events for the detail sheet and the editor; changes go through [EventWriter]. */
