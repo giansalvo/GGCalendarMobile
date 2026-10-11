@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -154,7 +156,8 @@ fun EventEditorSheet(
         onDismissRequest = onDismiss,
         sheetState = sheet,
         dragHandle = null,
-        contentWindowInsets = { androidx.compose.foundation.layout.WindowInsets(0) },
+        // Keep the content above Android's navigation buttons.
+        contentWindowInsets = { WindowInsets.navigationBars },
     ) {
         val draft = viewModel.draft
         val calendars by viewModel.calendars.collectAsStateWithLifecycle()
@@ -220,7 +223,7 @@ private fun EditorFields(
     val locale = Locale.getDefault()
     var picking by remember { mutableStateOf<Picker?>(null) }
 
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(bottom = 24.dp)) {
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
         TextField(
             value = draft.title,
             onValueChange = { v -> update { it.copy(title = v) } },
