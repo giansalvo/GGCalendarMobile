@@ -92,6 +92,16 @@ class ReminderEngine @Inject constructor(
         scheduler.reschedule()
     }
 
+    /**
+     * Closes an alarm before it rings (the event stays): a planned one is marked as shown, so that it is neither
+     * registered again nor caught up; a snooze is forgotten. The alarm registered with AlarmManager is cancelled.
+     */
+    suspend fun skip(alarm: ActiveAlarm) {
+        val snoozeId = alarm.snoozeId
+        if (snoozeId != null) dao.deleteSnoozed(snoozeId) else dao.insertFired(ReminderFiredEntity(alarm.key, alarm.fireAt))
+        scheduler.reschedule()
+    }
+
     /** The user closed the reminder: its notification goes away and, for an alarm, the ringing stops. */
     fun dismiss(alert: ReminderAlert) {
         notifier.cancel(alert)

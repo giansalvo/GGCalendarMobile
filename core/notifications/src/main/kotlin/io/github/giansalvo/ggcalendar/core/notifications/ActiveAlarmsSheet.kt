@@ -13,7 +13,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Alarm
+import androidx.compose.material.icons.outlined.AlarmOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -22,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -39,12 +44,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
-class ActiveAlarmsViewModel @Inject constructor(private val scheduler: ReminderScheduler) : ViewModel() {
+class ActiveAlarmsViewModel @Inject constructor(private val scheduler: ReminderScheduler, private val engine: ReminderEngine) : ViewModel() {
     suspend fun load(): List<ActiveAlarm> = scheduler.upcomingAlarms()
+
+    suspend fun skip(alarm: ActiveAlarm) = engine.skip(alarm)
 }
 
 /** "Active alarms": the alarms that will ring in the coming weeks, with when, for which event and how long is left. */
@@ -53,6 +61,8 @@ class ActiveAlarmsViewModel @Inject constructor(private val scheduler: ReminderS
 fun ActiveAlarmsSheet(onDismiss: () -> Unit, onOpenEvent: (eventId: String, beginUtc: Long) -> Unit, viewModel: ActiveAlarmsViewModel = hiltViewModel()) {
     var alarms by remember { mutableStateOf<List<ActiveAlarm>?>(null) }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    var closing by remember { mutableStateOf<ActiveAlarm?>(null) }
+    val scope = rememberCoroutineScope()
     // The list is read again every minute (an alarm that rang leaves it); the time left follows the clock more often.
     LaunchedEffect(Unit) {
         while (true) {
@@ -65,6 +75,23 @@ fun ActiveAlarmsSheet(onDismiss: () -> Unit, onOpenEvent: (eventId: String, begi
             now = System.currentTimeMillis()
             delay(15_000)
         }
+    }
+    closing?.let { alarm ->
+        AlertDialog(
+            onDismissRequest = { closing = null },
+            title = { Text(stringResource(R.string.close_alarm_title)) },
+            text = { Text(stringResource(R.string.close_alarm_text, alarm.title.ifBlank { stringResource(R.string.alarm_title) })) },
+            confirmButton = {
+                TextButton(onClick = {
+                    closing = null
+                    scope.launch {
+                        viewModel.skip(alarm)
+                        alarms = viewModel.load()
+                    }
+                }) { Text(stringResource(R.string.close_alarm)) }
+            },
+            dismissButton = { TextButton(onClick = { closing = null }) { Text(stringResource(R.string.keep_alarm)) } },
+        )
     }
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp)) {
@@ -80,10 +107,14 @@ fun ActiveAlarmsSheet(onDismiss: () -> Unit, onOpenEvent: (eventId: String, begi
             }
             LazyColumn(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(0.dp)) {
                 items(list.orEmpty(), key = { it.fireAt.toString() + it.eventId + it.minutesBefore + it.snoozed }) { alarm ->
-                    AlarmRow(alarm, now) {
-                        onOpenEvent(alarm.eventId, alarm.beginUtc)
-                        onDismiss()
-                    }
+                    AlarmRow(
+                        alarm, now,
+                        onClick = {
+                            onOpenEvent(alarm.eventId, alarm.beginUtc)
+                            onDismiss()
+                        },
+                        onClose = { closing = alarm },
+                    )
                     HorizontalDivider()
                 }
             }
@@ -92,7 +123,7 @@ fun ActiveAlarmsSheet(onDismiss: () -> Unit, onOpenEvent: (eventId: String, begi
 }
 
 @Composable
-private fun AlarmRow(alarm: ActiveAlarm, now: Long, onClick: () -> Unit) {
+private fun AlarmRow(alarm: ActiveAlarm, now: Long, onClick: () -> Unit, onClose: () -> Unit) {
     val context = LocalContext.current
     val whenText = DateUtils.formatDateTime(
         context, alarm.fireAt,
@@ -118,6 +149,7 @@ private fun AlarmRow(alarm: ActiveAlarm, now: Long, onClick: () -> Unit) {
             Text(details, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Text(remaining(alarm.fireAt - now), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(start = 12.dp))
+        IconButton(onClick = onClose) { Icon(Icons.Outlined.AlarmOff, contentDescription = stringResource(R.string.close_alarm)) }
     }
 }
 

@@ -50,4 +50,8 @@
     <string name="remaining_minutes">%d min</string>
     <string name="remaining_hours_minutes">%d h %d min</string>
     <string name="remaining_days_hours">%d d %d h</string>
+    <string name="close_alarm_title">Cancel this alarm?</string>
+    <string name="close_alarm_text">The alarm for "%s" will not ring. The event stays in the calendar.</string>
+    <string name="close_alarm">Cancel alarm</string>
+    <string name="keep_alarm">Keep</string>
 </resources>

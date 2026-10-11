@@ -117,6 +117,25 @@ class ReminderEngineTest {
     }
 
     @Test
+    fun closingAnAlarmEarlyRemovesItFromTheListAndFromAlarmManager() = runTest {
+        val now = System.currentTimeMillis()
+        addEvent("x", now + 100 * minute, now + 160 * minute, Reminder(ReminderMethod.ALARM, 10), Reminder(ReminderMethod.ALARM, 30))
+        scheduler.reschedule(now)
+        val alarms = shadowOf(context.getSystemService(android.app.AlarmManager::class.java))
+        assertEquals(2, alarms.scheduledAlarms.size)
+        val first = scheduler.upcomingAlarms(now).first() // the 30-minute one, ringing first
+        assertEquals(30, first.minutesBefore)
+        engine.skip(first)
+        assertEquals(listOf(10), scheduler.upcomingAlarms(now).map { it.minutesBefore })
+        assertEquals(1, alarms.scheduledAlarms.size)
+        // A snoozed alarm can be closed too.
+        engine.snooze(ReminderAlert(first.key, "x", now + 100 * minute, now + 160 * minute, false, "T", "", "", null, ReminderMethod.ALARM, 10), 5)
+        val snoozed = scheduler.upcomingAlarms().first { it.snoozed }
+        engine.skip(snoozed)
+        assertTrue(scheduler.upcomingAlarms().none { it.snoozed })
+    }
+
+    @Test
     fun theNextRemindersAreRegisteredWithAlarmManager() = runTest {
         val now = System.currentTimeMillis()
         addEvent("n", now + 60 * minute, now + 120 * minute, Reminder(ReminderMethod.POPUP, 10), Reminder(ReminderMethod.ALARM, 30))

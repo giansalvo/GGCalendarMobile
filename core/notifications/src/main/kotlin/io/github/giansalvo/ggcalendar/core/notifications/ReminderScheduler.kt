@@ -58,10 +58,12 @@ class ReminderScheduler @Inject constructor(
         val due = ReminderCalculator.due(rows, now, until).filter { it.reminder.method == ReminderMethod.ALARM }
         val fired = due.map { it.key }.chunked(500).flatMap { dao.fired(it) }.toSet()
         val planned = due.filter { it.key !in fired }.map {
-            ActiveAlarm(it.fireAt, it.row.eventId, it.row.beginUtc, it.row.title, it.reminder.minutes, snoozed = false, allDay = it.row.allDay)
+            ActiveAlarm(it.key, null, it.fireAt, it.row.eventId, it.row.beginUtc, it.row.title, it.reminder.minutes, snoozed = false, allDay = it.row.allDay)
         }
         val snoozed = dao.snoozed().filter { it.method == ReminderMethod.ALARM.name }.mapNotNull { s ->
-            dao.row(s.eventId, s.beginUtc)?.let { ActiveAlarm(maxOf(s.fireAt, now), it.eventId, it.beginUtc, it.title, s.minutes, snoozed = true, allDay = it.allDay) }
+            dao.row(s.eventId, s.beginUtc)?.let {
+                ActiveAlarm(ReminderEngine.snoozeKey(s.id), s.id, maxOf(s.fireAt, now), it.eventId, it.beginUtc, it.title, s.minutes, snoozed = true, allDay = it.allDay)
+            }
         }
         return (planned + snoozed).sortedBy { it.fireAt }.take(MAX_ACTIVE_ALARMS)
     }
@@ -101,6 +103,10 @@ class ReminderScheduler @Inject constructor(
 
 /** An alarm that has not rung yet: when it rings (fireAt), for which occurrence, and how long before it starts. */
 data class ActiveAlarm(
+    /** Key of the reminder (DueReminder.key), or of the snooze. */
+    val key: String,
+    /** Id of the snooze row, for a snoozed alarm. */
+    val snoozeId: Long?,
     val fireAt: Long,
     val eventId: String,
     val beginUtc: Long,
