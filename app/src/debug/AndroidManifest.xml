@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Experiment on direct boot (debug builds only): see BootProbe.kt. -->
+    <application>
+        <receiver
+            android:name=".BootProbeReceiver"
+            android:directBootAware="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name=".BootProbeAlarmReceiver"
+            android:directBootAware="true"
+            android:exported="false" />
+    </application>
+</manifest>

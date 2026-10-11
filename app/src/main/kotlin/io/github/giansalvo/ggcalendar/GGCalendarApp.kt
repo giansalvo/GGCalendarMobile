@@ -1,6 +1,12 @@
 package io.github.giansalvo.ggcalendar
 
 import android.app.Application
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.UserManager
+import androidx.core.content.ContextCompat
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
@@ -16,9 +22,10 @@ import javax.inject.Inject
 class GGCalendarApp : Application(), Configuration.Provider {
     @Inject lateinit var workerFactory: HiltWorkerFactory
 
-    @Inject lateinit var repository: CalendarRepository
+    // Lazy: before the first unlock (direct boot) nothing that opens the normal storage may be created.
+    @Inject lateinit var repository: dagger.Lazy<CalendarRepository>
 
-    @Inject lateinit var reminders: ReminderStartup
+    @Inject lateinit var reminders: dagger.Lazy<ReminderStartup>
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder().setWorkerFactory(workerFactory).build()
@@ -27,9 +34,29 @@ class GGCalendarApp : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
-        repository.schedulePeriodicSync()
-        reminders.start()
+        // A direct boot aware component also starts the app before the first unlock, when the normal storage (Room,
+        // WorkManager) does not exist yet: the setup waits for the unlock.
+        if (getSystemService(UserManager::class.java).isUserUnlocked) {
+            start()
+        } else {
+            ContextCompat.registerReceiver(
+                this,
+                object : BroadcastReceiver() {
+                    override fun onReceive(context: Context, intent: Intent) {
+                        unregisterReceiver(this)
+                        start()
+                    }
+                },
+                IntentFilter(Intent.ACTION_USER_UNLOCKED),
+                ContextCompat.RECEIVER_NOT_EXPORTED,
+            )
+        }
+    }
+
+    private fun start() {
+        repository.get().schedulePeriodicSync()
+        reminders.get().start()
         // First start of the day or after a change of time zone while the app was closed.
-        scope.launch { repository.refreshInstances() }
+        scope.launch { repository.get().refreshInstances() }
     }
 }
