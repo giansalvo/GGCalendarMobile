@@ -49,6 +49,7 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -104,9 +105,10 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
             consent.launch(IntentSenderRequest.Builder(it.intentSender).build())
         }
     }
+    val okText = stringResource(android.R.string.ok)
     LaunchedEffect(state.error) {
         state.error?.let {
-            snackbar.showSnackbar(it)
+            snackbar.showSnackbar(it, actionLabel = okText, withDismissAction = true, duration = SnackbarDuration.Indefinite)
             viewModel.dismissError()
         }
     }
@@ -116,8 +118,14 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
         val message = state.message ?: return@LaunchedEffect
         val isAuth = message.kind == "auth"
         val text = if (isAuth) authText.format(message.accountEmail) else message.text
-        val result = snackbar.showSnackbar(text, actionLabel = if (isAuth) authAction else null, withDismissAction = !isAuth)
-        if (result == SnackbarResult.ActionPerformed) message.accountEmail?.let(viewModel::reauthorize)
+        // Conflicts and errors stay until the user closes them: they explain what happened to an edit.
+        val result = snackbar.showSnackbar(
+            text,
+            actionLabel = if (isAuth) authAction else okText,
+            withDismissAction = true,
+            duration = SnackbarDuration.Indefinite,
+        )
+        if (result == SnackbarResult.ActionPerformed && isAuth) message.accountEmail?.let(viewModel::reauthorize)
         viewModel.dismissMessage(message.id)
     }
 
