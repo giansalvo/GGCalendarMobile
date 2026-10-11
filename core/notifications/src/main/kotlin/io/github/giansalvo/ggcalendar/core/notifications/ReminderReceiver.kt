@@ -63,12 +63,13 @@ class ReminderReceiver : BroadcastReceiver() {
                 engine.restoreAfterBoot()
                 scheduler.reschedule()
             }
-            Intent.ACTION_TIMEZONE_CHANGED -> {
-                // The days of the instances depend on the zone; the reminders follow the new instances.
+            Intent.ACTION_TIMEZONE_CHANGED, Intent.ACTION_TIME_CHANGED -> {
+                // The days of the instances depend on the zone, and a change of zone also arrives as a change of time:
+                // both wait for the instances to be rebuilt (it does nothing if they are up to date), then the
+                // reminders follow the new instances.
                 hilt.repository().refreshInstances()
                 scheduler.reschedule()
             }
-            Intent.ACTION_TIME_CHANGED -> scheduler.reschedule()
         }
     }
 }

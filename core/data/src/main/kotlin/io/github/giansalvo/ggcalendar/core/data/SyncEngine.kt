@@ -177,23 +177,28 @@ class SyncEngine @Inject constructor(
 
     private suspend fun updateWindowLocked(from: LocalDate?, to: LocalDate?) {
         val plan = InstanceWindows.plan(window ?: prefs.instanceWindow(), LocalDate.now(), ZoneId.systemDefault().id, from, to)
-        window = plan.window
-        if (plan.scope == InstanceWindows.Scope.NONE) return
+        if (plan.scope == InstanceWindows.Scope.NONE) {
+            window = plan.window
+            return
+        }
         db.withTransaction {
             val ids = if (plan.scope == InstanceWindows.Scope.ALL) events.masterIds() else events.seriesIds()
-            ids.forEach { recomputeInstances(it) }
+            ids.forEach { recomputeInstances(it, plan.window) }
         }
         prefs.setInstanceWindow(plan.window)
+        // Published only when the instances are rebuilt: a concurrent caller (the time zone change reaches two
+        // receivers) must not see the new window and go on with the old instances.
+        window = plan.window
     }
 
     /** Rebuilds the instances of an event after a local change (see [EventWriter]). */
     suspend fun recompute(eventId: String) = db.withTransaction { recomputeInstances(eventId) }
 
     /** Rebuilds the instances of an event and of its exceptions (a series' modified or cancelled occurrences). */
-    private suspend fun recomputeInstances(eventId: String) {
+    private suspend fun recomputeInstances(eventId: String, newWindow: InstanceWindow? = null) {
         val event = events.get(eventId) ?: return
         val zone = ZoneId.systemDefault()
-        val days = window ?: InstanceWindows.default(LocalDate.now(), zone.id)
+        val days = newWindow ?: window ?: InstanceWindows.default(LocalDate.now(), zone.id)
         val range = RecurrenceExpander.Window(days.from.atStartOfDay(zone).toInstant(), days.to.atStartOfDay(zone).toInstant())
         val exceptions = if (event.rrule != null) events.getExceptions(eventId) else emptyList()
         instances.deleteForEvent(eventId)
