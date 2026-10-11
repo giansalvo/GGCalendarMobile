@@ -28,7 +28,7 @@
         <item quantity="other">%d modifiche non ancora inviate a Google</item>
     </plurals>
     <string name="notifications_alarms">Notifiche e sveglie</string>
-    <string name="view_month_list">Mese + lista</string>
+    <string name="view_month_list">Mese + Programma</string>
     <string name="no_events_day">Nessun evento in questo giorno</string>
     <string name="day_today">Oggi</string>
     <string name="day_tomorrow">Domani</string>

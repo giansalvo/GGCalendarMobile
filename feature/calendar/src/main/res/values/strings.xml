@@ -29,7 +29,7 @@
         <item quantity="other">%d changes not yet sent to Google</item>
     </plurals>
     <string name="notifications_alarms">Notifications and alarms</string>
-    <string name="view_month_list">Month + list</string>
+    <string name="view_month_list">Month + Schedule</string>
     <string name="no_events_day">No events this day</string>
     <string name="day_today">Today</string>
     <string name="day_tomorrow">Tomorrow</string>

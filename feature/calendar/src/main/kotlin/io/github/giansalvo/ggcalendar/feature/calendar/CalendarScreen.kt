@@ -56,6 +56,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
@@ -84,6 +85,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.giansalvo.ggcalendar.core.model.CalendarInfo
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
 
@@ -103,6 +105,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
     var miniOpen by rememberSaveable { mutableStateOf(false) }
+    var yearPickerOpen by rememberSaveable { mutableStateOf(false) }
     var notificationsOpen by rememberSaveable { mutableStateOf(false) }
 
     val pickAccount = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -170,6 +173,11 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                     onMenu = { scope.launch { drawerState.open() } },
                     miniOpen = miniOpen,
                     onTitle = {
+                        // The month + schedule view already swipes between months: the title only picks the year.
+                        if (state.view == CalendarView.MONTH_LIST) {
+                            yearPickerOpen = true
+                            return@CalendarTopBar
+                        }
                         miniOpen = !miniOpen
                         if (!miniOpen) viewModel.showMiniMonth(null)
                     },
@@ -256,6 +264,24 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
             instance = instance,
             onDismiss = { viewModel.openEvent(null) },
             onEdit = { detail, shown -> viewModel.openEditor(EditorRequest.Edit(detail.event.id, shown.occurrence())) },
+        )
+    }
+    if (yearPickerOpen) {
+        val shown = YearMonth.from(state.date)
+        AlertDialog(
+            onDismissRequest = { yearPickerOpen = false },
+            confirmButton = { TextButton(onClick = { yearPickerOpen = false }) { Text(stringResource(android.R.string.cancel)) } },
+            title = { Text(stringResource(R.string.choose_year)) },
+            text = {
+                YearGrid(
+                    current = shown.year,
+                    years = (LocalDate.now().year - 99)..(LocalDate.now().year + 99),
+                    onPick = { year ->
+                        yearPickerOpen = false
+                        viewModel.showMonth(YearMonth.of(year, shown.month))
+                    },
+                )
+            },
         )
     }
     if (notificationsOpen) NotificationsSheet(onDismiss = { notificationsOpen = false })

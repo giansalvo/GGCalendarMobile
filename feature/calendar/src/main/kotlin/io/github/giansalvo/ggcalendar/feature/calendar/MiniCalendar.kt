@@ -147,7 +147,7 @@ internal fun MiniCalendar(
 
 /** Years in four columns, opened on the current one; as tall as the month grid it replaces. */
 @Composable
-private fun YearGrid(current: Int, years: IntRange, onPick: (Int) -> Unit) {
+internal fun YearGrid(current: Int, years: IntRange, onPick: (Int) -> Unit) {
     val state = rememberLazyGridState(initialFirstVisibleItemIndex = maxOf(current - years.first - 8, 0))
     LazyVerticalGrid(GridCells.Fixed(4), Modifier.fillMaxWidth().height(284.dp), state = state) {
         items(years.toList()) { year ->
