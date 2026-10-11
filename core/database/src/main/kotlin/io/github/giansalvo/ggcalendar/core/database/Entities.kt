@@ -149,6 +149,44 @@ data class SyncMessageEntity(
     val read: Boolean = false,
 )
 
+/** A reminder already shown, so that it is not shown again (also after a restart). [key] is DueReminder.key. */
+@Entity(tableName = "reminder_fired")
+data class ReminderFiredEntity(
+    @PrimaryKey val key: String,
+    @ColumnInfo(name = "fire_at") val fireAt: Long,
+)
+
+/** A snoozed reminder of one occurrence ([eventId], [beginUtc]), shown again at [fireAt]. */
+@Entity(tableName = "reminder_snoozed")
+data class ReminderSnoozedEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @ColumnInfo(name = "fire_at") val fireAt: Long,
+    @ColumnInfo(name = "event_id") val eventId: String,
+    @ColumnInfo(name = "begin_utc") val beginUtc: Long,
+    /** ReminderMethod name: POPUP or ALARM. */
+    val method: String,
+    val minutes: Int,
+)
+
+/** An occurrence with what is needed to compute and show its reminders, from every calendar (also hidden ones). */
+data class ReminderRow(
+    val eventId: String,
+    val beginUtc: Long,
+    val endUtc: Long,
+    val allDay: Boolean,
+    val title: String,
+    val location: String,
+    val meetLink: String?,
+    val iCalUid: String?,
+    val reminders: List<Reminder>?,
+    val hasAlarm: Boolean,
+    val organizerEmail: String?,
+    val attendees: List<Attendee>,
+    val defaultReminders: List<Reminder>,
+    val accountEmail: String?,
+    val calendarRemoteId: String?,
+)
+
 /** Row of the views' query: an instance joined with its event and calendar. */
 data class InstanceRow(
     val eventId: String,

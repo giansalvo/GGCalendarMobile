@@ -85,9 +85,18 @@ import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
 
+/** An occurrence to open on arrival (the tap on a reminder notification). */
+data class EventLink(val eventId: String, val beginUtc: Long)
+
 @Composable
-fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
+fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, viewModel: CalendarViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    LaunchedEffect(link) {
+        if (link != null) {
+            viewModel.openLink(link)
+            onLinkHandled()
+        }
+    }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }

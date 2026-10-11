@@ -24,9 +24,11 @@ class SyncWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val engine: SyncEngine,
+    private val reminders: ReminderHooks,
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         engine.syncAll()
+        reminders.changed()
         return Result.success()
     }
 }

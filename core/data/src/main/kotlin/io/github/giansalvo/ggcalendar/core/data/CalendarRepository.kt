@@ -9,6 +9,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.github.giansalvo.ggcalendar.core.database.AccountEntity
 import io.github.giansalvo.ggcalendar.core.database.GGCalendarDatabase
+import io.github.giansalvo.ggcalendar.core.database.InstanceRow
 import io.github.giansalvo.ggcalendar.core.database.SyncMessageEntity
 import io.github.giansalvo.ggcalendar.core.model.CalendarInfo
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
@@ -55,17 +56,20 @@ class CalendarRepository @Inject constructor(
     fun instances(from: LocalDate, to: LocalDate): Flow<List<EventInstance>> = channelFlow {
         launch { engine.updateWindow(from, to) }
         db.instanceDao().observeRange(from.toEpochDay(), to.toEpochDay()).map { rows ->
-            rows.map {
-                EventInstance(
-                    eventId = it.eventId, calendarId = it.calendarId, title = it.title, location = it.location,
-                    colorHex = it.colorHex, allDay = it.allDay,
-                    begin = Instant.ofEpochMilli(it.beginUtc), end = Instant.ofEpochMilli(it.endUtc),
-                    startDay = LocalDate.ofEpochDay(it.startDay), endDay = LocalDate.ofEpochDay(it.endDay),
-                    hasMeet = it.hasMeet, hasAlarm = it.hasAlarm, isRecurring = it.isRecurring, isBirthday = it.isBirthday, canWrite = it.canWrite,
-                )
-            }
+            rows.map { it.toInstance() }
         }.collect { send(it) }
     }
+
+    /** The occurrence of [eventId] starting at [beginUtc], from any calendar (a reminder notification opens it). */
+    suspend fun instance(eventId: String, beginUtc: Long): EventInstance? = db.instanceDao().get(eventId, beginUtc)?.toInstance()
+
+    private fun InstanceRow.toInstance() = EventInstance(
+        eventId = eventId, calendarId = calendarId, title = title, location = location,
+        colorHex = colorHex, allDay = allDay,
+        begin = Instant.ofEpochMilli(beginUtc), end = Instant.ofEpochMilli(endUtc),
+        startDay = LocalDate.ofEpochDay(startDay), endDay = LocalDate.ofEpochDay(endDay),
+        hasMeet = hasMeet, hasAlarm = hasAlarm, isRecurring = isRecurring, isBirthday = isBirthday, canWrite = canWrite,
+    )
 
     /** A new day or time zone: move the instance window, rebuilding the instances if needed. */
     suspend fun refreshInstances() = engine.updateWindow()
@@ -98,6 +102,6 @@ object DatabaseModule {
     @Singleton
     fun database(@ApplicationContext context: Context): GGCalendarDatabase =
         Room.databaseBuilder(context, GGCalendarDatabase::class.java, GGCalendarDatabase.NAME)
-            .addMigrations(GGCalendarDatabase.MIGRATION_1_2, GGCalendarDatabase.MIGRATION_2_3, GGCalendarDatabase.MIGRATION_3_4)
+            .addMigrations(GGCalendarDatabase.MIGRATION_1_2, GGCalendarDatabase.MIGRATION_2_3, GGCalendarDatabase.MIGRATION_3_4, GGCalendarDatabase.MIGRATION_4_5)
             .build()
 }

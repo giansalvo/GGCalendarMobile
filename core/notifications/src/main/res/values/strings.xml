@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="channel_reminders">Reminders</string>
+    <string name="channel_alarms">Alarms</string>
+    <string name="channel_missed">Missed alarms</string>
+    <string name="all_day">All day</string>
+    <string name="snooze">Snooze</string>
+    <string name="snooze_minutes">Snooze %d min</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="join_meet">Join with Meet</string>
+    <string name="missed_alarm">Missed alarm</string>
+    <string name="alarm_stops_in">Stops by itself after %d:00</string>
+    <string name="alarm_title">Alarm</string>
+    <plurals name="minutes">
+        <item quantity="one">%d minute</item>
+        <item quantity="other">%d minutes</item>
+    </plurals>
+    <string name="now">Now</string>
+</resources>

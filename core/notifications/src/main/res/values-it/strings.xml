@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="channel_reminders">Promemoria</string>
+    <string name="channel_alarms">Sveglie</string>
+    <string name="channel_missed">Sveglie perse</string>
+    <string name="all_day">Tutto il giorno</string>
+    <string name="snooze">Posticipa</string>
+    <string name="snooze_minutes">Posticipa %d min</string>
+    <string name="dismiss">Chiudi</string>
+    <string name="join_meet">Partecipa con Meet</string>
+    <string name="missed_alarm">Sveglia persa</string>
+    <string name="alarm_stops_in">Si ferma da sola dopo %d:00</string>
+    <string name="alarm_title">Sveglia</string>
+    <plurals name="minutes">
+        <item quantity="one">%d minuto</item>
+        <item quantity="other">%d minuti</item>
+    </plurals>
+    <string name="now">Ora</string>
+</resources>

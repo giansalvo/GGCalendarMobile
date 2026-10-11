@@ -63,6 +63,7 @@ dependencies {
     implementation(project(":core:network"))
     implementation(project(":core:auth"))
     implementation(project(":core:data"))
+    implementation(project(":core:notifications"))
     implementation(project(":feature:calendar"))
     implementation(project(":feature:event"))
     implementation(libs.androidx.hilt.work)

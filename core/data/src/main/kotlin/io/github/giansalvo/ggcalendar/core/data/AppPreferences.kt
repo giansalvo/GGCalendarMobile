@@ -42,6 +42,37 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         val windowTo = longPreferencesKey("instances_to")
         val windowZone = stringPreferencesKey("instances_zone")
         val windowComputedOn = longPreferencesKey("instances_computed_on")
+        val alarmMinutes = intPreferencesKey("alarm_minutes")
+        val reminderLastCheck = longPreferencesKey("reminder_last_check")
+        val askedNotifications = booleanPreferencesKey("asked_notifications")
+    }
+
+    /** How long an alarm rings before it stops by itself and becomes a "missed alarm", in minutes (1 to 10). */
+    val alarmMinutes: Flow<Int> = context.dataStore.data.map { (it[Keys.alarmMinutes] ?: DEFAULT_ALARM_MINUTES).coerceIn(1, 10) }
+
+    suspend fun setAlarmMinutes(minutes: Int) {
+        context.dataStore.edit { it[Keys.alarmMinutes] = minutes.coerceIn(1, 10) }
+    }
+
+    /** Reminders firing up to this time (epoch millis) have been handled; null before the first check. */
+    suspend fun reminderLastCheck(): Long? = context.dataStore.data.first()[Keys.reminderLastCheck]
+
+    suspend fun setReminderLastCheck(at: Long) {
+        context.dataStore.edit { it[Keys.reminderLastCheck] = at }
+    }
+
+    /** The notification permission is asked once by itself; afterwards only from the "Notifications and alarms" screen. */
+    suspend fun askedNotifications(): Boolean = context.dataStore.data.first()[Keys.askedNotifications] == true
+
+    suspend fun setAskedNotifications() {
+        context.dataStore.edit { it[Keys.askedNotifications] = true }
+    }
+
+    companion object {
+        const val DEFAULT_ALARM_MINUTES = 2
+
+        /** Snooze length offered first (5, 15 and 30 from a menu); a setting in M6. */
+        const val DEFAULT_SNOOZE_MINUTES = 10
     }
 
     val view: Flow<ViewPreferences> = context.dataStore.data.map {

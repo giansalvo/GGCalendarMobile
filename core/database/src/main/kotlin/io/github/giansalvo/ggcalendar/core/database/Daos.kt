@@ -118,6 +118,44 @@ interface OutboxDao {
     suspend fun failed(seq: Long, error: String?)
 }
 
+private const val REMINDER_ROW = """
+    SELECT i.event_id AS eventId, i.begin_utc AS beginUtc, i.end_utc AS endUtc, i.all_day AS allDay, e.title AS title,
+           e.location AS location, e.meet_link AS meetLink, e.ical_uid AS iCalUid, e.reminders AS reminders,
+           e.has_alarm AS hasAlarm, e.organizer_email AS organizerEmail, e.attendees AS attendees,
+           c.default_reminders AS defaultReminders, c.account_email AS accountEmail, c.remote_id AS calendarRemoteId
+    FROM instances i
+    JOIN events e ON e.id = i.event_id
+    JOIN calendars c ON c.id = e.calendar_id
+"""
+
+@Dao
+interface ReminderDao {
+    /** Occurrences of every calendar, hidden ones too, not ended by [endAfter] and starting by [beginUntil]. */
+    @Query("$REMINDER_ROW WHERE i.end_utc > :endAfter AND i.begin_utc <= :beginUntil")
+    suspend fun rows(endAfter: Long, beginUntil: Long): List<ReminderRow>
+
+    @Query("$REMINDER_ROW WHERE i.event_id = :eventId AND i.begin_utc = :beginUtc")
+    suspend fun row(eventId: String, beginUtc: Long): ReminderRow?
+
+    @Query("SELECT `key` FROM reminder_fired WHERE `key` IN (:keys)")
+    suspend fun fired(keys: List<String>): List<String>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertFired(fired: ReminderFiredEntity)
+
+    @Query("DELETE FROM reminder_fired WHERE fire_at < :before")
+    suspend fun deleteFiredBefore(before: Long)
+
+    @Insert
+    suspend fun insertSnoozed(snoozed: ReminderSnoozedEntity)
+
+    @Query("SELECT * FROM reminder_snoozed ORDER BY fire_at")
+    suspend fun snoozed(): List<ReminderSnoozedEntity>
+
+    @Query("DELETE FROM reminder_snoozed WHERE id = :id")
+    suspend fun deleteSnoozed(id: Long)
+}
+
 @Dao
 interface InstanceDao {
     @Query("DELETE FROM instances WHERE event_id = :eventId")
@@ -145,6 +183,25 @@ interface InstanceDao {
         """,
     )
     fun observeRange(fromDay: Long, toDay: Long): Flow<List<InstanceRow>>
+
+    /** One occurrence, also of a hidden calendar (a reminder opens it). */
+    @Query(
+        """
+        SELECT i.event_id AS eventId, e.calendar_id AS calendarId, e.title AS title, e.location AS location,
+               COALESCE(e.color, c.color) AS colorHex, i.all_day AS allDay, i.begin_utc AS beginUtc, i.end_utc AS endUtc,
+               i.start_day AS startDay, i.end_day AS endDay,
+               (e.meet_link IS NOT NULL OR e.add_meet) AS hasMeet, e.has_alarm AS hasAlarm,
+               (e.rrule IS NOT NULL OR e.series_master_id IS NOT NULL) AS isRecurring,
+               (e.event_type = 'birthday') AS isBirthday,
+               (c.access_role IN ('owner', 'writer') AND e.event_type = 'default' AND (e.organizer_email IS NULL
+                   OR e.organizer_email IN (c.remote_id, c.account_email) OR e.guests_can_modify)) AS canWrite
+        FROM instances i
+        JOIN events e ON e.id = i.event_id
+        JOIN calendars c ON c.id = e.calendar_id
+        WHERE i.event_id = :eventId AND i.begin_utc = :beginUtc
+        """,
+    )
+    suspend fun get(eventId: String, beginUtc: Long): InstanceRow?
 }
 
 @Dao

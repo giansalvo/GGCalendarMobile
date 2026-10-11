@@ -18,8 +18,10 @@ import kotlinx.serialization.json.Json
         InstanceEntity::class,
         SyncMessageEntity::class,
         OutboxEntity::class,
+        ReminderFiredEntity::class,
+        ReminderSnoozedEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -30,6 +32,7 @@ abstract class GGCalendarDatabase : RoomDatabase() {
     abstract fun instanceDao(): InstanceDao
     abstract fun syncMessageDao(): SyncMessageDao
     abstract fun outboxDao(): OutboxDao
+    abstract fun reminderDao(): ReminderDao
 
     companion object {
         const val NAME = "ggcalendar.db"
@@ -59,6 +62,18 @@ abstract class GGCalendarDatabase : RoomDatabase() {
                         "`attempts` INTEGER NOT NULL, `last_error` TEXT)",
                 )
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_outbox_event_id` ON `outbox` (`event_id`)")
+            }
+        }
+
+        /** v5: reminders already shown and snoozed (milestone M4). */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS `reminder_fired` (`key` TEXT NOT NULL, `fire_at` INTEGER NOT NULL, PRIMARY KEY(`key`))")
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `reminder_snoozed` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`fire_at` INTEGER NOT NULL, `event_id` TEXT NOT NULL, `begin_utc` INTEGER NOT NULL, " +
+                        "`method` TEXT NOT NULL, `minutes` INTEGER NOT NULL)",
+                )
             }
         }
     }

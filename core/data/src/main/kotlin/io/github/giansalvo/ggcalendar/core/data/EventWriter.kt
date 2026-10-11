@@ -17,6 +17,7 @@ class EventWriter @Inject constructor(
     private val db: GGCalendarDatabase,
     private val engine: SyncEngine,
     private val scheduler: SyncScheduler,
+    private val reminders: ReminderHooks,
 ) {
     private val events get() = db.eventDao()
     private val outbox get() = db.outboxDao()
@@ -44,6 +45,7 @@ class EventWriter @Inject constructor(
         }
         engine.recompute(saved.seriesMasterId ?: saved.id)
         scheduler.syncNow()
+        reminders.changed()
     }
 
     /**
@@ -66,6 +68,7 @@ class EventWriter @Inject constructor(
         }
         engine.recompute(event.seriesMasterId ?: eventId)
         scheduler.syncNow()
+        reminders.changed()
     }
 
     /**
@@ -92,5 +95,6 @@ class EventWriter @Inject constructor(
         }
         engine.recompute(eventId)
         scheduler.syncNow()
+        reminders.changed()
     }
 }

@@ -185,6 +185,11 @@ class CalendarViewModel @Inject constructor(
 
     fun refresh() = repository.syncNow()
 
+    /** The occurrence of a reminder notification, also from a calendar hidden in the menu. */
+    fun openLink(link: EventLink) {
+        viewModelScope.launch { repository.instance(link.eventId, link.beginUtc)?.let { openEvent(it) } }
+    }
+
     fun openEvent(instance: EventInstance?) = transient.update { it.copy(selected = instance) }
 
     /** A drag in a time grid ended: save the new times, asking the scope first for a series. */

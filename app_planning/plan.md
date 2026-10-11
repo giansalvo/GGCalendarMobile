@@ -194,6 +194,7 @@ I test xUnit (`tests/GGCalendar.Core.Tests`) vengono tradotti in JUnit con gli s
   - **M3 completata (11/10/2026)**, CI verde (run 38123898234, con i test Robolectric).
   - Nota per la build su questo PC: l'antivirus ispeziona HTTPS, quindi Gradle scarica le dipendenze nuove solo con `-Djavax.net.ssl.trustStoreType=Windows-ROOT` (i test Robolectric lo impostano da soli su Windows).
 - **M4** Notifiche: popup, sveglia (durata impostabile da 1 a 10 minuti, predefinita 2), promemoria email, riavvio, onboarding dei permessi. Dettaglio nella sezione "M4: piano dettagliato".
+- **M4bis** Vista "Mese + lista" e APK di prova da condividere (anche via WhatsApp) prima della pubblicazione ufficiale. Dettaglio nella sezione "M4bis: piano dettagliato".
 - **M5** Condivisione, esportazione `.ics`/CSV, stampa PDF, ACL dei calendari.
 - **M6** Impostazioni, calendari locali, calendario "Compleanni" dalla rubrica del telefono (`READ_CONTACTS`, vedi M2), importazione `.ics`, suoni personalizzati, secondo fuso orario, rifinitura i18n, aggiornamenti in-app; aggiornamento del desktop C# per `ggAlarm`.
 - **M7** Landing page completa e release v1.0. La privacy policy estesa ad Android si pubblica già in M0; la verifica dello scope `calendar` si invia in parallelo, prima possibile.
@@ -419,6 +420,28 @@ Stato del PC (verificato l'11/10/2026): Git c'è; mancano Android Studio, Androi
   - una sola notifica per un invito presente in due account;
   - arrivo dell'email di promemoria.
 - CI verde.
+
+## M4bis: piano dettagliato
+**Obiettivo** (richiesta dell'11/10/2026): una nuova vista che unisce Mese e lista, e un APK di prova firmato che si può mandare ad altri telefoni (anche con WhatsApp) per provare l'app prima di passare per la piattaforma Google ufficiale.
+
+**1. Vista "Mese + lista"**
+- Interpretazione da confermare: in alto la griglia del mese (compatta, con un pallino colorato nei giorni con eventi, come il mini-calendario), sotto l'elenco degli eventi del giorno selezionato in stile Programma. Come la vista mese di Google Calendar su telefono. Il Mese pieno con i chip dei titoli e il Programma restano.
+- Tocco su un giorno: seleziona il giorno e aggiorna l'elenco; scorrimento orizzontale della griglia: cambia mese; tocco su un evento: dettaglio; "+" crea un evento nel giorno scelto.
+- Si aggiunge al menu laterale come sesta vista (icona e nome da decidere), riusa `MiniCalendar`, `ScheduleView` e le query di `CalendarViewModel`; l'ultima vista usata la ricorda come le altre.
+- Prova sul Samsung: cambio mese e giorno, elenco dei giorni senza eventi, eventi di tutto il giorno e di più giorni, tema scuro.
+
+**2. APK di prova da condividere**
+- Build `assembleRelease` firmata con il keystore di release (fuori dal repo), `versionName` "0.4.0-beta" e `versionCode` aumentato a ogni consegna; nome file `GGCalendar-0.4.0-beta.apk`. L'APK non contiene segreti: l'ID del client OAuth Android è pubblico e legato a pacchetto e SHA-1 di release, già registrato.
+- **Prima verifica da fare**: la build release ha R8 attivo e le regole `proguard-rules.pro` sono quasi vuote, mentre ora ci sono classi `@Serializable` (Room, outbox), Room, Hilt, WorkManager e lib-recur. Si aggiungono le regole necessarie e si prova la release sul Samsung (login, sync, modifica, notifiche e sveglia) prima di consegnarla.
+- Installazione sui telefoni degli altri (guida breve da mandare insieme al file, IT/EN):
+  - WhatsApp può rifiutare o rinominare i file `.apk`: si manda come documento, e se non va si invia lo ZIP (`GGCalendar-0.4.0-beta.zip`) da estrarre, oppure un link a Google Drive o a GitHub (pre-release non pubblicizzata). Si manda anche l'SHA-256 per controllare il file.
+  - Sul telefono: consentire l'installazione da origini sconosciute all'app da cui si apre il file; Play Protect può mostrare un avviso ("app non riconosciuta"), si sceglie "Installa comunque".
+  - Al primo accesso Google mostra l'avviso "app non verificata" (lo scope `calendar` non è ancora verificato): "Avanzate" → "Vai a GGCalendar". Vale il limite di 100 utenti condivisi con il desktop; **gli account dei tester vanno aggiunti come utenti di test se il progetto torna in Testing**, altrimenti il login funziona già in Production.
+  - I tester devono sapere che l'app scrive sul loro vero Google Calendar: per le prove usare eventi creati apposta o un account di prova.
+- Aggiornamenti: la v0.4.1 si installa sopra la precedente (stessa firma e stesso pacchetto); i dati restano. Gli aggiornamenti in-app arrivano in M6.
+- Raccolta dei problemi: i tester scrivono a te (WhatsApp) con modello del telefono, versione Android e una descrizione; per i crash si valuta in M6 un pulsante "Invia log".
+- Verifica: installazione pulita su un secondo telefono (anche non Samsung), login con un altro account Google, sincronizzazione, una notifica e una sveglia, aggiornamento sopra la versione precedente.
+- La landing page e il canale ufficiale (GitHub Releases) restano in M7; questo è solo un test chiuso con amici.
 
 ## Verifica
 - Test unitari: SyncEngine (syncToken, 410, 412 → conflitto), espansione RRULE, mapping dei DTO, scrittore ICS, scheduler degli allarmi. Le chiamate API sono simulate con MockWebServer.
