@@ -140,9 +140,18 @@ class CalendarViewModel @Inject constructor(
         if (YearMonth.from(it.date) == month) it else it.jumpTo(month.atDay(minOf(it.date.dayOfMonth, month.lengthOfMonth())))
     }
 
-    /** A time grid settled on the [days] days from [start]: keep the selected date if it is among them. */
+    /**
+     * A time grid settled on the [days] days from [start]: keep the selected date if it is among them, otherwise
+     * select today when shown (so that going back to this week and then to 6 days starts from today), else [start].
+     */
     fun showDays(start: LocalDate, days: Int) = navigation.update {
-        if (it.date >= start && it.date < start.plusDays(days.toLong())) it else it.jumpTo(start)
+        val end = start.plusDays(days.toLong())
+        val today = LocalDate.now()
+        when {
+            it.date >= start && it.date < end -> it
+            today >= start && today < end -> it.jumpTo(today)
+            else -> it.jumpTo(start)
+        }
     }
 
     /** The mini calendar shows [month] (null: closed): load the days with events around it. */
