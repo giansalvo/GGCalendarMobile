@@ -9,7 +9,10 @@
     <string name="dismiss">Dismiss</string>
     <string name="join_meet">Join with Meet</string>
     <string name="missed_alarm">Missed alarm</string>
-    <string name="alarm_stops_in">Stops by itself after %d:00</string>
+    <plurals name="alarm_stops_in">
+        <item quantity="one">Stops by itself after %d minute</item>
+        <item quantity="other">Stops by itself after %d minutes</item>
+    </plurals>
     <string name="alarm_title">Alarm</string>
     <plurals name="minutes">
         <item quantity="one">%d minute</item>

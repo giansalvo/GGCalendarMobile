@@ -9,7 +9,10 @@
     <string name="dismiss">Chiudi</string>
     <string name="join_meet">Partecipa con Meet</string>
     <string name="missed_alarm">Sveglia persa</string>
-    <string name="alarm_stops_in">Si ferma da sola dopo %d:00</string>
+    <plurals name="alarm_stops_in">
+        <item quantity="one">Si ferma da sola dopo %d minuto</item>
+        <item quantity="other">Si ferma da sola dopo %d minuti</item>
+    </plurals>
     <string name="alarm_title">Sveglia</string>
     <plurals name="minutes">
         <item quantity="one">%d minuto</item>
