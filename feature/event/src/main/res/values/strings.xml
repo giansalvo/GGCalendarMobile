@@ -122,4 +122,6 @@
     <string name="color_blueberry">Blueberry</string>
     <string name="color_basil">Basil</string>
     <string name="color_tomato">Tomato</string>
+    <string name="calendar">Calendar</string>
+    <string name="my_calendar">My calendar</string>
 </resources>

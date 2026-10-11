@@ -119,4 +119,6 @@
     <string name="color_blueberry">Mirtillo</string>
     <string name="color_basil">Basilico</string>
     <string name="color_tomato">Pomodoro</string>
+    <string name="calendar">Calendario</string>
+    <string name="my_calendar">Il mio calendario</string>
 </resources>

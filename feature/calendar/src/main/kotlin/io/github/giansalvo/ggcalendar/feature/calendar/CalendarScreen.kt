@@ -204,6 +204,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                             onDayClick = viewModel::openDay,
                             onEventClick = viewModel::openEvent,
                             onCreateAt = { start -> viewModel.openEditor(EditorRequest.New(start)) },
+                            pendingStart = (state.editing as? EditorRequest.New)?.start,
                         )
                     }
                 }

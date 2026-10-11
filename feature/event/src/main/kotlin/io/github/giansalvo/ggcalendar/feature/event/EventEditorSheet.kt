@@ -48,6 +48,9 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -209,17 +212,7 @@ private fun EditorFields(
             modifier = Modifier.fillMaxWidth().padding(start = 40.dp, end = 8.dp),
         )
 
-        // Calendars as scrolling chips; a modified occurrence stays in its series' calendar.
-        LazyRow(contentPadding = PaddingValues(horizontal = 56.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(calendars, key = { it.id }) { cal ->
-                FilterChip(
-                    selected = cal.id == draft.calendarId,
-                    onClick = { update { it.copy(calendarId = cal.id) } },
-                    label = { Text(cal.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                    leadingIcon = { Box(Modifier.size(12.dp).background(parseColor(cal.color), CircleShape)) },
-                )
-            }
-        }
+        CalendarChooser(calendars, draft.calendarId) { id -> update { it.copy(calendarId = id) } }
         Divider()
 
         Row(Modifier.fillMaxWidth().clickable { update { it.copy(allDay = !it.allDay) } }.padding(horizontal = 20.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -305,6 +298,51 @@ private fun EditorFields(
         null -> Unit
     }
 }
+
+/** Drop-down of the writable calendars, grouped by account (the primary one shown as the account). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CalendarChooser(calendars: List<CalendarEntity>, selectedId: String, onSelect: (String) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    val selected = calendars.firstOrNull { it.id == selectedId }
+    ExposedDropdownMenuBox(expanded = open, onExpandedChange = { open = it }, modifier = Modifier.padding(start = 56.dp, end = 20.dp)) {
+        OutlinedTextField(
+            value = selected?.let { calendarLabel(it) } ?: "",
+            onValueChange = {},
+            readOnly = true,
+            singleLine = true,
+            label = { Text(stringResource(R.string.calendar)) },
+            supportingText = selected?.accountEmail?.takeIf { it != selected.name }?.let { { Text(it) } },
+            leadingIcon = { Box(Modifier.size(14.dp).background(parseColor(selected?.color), CircleShape)) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(open) },
+            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
+        )
+        ExposedDropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            calendars.groupBy { it.accountEmail ?: "" }.forEach { (account, list) ->
+                Text(
+                    account,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+                list.forEach { cal ->
+                    DropdownMenuItem(
+                        text = { Text(calendarLabel(cal), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        leadingIcon = { Box(Modifier.size(14.dp).background(parseColor(cal.color), CircleShape)) },
+                        onClick = {
+                            onSelect(cal.id)
+                            open = false
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun calendarLabel(cal: CalendarEntity): String =
+    if (cal.isPrimary) stringResource(R.string.my_calendar) else cal.name
 
 private enum class Picker { StartDate, EndDate, StartTime, EndTime, Zone, Recurrence, Reminder, Color, Visibility }
 

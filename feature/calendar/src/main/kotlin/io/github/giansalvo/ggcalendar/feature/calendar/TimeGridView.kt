@@ -109,6 +109,8 @@ internal fun TimeGridView(
     onDayClick: (LocalDate) -> Unit,
     onEventClick: (EventInstance) -> Unit,
     onCreateAt: (LocalDateTime) -> Unit,
+    /** Start of the new event being edited, drawn as "(New event)" until it is saved or discarded. */
+    pendingStart: LocalDateTime?,
     modifier: Modifier = Modifier,
 ) {
     val firstDay = firstDayOfWeek()
@@ -151,7 +153,6 @@ internal fun TimeGridView(
         mutableIntStateOf(with(density) { (hourHeight.dp * firstHour).roundToPx() })
     }
     var zoomTarget by remember { mutableStateOf<Int?>(null) }
-    var placeholder by remember { mutableStateOf<Pair<LocalDate, Int>?>(null) }
 
     HorizontalPager(pager, modifier.fillMaxSize(), beyondViewportPageCount = 1) { page ->
         val start = pageStart(page)
@@ -203,12 +204,8 @@ internal fun TimeGridView(
                         isToday = day == today,
                         dimPast = dimPast,
                         showTime = dayCount == 1,
-                        placeholder = placeholder?.takeIf { it.first == day }?.second,
-                        onEmptyTap = { minute -> placeholder = day to minute },
-                        onPlaceholderTap = { minute ->
-                            placeholder = null
-                            onCreateAt(day.atStartOfDay().plusMinutes(minute.toLong()))
-                        },
+                        placeholder = pendingStart?.takeIf { it.toLocalDate() == day }?.let { it.hour * 60 + it.minute },
+                        onEmptyTap = { minute -> onCreateAt(day.atStartOfDay().plusMinutes(minute.toLong())) },
                         onEventClick = onEventClick,
                         modifier = Modifier.weight(1f),
                     )
@@ -387,7 +384,6 @@ private fun DayColumn(
     showTime: Boolean,
     placeholder: Int?,
     onEmptyTap: (minute: Int) -> Unit,
-    onPlaceholderTap: (minute: Int) -> Unit,
     onEventClick: (EventInstance) -> Unit,
     modifier: Modifier,
 ) {
@@ -443,7 +439,6 @@ private fun DayColumn(
                     .clip(RoundedCornerShape(6.dp))
                     .background(MaterialTheme.colorScheme.primaryContainer)
                     .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(6.dp))
-                    .clickable { onPlaceholderTap(placeholder) } // opens the editor at this time
                     .padding(horizontal = 4.dp, vertical = 2.dp),
             ) {
                 Text(

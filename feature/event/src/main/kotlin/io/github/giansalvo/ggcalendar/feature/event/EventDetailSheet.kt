@@ -145,8 +145,9 @@ private fun DetailContent(instance: EventInstance, detail: EventDetail, onClose:
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 val zone = event.timeZone
-                if (!event.allDay && zone != null && zone != ZoneId.systemDefault().id) {
-                    val name = runCatching { ZoneId.of(zone).getDisplayName(TextStyle.FULL, Locale.getDefault()) }.getOrDefault(zone)
+                val name = zone?.let { runCatching { ZoneId.of(it).getDisplayName(TextStyle.FULL, Locale.getDefault()) }.getOrDefault(it) }
+                // Only when it differs from the phone's (Europe/Rome and Europe/Berlin are both "Central European Time").
+                if (!event.allDay && name != null && name != ZoneId.systemDefault().getDisplayName(TextStyle.FULL, Locale.getDefault())) {
                     Text(stringResource(R.string.time_zone_of, name), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 describe(event.rrule ?: detail.series?.rrule, res)?.let {
