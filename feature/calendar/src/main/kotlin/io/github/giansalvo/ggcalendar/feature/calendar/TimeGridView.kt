@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.sp
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -107,6 +108,7 @@ internal fun TimeGridView(
     onPageChange: (start: LocalDate, days: Int) -> Unit,
     onDayClick: (LocalDate) -> Unit,
     onEventClick: (EventInstance) -> Unit,
+    onCreateAt: (LocalDateTime) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val firstDay = firstDayOfWeek()
@@ -203,7 +205,10 @@ internal fun TimeGridView(
                         showTime = dayCount == 1,
                         placeholder = placeholder?.takeIf { it.first == day }?.second,
                         onEmptyTap = { minute -> placeholder = day to minute },
-                        onPlaceholderTap = { placeholder = null },
+                        onPlaceholderTap = { minute ->
+                            placeholder = null
+                            onCreateAt(day.atStartOfDay().plusMinutes(minute.toLong()))
+                        },
                         onEventClick = onEventClick,
                         modifier = Modifier.weight(1f),
                     )
@@ -382,7 +387,7 @@ private fun DayColumn(
     showTime: Boolean,
     placeholder: Int?,
     onEmptyTap: (minute: Int) -> Unit,
-    onPlaceholderTap: () -> Unit,
+    onPlaceholderTap: (minute: Int) -> Unit,
     onEventClick: (EventInstance) -> Unit,
     modifier: Modifier,
 ) {
@@ -438,7 +443,7 @@ private fun DayColumn(
                     .clip(RoundedCornerShape(6.dp))
                     .background(MaterialTheme.colorScheme.primaryContainer)
                     .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(6.dp))
-                    .clickable(onClick = onPlaceholderTap) // M3: opens the editor at this time.
+                    .clickable { onPlaceholderTap(placeholder) } // opens the editor at this time
                     .padding(horizontal = 4.dp, vertical = 2.dp),
             ) {
                 Text(

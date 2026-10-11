@@ -1,0 +1,203 @@
+package io.github.giansalvo.ggcalendar.feature.event
+
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.giansalvo.ggcalendar.core.data.EventRepository
+import io.github.giansalvo.ggcalendar.core.database.CalendarEntity
+import io.github.giansalvo.ggcalendar.core.database.EventEntity
+import io.github.giansalvo.ggcalendar.core.model.Attendee
+import io.github.giansalvo.ggcalendar.core.model.Reminder
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.temporal.ChronoUnit
+import java.util.UUID
+import javax.inject.Inject
+
+/** What the editor opens on: a new event (from the FAB or a tap on the grid) or an existing one. */
+sealed interface EditorRequest {
+    data class New(val start: LocalDateTime? = null, val allDay: Boolean = false) : EditorRequest
+    data class Edit(val eventId: String) : EditorRequest
+}
+
+/** The editor's fields; dates and times are wall-clock values in [zoneId]. */
+data class Draft(
+    val id: String,
+    val calendarId: String,
+    val title: String = "",
+    val allDay: Boolean = false,
+    val startDate: LocalDate,
+    val startTime: LocalTime,
+    val endDate: LocalDate,
+    val endTime: LocalTime,
+    val zoneId: String = ZoneId.systemDefault().id,
+    val rrule: String? = null,
+    val location: String = "",
+    val description: String = "",
+    /** Null: the calendar's default reminders. */
+    val reminders: List<Reminder>? = null,
+    val color: String? = null,
+    val availability: String = "BUSY",
+    val visibility: String = "DEFAULT",
+    val addMeet: Boolean = false,
+    val meetLink: String? = null,
+    val attendees: List<Attendee> = emptyList(),
+    val sendInvites: Boolean = true,
+    val guestsCanModify: Boolean = false,
+    val guestsCanInvite: Boolean = true,
+    val guestsCanSeeList: Boolean = true,
+) {
+    val zone: ZoneId get() = runCatching { ZoneId.of(zoneId) }.getOrDefault(ZoneId.systemDefault())
+    val start: LocalDateTime get() = LocalDateTime.of(startDate, startTime)
+    val end: LocalDateTime get() = LocalDateTime.of(endDate, endTime)
+
+    /** Moves the start keeping the duration, as in Google Calendar. */
+    fun withStart(date: LocalDate = startDate, time: LocalTime = startTime): Draft {
+        val minutes = ChronoUnit.MINUTES.between(start, end)
+        val days = ChronoUnit.DAYS.between(startDate, endDate)
+        val newStart = LocalDateTime.of(date, time)
+        return if (allDay) copy(startDate = date, endDate = date.plusDays(days))
+        else newStart.plusMinutes(minutes).let { copy(startDate = date, startTime = time, endDate = it.toLocalDate(), endTime = it.toLocalTime()) }
+    }
+
+    /** Sets the end; an end before the start moves the start back by the same amount. */
+    fun withEnd(date: LocalDate = endDate, time: LocalTime = endTime): Draft {
+        val newEnd = LocalDateTime.of(date, time)
+        if (allDay) return if (date < startDate) copy(startDate = date, endDate = date) else copy(endDate = date)
+        if (!newEnd.isBefore(start)) return copy(endDate = date, endTime = time)
+        val minutes = ChronoUnit.MINUTES.between(start, end)
+        val s = newEnd.minusMinutes(minutes)
+        return copy(startDate = s.toLocalDate(), startTime = s.toLocalTime(), endDate = date, endTime = time)
+    }
+}
+
+@HiltViewModel
+class EventEditorViewModel @Inject constructor(private val repository: EventRepository) : ViewModel() {
+    val calendars: StateFlow<List<CalendarEntity>> =
+        repository.writableCalendars.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    var draft by mutableStateOf<Draft?>(null)
+        private set
+    private var initial: Draft? = null
+    private var original: EventEntity? = null
+    private var loadedFor: EditorRequest? = null
+
+    var suggestions by mutableStateOf<List<Attendee>>(emptyList())
+        private set
+
+    val dirty: Boolean get() = draft != initial
+    val isNew: Boolean get() = original == null
+
+    fun load(request: EditorRequest) {
+        if (loadedFor == request) return
+        loadedFor = request
+        draft = null
+        viewModelScope.launch {
+            val d = when (request) {
+                is EditorRequest.New -> newDraft(request)
+                is EditorRequest.Edit -> editDraft(request.eventId) ?: return@launch
+            }
+            initial = d
+            draft = d
+            suggestions = repository.knownAttendees()
+        }
+    }
+
+    fun update(transform: (Draft) -> Draft) {
+        draft = draft?.let(transform)
+    }
+
+    private suspend fun newDraft(request: EditorRequest.New): Draft {
+        val cals = repository.writableCalendars.first()
+        val calendar = cals.firstOrNull { it.isPrimary } ?: cals.first()
+        // Next full hour, one hour long (as in the desktop app).
+        val start = request.start ?: LocalDateTime.now().truncatedTo(ChronoUnit.HOURS).plusHours(1)
+        val end = start.plusHours(1)
+        original = null
+        return Draft(
+            id = UUID.randomUUID().toString(),
+            calendarId = calendar.id,
+            allDay = request.allDay,
+            startDate = start.toLocalDate(),
+            startTime = start.toLocalTime(),
+            endDate = if (request.allDay) start.toLocalDate() else end.toLocalDate(),
+            endTime = end.toLocalTime(),
+        )
+    }
+
+    private suspend fun editDraft(eventId: String): Draft? {
+        val detail = repository.observe(eventId).first() ?: return null
+        // A series is edited as a whole for now: the editor shows its master (scopes of a series: step 8 of M3).
+        val e = detail.event
+        original = e
+        val zone = e.timeZone?.let { runCatching { ZoneId.of(it) }.getOrNull() } ?: ZoneId.systemDefault()
+        val (sd, st, ed, et) = if (e.allDay) {
+            val s = LocalDate.ofEpochDay(e.startDay ?: 0)
+            val last = LocalDate.ofEpochDay((e.endDay ?: (s.toEpochDay() + 1)) - 1)
+            Quad(s, LocalTime.of(9, 0), maxOf(last, s), LocalTime.of(10, 0))
+        } else {
+            val s = Instant.ofEpochMilli(e.startUtc ?: 0).atZone(zone).toLocalDateTime()
+            val en = Instant.ofEpochMilli(e.endUtc ?: e.startUtc ?: 0).atZone(zone).toLocalDateTime()
+            Quad(s.toLocalDate(), s.toLocalTime(), en.toLocalDate(), en.toLocalTime())
+        }
+        return Draft(
+            id = e.id, calendarId = e.calendarId, title = e.title, allDay = e.allDay,
+            startDate = sd, startTime = st, endDate = ed, endTime = et, zoneId = zone.id,
+            rrule = e.rrule, location = e.location, description = e.description, reminders = e.reminders,
+            color = e.color, availability = e.availability, visibility = e.visibility,
+            addMeet = e.addMeet, meetLink = e.meetLink, attendees = e.attendees, sendInvites = e.sendInvites,
+            guestsCanModify = e.guestsCanModify, guestsCanInvite = e.guestsCanInvite, guestsCanSeeList = e.guestsCanSeeList,
+        )
+    }
+
+    /** Writes the draft (offline first) and queues it for Google. */
+    fun save(onDone: () -> Unit) {
+        val d = draft ?: return
+        val base = original ?: EventEntity(id = d.id, calendarId = d.calendarId)
+        val entity = if (d.allDay) {
+            base.copy(allDay = true, startDay = d.startDate.toEpochDay(), endDay = d.endDate.toEpochDay() + 1, startUtc = null, endUtc = null, timeZone = null)
+        } else {
+            base.copy(
+                allDay = false, startDay = null, endDay = null, timeZone = d.zoneId,
+                startUtc = d.start.atZone(d.zone).toInstant().toEpochMilli(),
+                endUtc = d.end.atZone(d.zone).toInstant().toEpochMilli(),
+            )
+        }.copy(
+            title = d.title.trim(), rrule = d.rrule, location = d.location.trim(), description = d.description,
+            reminders = d.reminders, hasAlarm = d.reminders.orEmpty().any { it.method == io.github.giansalvo.ggcalendar.core.model.ReminderMethod.ALARM },
+            color = d.color, availability = d.availability, visibility = d.visibility,
+            addMeet = d.addMeet, meetLink = if (d.addMeet) d.meetLink else null,
+            attendees = d.attendees, sendInvites = d.sendInvites,
+            guestsCanModify = d.guestsCanModify, guestsCanInvite = d.guestsCanInvite, guestsCanSeeList = d.guestsCanSeeList,
+            // Exclusions keep their meaning only while the series keeps its rule.
+            exdates = if (d.rrule != null && d.rrule == original?.rrule) base.exdates else emptyList(),
+        )
+        viewModelScope.launch {
+            val previous = original
+            var saved = entity.copy(calendarId = d.calendarId)
+            if (previous != null && previous.calendarId != d.calendarId) {
+                repository.writer.move(previous.id, d.calendarId, d.sendInvites)
+                // Another account: the event is created anew there, without the old Google ids.
+                if (previous.calendarId.substringBefore('|') != d.calendarId.substringBefore('|')) {
+                    saved = saved.copy(remoteId = null, etag = null, iCalUid = null, meetLink = null)
+                }
+            }
+            repository.writer.save(saved, d.sendInvites)
+            loadedFor = null
+            onDone()
+        }
+    }
+
+    private data class Quad(val a: LocalDate, val b: LocalTime, val c: LocalDate, val d: LocalTime)
+}

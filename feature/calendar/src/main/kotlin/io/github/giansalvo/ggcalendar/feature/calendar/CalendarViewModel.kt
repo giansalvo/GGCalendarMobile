@@ -11,6 +11,7 @@ import io.github.giansalvo.ggcalendar.core.data.AccountWithCalendars
 import io.github.giansalvo.ggcalendar.core.data.CalendarRepository
 import io.github.giansalvo.ggcalendar.core.database.SyncMessageEntity
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
+import io.github.giansalvo.ggcalendar.feature.event.EditorRequest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -46,6 +47,8 @@ data class CalendarUiState(
     val eventDays: Set<LocalDate> = emptySet(),
     /** The occurrence whose details are open. */
     val selected: EventInstance? = null,
+    /** The editor, when open. */
+    val editing: EditorRequest? = null,
     val busy: Boolean = false,
     /** Set when Google needs the user's consent; the screen launches it and calls [CalendarViewModel.onConsentResult]. */
     val consent: AuthorizationOutcome.NeedsConsent? = null,
@@ -66,6 +69,7 @@ private data class Navigation(
 
 private data class Transient(
     val selected: EventInstance? = null,
+    val editing: EditorRequest? = null,
     val busy: Boolean = false,
     val consent: AuthorizationOutcome.NeedsConsent? = null,
     val error: String? = null,
@@ -108,7 +112,7 @@ class CalendarViewModel @Inject constructor(
         CalendarUiState(
             view = nav.view, date = nav.date, scheduleFrom = nav.scheduleFrom, scheduleTo = nav.scheduleTo, accounts = accounts, instances = list, syncing = syncing,
             hourHeight = g.hourHeight, dayStartHour = g.dayStartHour, dimPast = g.dimPast, eventDays = days,
-            selected = t.selected, busy = t.busy, consent = t.consent, error = t.error, message = message,
+            selected = t.selected, editing = t.editing, busy = t.busy, consent = t.consent, error = t.error, message = message,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CalendarUiState())
 
@@ -170,6 +174,9 @@ class CalendarViewModel @Inject constructor(
     fun refresh() = repository.syncNow()
 
     fun openEvent(instance: EventInstance?) = transient.update { it.copy(selected = instance) }
+
+    /** Opens the editor (closing the details) or closes it with null. */
+    fun openEditor(request: EditorRequest?) = transient.update { it.copy(editing = request, selected = if (request != null) null else it.selected) }
 
     fun chooseAccountIntent(): Intent = authorizer.chooseAccountIntent()
 

@@ -67,7 +67,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import io.github.giansalvo.ggcalendar.feature.event.EditorRequest
 import io.github.giansalvo.ggcalendar.feature.event.EventDetailSheet
+import io.github.giansalvo.ggcalendar.feature.event.EventEditorSheet
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.giansalvo.ggcalendar.core.model.CalendarInfo
@@ -145,7 +147,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                 )
             },
             floatingActionButton = {
-                FloatingActionButton(onClick = { /* Editor: milestone M3 */ }, shape = RoundedCornerShape(16.dp)) {
+                FloatingActionButton(onClick = { viewModel.openEditor(EditorRequest.New()) }, shape = RoundedCornerShape(16.dp)) {
                     Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.new_event))
                 }
             },
@@ -201,6 +203,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                             onPageChange = viewModel::showDays,
                             onDayClick = viewModel::openDay,
                             onEventClick = viewModel::openEvent,
+                            onCreateAt = { start -> viewModel.openEditor(EditorRequest.New(start)) },
                         )
                     }
                 }
@@ -212,8 +215,11 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
         EventDetailSheet(
             instance = instance,
             onDismiss = { viewModel.openEvent(null) },
-            onEdit = { /* Editor: next step of M3 */ },
+            onEdit = { viewModel.openEditor(EditorRequest.Edit(it.event.id)) },
         )
+    }
+    state.editing?.let { request ->
+        EventEditorSheet(request = request, onDismiss = { viewModel.openEditor(null) })
     }
 }
 
