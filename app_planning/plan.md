@@ -185,7 +185,7 @@ I test xUnit (`tests/GGCalendar.Core.Tests`) vengono tradotti in JUnit con gli s
   - Stato all'11/10/2026: passi 1–12 fatti e provati sul Samsung (settimana uguale a `vista_settimana.jpeg`, Giorno con eventi affiancati e ora mantenuta tra le pagine, Mese, Programma nel passato, mini-calendario, ultima vista riaperta, torta dei compleanni). Pinch provato da te: funziona. Corretto un errore della vista 6 giorni: dopo essere tornati alla settimana corrente la data selezionata diventava il lunedì e 6 giorni mostrava giorni passati; ora, se la pagina contiene oggi, si seleziona oggi. Mini-calendario: scorrendolo, titolo e vista seguono il mese; l'intestazione apre la griglia degli anni (salto diretto, richiesto per il Mese). Navigazione a 3 anni provata (novembre 2029, ricorrenze presenti). Cambio di fuso orario provato da te (Tokyo con app aperta, New York con app chiusa, ritorno a Roma): ok.
   - **M2 completata (11/10/2026)**.
   - Compleanni: l'API restituisce solo i compleanni salvati come eventi `eventType=birthday` nel calendario principale (3 sul tuo account). Il calendario dei contatti (`addressbook#contacts@...`) non è più in `calendarList`; Google Calendar per Android legge gli altri dalla **rubrica del telefono**. Soluzione proposta: calendario locale virtuale "Compleanni" letto da `ContactsContract` (`Event.TYPE_BIRTHDAY`, anche senza anno), con permesso facoltativo `READ_CONTACTS`: nessuno scope Google in più, quindi nessuna nuova verifica OAuth; si evitano i doppioni con i compleanni già arrivati da Google. **Spostato in M6** (deciso l'11/10/2026), insieme ai calendari locali.
-- **M3** Editor: creazione, modifica, eliminazione, invitati, Meet, ricorrenze, outbox offline, conflitti; trascinamento degli eventi (spostare e ridimensionare) nelle griglie orarie, spostato qui da M2 perché richiede la scrittura su Google.
+- **M3** Editor: creazione, modifica, eliminazione, invitati, Meet, ricorrenze, outbox offline, conflitti; trascinamento degli eventi (spostare e ridimensionare) nelle griglie orarie, spostato qui da M2 perché richiede la scrittura su Google. Dettaglio nella sezione "M3: piano dettagliato".
 - **M4** Notifiche: popup, sveglia di 2 minuti, promemoria email, riavvio, onboarding dei permessi.
 - **M5** Condivisione, esportazione `.ics`/CSV, stampa PDF, ACL dei calendari.
 - **M6** Impostazioni, calendari locali, calendario "Compleanni" dalla rubrica del telefono (`READ_CONTACTS`, vedi M2), importazione `.ics`, suoni personalizzati, secondo fuso orario, rifinitura i18n, aggiornamenti in-app; aggiornamento del desktop C# per `ggAlarm`.
@@ -277,6 +277,77 @@ Stato del PC (verificato l'11/10/2026): Git c'è; mancano Android Studio, Androi
 - Unit test: `OverlapLayout` (gli stessi casi del desktop), corsie delle barre multi-giorno, inizio della settimana per locale, divisione degli eventi a mezzanotte, estensione della finestra delle istanze, migrazione v3.
 - Sul Samsung, confronto con gli screenshot di Google in `img/`: settimana dell'11 ottobre contro `vista_settimana.jpeg` (stessi blocchi negli stessi orari e affiancati quando si sovrappongono), Mese con barre continue, Programma che scorre nel passato.
 - Prove manuali: pinch, scorrimento tra le settimane con l'ora mantenuta, cambio del fuso orario nelle impostazioni del telefono, navigazione a 3 anni di distanza.
+- CI verde.
+
+## M3: piano dettagliato
+**Obiettivo**: dal telefono si creano, modificano ed eliminano eventi (anche ricorrenti), con invitati, Meet, promemoria e fuso orario. Le modifiche funzionano offline e si sincronizzano con Google. I conflitti si gestiscono come nel desktop. Gli eventi si trascinano nelle griglie orarie. Logica portata da `GoogleSyncService.PushAsync`, `ResolveConflict`, `EventContent`, `GoogleEventMapper.ToGoogle` e `MainViewModel.SaveOccurrence/DeleteOccurrence/MoveOccurrence` del desktop.
+
+**Decisioni (11/10/2026)**
+- Invitati: suggerimenti dagli indirizzi già presenti negli eventi più la **rubrica del telefono** (`READ_CONTACTS`, chiesto solo quando si tocca il campo invitati; se negato restano gli indirizzi già visti). Lo stesso permesso servirà in M6 per i compleanni.
+- Trascinamento solo nelle griglie orarie (Giorno, 6 giorni, Settimana): pressione prolungata, spostamento anche su un altro giorno, ridimensionamento dal bordo inferiore, scatto di 15 minuti; per le serie chiede l'ambito.
+- Fuso orario: per gli eventi con orario si mostra il fuso dell'evento (di default quello del telefono) e lo si può cambiare da una lista ricercabile.
+- Dettaglio come bottom sheet ed editor come bottom sheet a schermo intero (mockup 5 e 6); eliminazione con conferma, come Google e il desktop.
+- Si modificano solo i calendari Google con ruolo `owner` o `writer`; gli altri aprono il dettaglio in sola lettura. I calendari locali arrivano in M6.
+- Promemoria: tipo Notifica, Sveglia (popup + `ggAlarm`) o Email, con l'anticipo. Il suono per promemoria arriva in M6; la sveglia che suona arriva in M4.
+
+**1. Rete** (`:core:network`)
+- `GoogleCalendarApi`: `insertEvent`, `patchEvent` (con `If-Match: etag`), `deleteEvent`, `getEvent`, sempre con `conferenceDataVersion=1` e `sendUpdates=all|none`.
+- `GoogleEventMapper.toGoogle(event)`: porting di `ToGoogle`. Nelle PATCH la forma di data non usata si manda come `null`. Si mandano RRULE ed EXDATE, `reminders.useDefault=false` più gli override (la sveglia diventa un popup), `extendedProperties.private.ggAlarm` con i minuti delle sveglie, `conferenceData.createRequest` se si aggiunge il Meet, e il fuso IANA dell'evento.
+- `instanceId(masterRemoteId, originalStart, allDay)` per modificare un'occorrenza.
+- Test con MockWebServer: corpo delle richieste, `If-Match`, 412, 404, 410.
+
+**2. Outbox e push** (`:core:database`, `:core:data`)
+- Room v4: tabella `outbox` (`seq`, `event_id`, `calendar_id`, `operation` create/update/delete, `payload` = istantanea JSON dell'evento, `base` = versione Google da cui parte la modifica, `created_at`, `attempts`, `last_error`), più `MIGRATION_3_4`.
+- `EventWriter`: ogni modifica scrive subito in Room, ricalcola le istanze, accoda l'operazione e chiede un sync immediato (`SyncScheduler.syncNow`, con vincolo di rete: offline parte quando torna la connessione).
+- `SyncEngine`: prima il push, poi il pull, poi di nuovo il push delle copie "(conflitto)", come il desktop. Durante il pull gli eventi con operazioni in coda non si sovrascrivono.
+- 412: si confronta la versione remota con `base` tramite `EventContent.same`, che ignora Meet, risposte degli invitati, promemoria e il proprietario. Se sono uguali si ritenta con il nuovo etag. Altrimenti vince Google e la versione locale diventa "Titolo (conflitto)", senza invitati né Meet, con un messaggio di tipo `conflict` (snackbar).
+- 400, 403 e 404 scartano l'operazione con un messaggio, senza bloccare la coda. Gli errori di rete lasciano la coda com'è.
+- Cambio di calendario: nello stesso account si usa `events.move`, tra account diversi si inserisce nel nuovo calendario e si elimina dal vecchio.
+- Test JVM: `EventContent`, `ResolveConflict`, ordine della coda, sostituzione degli ID temporanei.
+
+**3. Dettaglio evento** (`:feature:event`, nuovo modulo)
+- Bottom sheet aperto dal tocco su un evento in ogni vista: titolo con il colore, data e ora (con il fuso se diverso da quello del telefono), testo della ricorrenza ("Si ripete ogni giorno; per 5 volte"), pulsante "Partecipa con Google Meet", luogo (apre Maps), promemoria, invitati con le risposte, descrizione con link cliccabili, calendario e account.
+- Azioni: ✎ modifica, ⋮ elimina e duplica. Email agli invitati, condividi, esporta e stampa arrivano in M5.
+
+**4. Editor** (`:feature:event`)
+- Bottom sheet a schermo intero (mockup 6): titolo; calendario come chip scorrevoli (solo quelli modificabili); tutto il giorno; date e ore di inizio e fine (la fine segue l'inizio mantenendo la durata); fuso orario; ricorrenza; invitati con "Invia inviti" e permessi; Meet; luogo; promemoria; colore (palette Google dei `colorId`); disponibilità e visibilità; descrizione.
+- Si apre dal FAB (prossima ora piena, durata di un'ora come nel desktop), dal segnaposto "(Nuovo evento)" delle griglie e da ✎ del dettaglio. Se si esce con modifiche non salvate chiede conferma.
+- Ricorrenza: preset (non si ripete, ogni giorno, ogni settimana di \<giorno\>, ogni mese il \<n\>, ogni anno, giorni feriali) più "Personalizzata…" (ogni N giorni, settimane, mesi o anni; giorni della settimana; fine mai, a una data o dopo N volte). La RRULE si costruisce e si legge con un piccolo `RecurrenceRule` portato dal desktop, testato; l'espansione resta con lib-recur.
+- Ambito della serie (mockup 8): solo questo evento (eccezione con l'ID dell'istanza Google), questo e i successivi (la serie si divide: UNTIL nella vecchia, nuova serie dalla data scelta), tutti gli eventi (si sposta anche ogni EXDATE ed eccezione). Vale per modifica, eliminazione e trascinamento.
+- Invitati: campo con suggerimenti (indirizzi già visti più rubrica), chip con "facoltativo", controllo del formato email.
+
+**5. Trascinamento** (griglie orarie)
+- Pressione prolungata su un evento: compare in rilievo e segue il dito, scattando ogni 15 minuti; spostandosi sopra un'altra colonna cambia giorno. La maniglia sul bordo inferiore cambia la durata.
+- Al rilascio: per le serie si mostra il dialog dell'ambito, poi si salva tramite `EventWriter`. Gli eventi in sola lettura non si trascinano.
+- Le pagine non scorrono durante il trascinamento. Lo scorrimento automatico vicino ai bordi è facoltativo, da valutare.
+
+**6. Ordine di lavoro** (commit e prova sul Samsung a ogni blocco)
+1. Rete: `toGoogle`, chiamate di scrittura, test MockWebServer.
+2. Outbox (Room v4), `EventWriter`, push nel `SyncEngine`, `EventContent` e conflitti, test.
+3. Modulo `:feature:event` e dettaglio in sola lettura, aperto da tutte le viste.
+4. Editor per gli eventi singoli: creazione, modifica, eliminazione, cambio di calendario.
+5. Promemoria (notifica, sveglia, email) e colore.
+6. Fuso orario con la lista ricercabile.
+7. Ricorrenze: preset, personalizzata, testo leggibile, `RecurrenceRule` con test.
+8. Ambiti della serie per modifica ed eliminazione.
+9. Invitati: indirizzi già visti più rubrica (`READ_CONTACTS`), invia inviti, permessi degli invitati.
+10. Meet: aggiunta, stato "in creazione", copia del link.
+11. Trascinamento e ridimensionamento nelle griglie.
+12. Messaggi di conflitto ed errore (snackbar), stato della coda.
+13. Verifica e commit.
+
+**7. Verifica di M3**
+- Unit test: mapper verso Google, outbox, conflitti (412 con contenuto uguale o diverso), ambiti della serie (stessi casi del desktop), `RecurrenceRule`, migrazione v4.
+- Sul Samsung, insieme a calendar.google.com:
+  - evento creato sul telefono che compare sul web, e viceversa;
+  - modifica e eliminazione nelle due direzioni;
+  - serie con "solo questo", "questo e i successivi", "tutti";
+  - Meet creato e link copiato;
+  - invito ricevuto da un altro account;
+  - sveglia registrata (`ggAlarm`) e letta dal pull;
+  - evento a New York creato con il fuso di New York;
+  - trascinamento con e senza serie.
+- Offline: modalità aereo, modifica, modifica dello stesso evento sul web, riconnessione. Risultato atteso: la versione di Google e la copia "(conflitto)".
 - CI verde.
 
 ## Verifica
