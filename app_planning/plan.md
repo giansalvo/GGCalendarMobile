@@ -193,7 +193,7 @@ I test xUnit (`tests/GGCalendar.Core.Tests`) vengono tradotti in JUnit con gli s
   - Meet provato: il link arriva subito dopo il salvataggio, con il pulsante "Partecipa con Google Meet" anche nella copia dell'invitato. Corretto: le copie degli inviti (organizzatore diverso, invitati senza permesso di modifica) sono in sola lettura.
   - **M3 completata (11/10/2026)**.
   - Nota per la build su questo PC: l'antivirus ispeziona HTTPS, quindi Gradle scarica le dipendenze nuove solo con `-Djavax.net.ssl.trustStoreType=Windows-ROOT` (i test Robolectric lo impostano da soli su Windows).
-- **M4** Notifiche: popup, sveglia di 2 minuti, promemoria email, riavvio, onboarding dei permessi.
+- **M4** Notifiche: popup, sveglia di 2 minuti, promemoria email, riavvio, onboarding dei permessi. Dettaglio nella sezione "M4: piano dettagliato".
 - **M5** Condivisione, esportazione `.ics`/CSV, stampa PDF, ACL dei calendari.
 - **M6** Impostazioni, calendari locali, calendario "Compleanni" dalla rubrica del telefono (`READ_CONTACTS`, vedi M2), importazione `.ics`, suoni personalizzati, secondo fuso orario, rifinitura i18n, aggiornamenti in-app; aggiornamento del desktop C# per `ggAlarm`.
 - **M7** Landing page completa e release v1.0. La privacy policy estesa ad Android si pubblica già in M0; la verifica dello scope `calendar` si invia in parallelo, prima possibile.
@@ -355,6 +355,68 @@ Stato del PC (verificato l'11/10/2026): Git c'è; mancano Android Studio, Androi
   - evento a New York creato con il fuso di New York;
   - trascinamento con e senza serie.
 - Offline: modalità aereo, modifica, modifica dello stesso evento sul web, riconnessione. Risultato atteso: la versione di Google e la copia "(conflitto)".
+- CI verde.
+
+## M4: piano dettagliato
+**Obiettivo**: i promemoria degli eventi suonano sul telefono all'ora giusta, anche a schermo spento, in Doze, dopo un riavvio e con l'app chiusa. Tre tipi: notifica popup con suono breve; sveglia con suoneria in loop (al massimo 2 minuti) e i pulsanti Chiudi e Posticipa; email, che invia Google. Logica portata da `ReminderCalculator` e `ReminderScheduler` del desktop: calcolo dei promemoria dovuti, quelli già mostrati, quelli posticipati e il recupero di quelli persi.
+
+**Decisioni (11/10/2026)**
+- Notifiche per **tutti i calendari**, anche quelli nascosti nel menu laterale: nascondere serve a pulire la vista.
+- **Posticipa**: 10 minuti, con un menu per 5, 15 o 30. Nella notifica popup c'è l'azione "Posticipa 10 min". Il valore predefinito diventa un'impostazione in M6.
+- **Sveglia** come l'app Orologio: a telefono bloccato schermo intero (anche a schermo spento); a telefono sbloccato una notifica in primo piano con Chiudi e Posticipa. In entrambi i casi la suoneria va in loop fino a 2 minuti, poi si ferma e lascia una notifica di "sveglia persa". Toccando la notifica si apre lo schermo intero.
+- **Un evento presente in due account** (un invito tra profgusinu e itiangioy): una sola notifica. Lo riconosco da iCalUID e inizio, e preferisco la copia con la sveglia, poi quella dell'organizzatore.
+- I promemoria "calendario predefinito" (reminders null) usano i promemoria predefiniti del calendario, come Google.
+- Suoni: la notifica usa il suono predefinito del canale, la sveglia la suoneria della sveglia di sistema. I suoni per promemoria arrivano in M6.
+
+**1. Calcolo** (`:core:data`, logica pura testata)
+- Porting di `ReminderCalculator.Due`: per ogni istanza dalla tabella `instances` (quindi già con eccezioni ed EXDATE), ogni promemoria non email dà un orario `inizio − minuti`; sono dovuti quelli in un intervallo `(dopo, fino a]` il cui evento non è ancora finito.
+- Chiave del promemoria: `eventId|beginUtc|metodo|minuti`, come nel desktop. Eliminazione dei doppioni tra account con iCalUID e inizio.
+- Per gli eventi di tutto il giorno "N minuti prima" si conta dalla mezzanotte locale, come Google.
+
+**2. Programmazione** (`:core:notifications`, nuovo modulo)
+- Si registrano in `AlarmManager` i promemoria delle prossime 48 ore: `setAlarmClock` per le sveglie (ignora Doze e mostra l'icona della sveglia), `setExactAndAllowWhileIdle` per le notifiche. Un `PendingIntent` per chiave; quelli non più dovuti si cancellano.
+- Si riprogramma dopo ogni sync e ogni modifica locale, all'avvio, al riavvio (`BOOT_COMPLETED`), all'aggiornamento dell'app (`MY_PACKAGE_REPLACED`), al cambio di ora o di fuso (`TIME_SET`, `TIMEZONE_CHANGED`) e con un worker giornaliero che sposta l'orizzonte.
+- Room v5: tabelle `reminder_fired` (chiave, ora) per non ripetere un promemoria già mostrato, e `reminder_snoozed` (ora, evento, inizio, metodo, minuti) per i posticipi, riprogrammati anche dopo un riavvio. Le chiavi vecchie di più di 2 giorni si cancellano.
+- **Recupero**: all'avvio e al riavvio si mostrano i promemoria persi nelle ultime 24 ore, solo se l'evento non è ancora finito (regola del desktop).
+
+**3. Notifica popup**
+- Canale "Promemoria" con importanza alta e suono breve. Contenuto: titolo, orario ("tra 10 minuti · 10:00–11:00"), luogo. Tocco: apre l'app sul dettaglio dell'evento. Azioni: "Posticipa 10 min" e, se c'è, "Partecipa con Meet".
+
+**4. Sveglia**
+- Canale "Sveglie" senza suono proprio: la suoneria la riproduce un foreground service con `AudioAttributes.USAGE_ALARM`, in loop, con vibrazione, così suona anche in modalità silenziosa e Non disturbare come le sveglie di sistema. Il tipo di foreground service (`mediaPlayback` o `shortService`) si sceglie in implementazione, con i limiti di Android 14–16.
+- Notifica con full-screen intent verso `AlarmActivity` (`showWhenLocked`, `turnScreenOn`), come il mockup 7: ora, titolo, "tra 30 minuti", luogo, Posticipa (10 min ▾) e Chiudi, "si ferma da sola dopo 2:00".
+- Dopo 120 secondi senza risposta la suoneria si ferma e resta una notifica di "sveglia persa". Più sveglie insieme si mettono in fila.
+
+**5. Permessi e onboarding**
+- `POST_NOTIFICATIONS` (Android 13 e successivi), chiesto la prima volta che c'è un promemoria da programmare o dalla schermata dei permessi.
+- Allarmi esatti: `USE_EXACT_ALARM` (concesso alle app di calendario) più `SCHEDULE_EXACT_ALARM` per Android 12 (fino all'API 32).
+- Schermo intero: su Android 14 e successivi `USE_FULL_SCREEN_INTENT` va abilitato dall'utente; se manca, la sveglia resta una notifica in primo piano con la suoneria, e l'app spiega come attivarlo.
+- Batteria: richiesta di esclusione dall'ottimizzazione e guida per togliere GGCalendar dalle "app in sospensione" di Samsung.
+- Una schermata "Notifiche e sveglie" (dal menu laterale) mostra lo stato di ogni permesso con il pulsante per sistemarlo. Nel dettaglio dell'evento, sotto i promemoria, compare l'avviso del mockup 5 se un permesso blocca quel promemoria.
+
+**6. Email**
+- Le invia Google (promemoria `method=email`, già scritti dall'editor in M3). Solo verifica.
+
+**7. Ordine di lavoro** (commit e prova sul Samsung a ogni blocco)
+1. Calcolo dei promemoria (porting, doppioni, giornata intera) con test.
+2. Room v5 (`reminder_fired`, `reminder_snoozed`) e modulo `:core:notifications`.
+3. Scheduler con AlarmManager e receiver; riprogrammazione dopo sync, modifiche, avvio, riavvio, aggiornamento, cambio di ora e worker giornaliero.
+4. Notifica popup con le azioni (apri, posticipa, Meet).
+5. Sveglia: foreground service con la suoneria, `AlarmActivity`, stop dopo 2 minuti, sveglia persa, Posticipa con menu.
+6. Recupero dei promemoria persi.
+7. Permessi: richieste, schermata "Notifiche e sveglie", avviso nel dettaglio.
+8. Verifica e commit.
+
+**8. Verifica di M4**
+- Unit test: calcolo (predefiniti del calendario, doppioni, giornata intera, eventi finiti, eccezioni ed EXDATE), recupero, posticipo, pulizia delle chiavi.
+- Sul Samsung, con eventi di prova creati apposta nel calendario principale di profgusinu a pochi minuti da adesso:
+  - notifica all'ora giusta a schermo acceso e spento;
+  - sveglia a telefono bloccato (schermo intero) e sbloccato (notifica), con Chiudi, Posticipa e stop dopo 2 minuti;
+  - sveglia in Doze (`adb shell dumpsys deviceidle force-idle`);
+  - promemoria ancora attivi dopo il riavvio del telefono e con l'app chiusa dalle recenti;
+  - cambio di fuso;
+  - una sola notifica per un invito presente in due account;
+  - arrivo dell'email di promemoria.
 - CI verde.
 
 ## Verifica
