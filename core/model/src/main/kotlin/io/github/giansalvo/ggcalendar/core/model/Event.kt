@@ -48,4 +48,5 @@ data class EventInstance(
     val hasMeet: Boolean,
     val hasAlarm: Boolean,
     val isRecurring: Boolean,
+    val isBirthday: Boolean = false,
 )

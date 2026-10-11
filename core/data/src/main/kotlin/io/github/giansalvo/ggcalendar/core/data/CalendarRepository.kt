@@ -14,6 +14,8 @@ import io.github.giansalvo.ggcalendar.core.model.CalendarInfo
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import java.time.Instant
@@ -28,6 +30,7 @@ class CalendarRepository @Inject constructor(
     private val db: GGCalendarDatabase,
     private val engine: SyncEngine,
     private val scheduler: SyncScheduler,
+    private val prefs: AppPreferences,
 ) {
     val syncing: StateFlow<Boolean> get() = engine.syncing
 
@@ -45,8 +48,9 @@ class CalendarRepository @Inject constructor(
 
     val messages: Flow<List<SyncMessageEntity>> = db.syncMessageDao().observeUnread()
 
-    /** Visible instances overlapping the days [from, to). */
-    fun instances(from: LocalDate, to: LocalDate): Flow<List<EventInstance>> =
+    /** Visible instances overlapping the days [from, to); series are expanded further if the days need it. */
+    fun instances(from: LocalDate, to: LocalDate): Flow<List<EventInstance>> = channelFlow {
+        launch { engine.updateWindow(from, to) }
         db.instanceDao().observeRange(from.toEpochDay(), to.toEpochDay()).map { rows ->
             rows.map {
                 EventInstance(
@@ -54,10 +58,20 @@ class CalendarRepository @Inject constructor(
                     colorHex = it.colorHex, allDay = it.allDay,
                     begin = Instant.ofEpochMilli(it.beginUtc), end = Instant.ofEpochMilli(it.endUtc),
                     startDay = LocalDate.ofEpochDay(it.startDay), endDay = LocalDate.ofEpochDay(it.endDay),
-                    hasMeet = it.hasMeet, hasAlarm = it.hasAlarm, isRecurring = it.isRecurring,
+                    hasMeet = it.hasMeet, hasAlarm = it.hasAlarm, isRecurring = it.isRecurring, isBirthday = it.isBirthday,
                 )
             }
-        }
+        }.collect { send(it) }
+    }
+
+    /** A new day or time zone: move the instance window, rebuilding the instances if needed. */
+    suspend fun refreshInstances() = engine.updateWindow()
+
+    val viewPreferences: Flow<ViewPreferences> = prefs.view
+
+    suspend fun setLastView(view: String) = prefs.setLastView(view)
+
+    suspend fun setHourHeight(height: Float) = prefs.setHourHeight(height)
 
     suspend fun setCalendarVisible(id: String, visible: Boolean) = db.calendarDao().setVisible(id, visible)
 
@@ -81,6 +95,6 @@ object DatabaseModule {
     @Singleton
     fun database(@ApplicationContext context: Context): GGCalendarDatabase =
         Room.databaseBuilder(context, GGCalendarDatabase::class.java, GGCalendarDatabase.NAME)
-            .addMigrations(GGCalendarDatabase.MIGRATION_1_2)
+            .addMigrations(GGCalendarDatabase.MIGRATION_1_2, GGCalendarDatabase.MIGRATION_2_3)
             .build()
 }

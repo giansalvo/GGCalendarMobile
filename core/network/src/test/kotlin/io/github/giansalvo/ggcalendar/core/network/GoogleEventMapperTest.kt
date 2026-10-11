@@ -36,6 +36,16 @@ class GoogleEventMapperTest {
     }
 
     @Test
+    fun eventTypeIsKeptAndDefaultsToDefault() {
+        val birthday = parse(
+            """{"id":"b","eventType":"birthday","summary":"Anna","start":{"date":"2026-10-12"},"end":{"date":"2026-10-13"},
+               "recurrence":["RRULE:FREQ=YEARLY"]}""",
+        )
+        assertEquals("birthday", birthday.eventType)
+        assertEquals("default", parse("""{"id":"a","start":{"date":"2026-10-12"},"end":{"date":"2026-10-13"}}""").eventType)
+    }
+
+    @Test
     fun allDayEventHasExclusiveEndDate() {
         val ev = parse("""{"id":"a","start":{"date":"2026-10-12"},"end":{"date":"2026-10-14"}}""")
         assertEquals(EventTime.AllDay(LocalDate.of(2026, 10, 12), LocalDate.of(2026, 10, 14)), ev.time)

@@ -6,7 +6,6 @@
     <string name="view_six_days">6 days</string>
     <string name="view_week">Week</string>
     <string name="view_month">Month</string>
-    <string name="view_placeholder">%1$s view: coming soon</string>
     <string name="refresh">Refresh</string>
     <string name="add_google_account">Add Google account</string>
     <string name="new_event">New event</string>
@@ -20,4 +19,8 @@
     <string name="message_auth">Access to Google Calendar for %1$s must be granted again</string>
     <string name="authorize">Authorize</string>
     <string name="my_calendar">My calendar</string>
+    <string name="new_event_placeholder">(New event)</string>
+    <string name="show_more">Show more</string>
+    <string name="show_less">Show less</string>
+    <string name="birthday">Birthday</string>
 </resources>

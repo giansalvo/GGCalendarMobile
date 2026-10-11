@@ -87,6 +87,8 @@ data class EventEntity(
     /** Null = the calendar's default reminders. */
     val reminders: List<Reminder>? = null,
     @ColumnInfo(name = "has_alarm") val hasAlarm: Boolean = false,
+    /** Google eventType: "default", "birthday", ... */
+    @ColumnInfo(name = "event_type", defaultValue = "'default'") val eventType: String = "default",
     @ColumnInfo(name = "updated_at") val updatedAt: Long = System.currentTimeMillis(),
 )
 
@@ -132,4 +134,5 @@ data class InstanceRow(
     val hasMeet: Boolean,
     val hasAlarm: Boolean,
     val isRecurring: Boolean,
+    val isBirthday: Boolean,
 )

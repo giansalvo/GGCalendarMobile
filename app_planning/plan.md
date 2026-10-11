@@ -179,9 +179,11 @@ I test xUnit (`tests/GGCalendar.Core.Tests`) vengono tradotti in JUnit con gli s
 - **M1** Login con più account, sincronizzazione in lettura, Room, viste agenda e mese.
   - CI verde (run 38097542767).
   - Stato all'11/10/2026: fatto. Moduli `:core:database` (Room v2, schema esportato in `core/database/schemas`) e `:core:data` (sync, ricorrenze con lib-recur, repository, `SyncWorker` ogni 15 minuti, Hilt WorkManager). Programma e Mese verificati sul Samsung con 2 account e 21 calendari; compleanni dei contatti richiesti con `eventTypes`.
-  - Semplificazioni da sistemare in M2: nel Mese gli eventi di più giorni sono chip ripetuti (non barre continue); il Programma parte dal giorno selezionato e non scorre verso il passato; il titolo del mese apre un DatePicker invece del mini-calendario a tendina.
-  - Da indagare: alcuni compleanni visibili in Google Calendar (es. "Babbo", "Nietta") non arrivano dall'API.
+  - Semplificazioni di M1 risolte in M2: barre continue nel Mese, Programma che scorre nel passato, mini-calendario a tendina.
+  - Compleanni mancanti (es. "Babbo", "Nietta"): indagati in M2, vedi sotto.
 - **M2** Viste giorno, 6 giorni e settimana (sola lettura) e rifinitura delle viste di M1. Dettaglio nella sezione "M2: piano dettagliato".
+  - Stato all'11/10/2026: passi 1–12 fatti e provati sul Samsung (settimana uguale a `vista_settimana.jpeg`, Giorno con eventi affiancati e ora mantenuta tra le pagine, Mese, Programma nel passato, mini-calendario, ultima vista riaperta, torta dei compleanni). Restano da provare a mano: pinch (adb non simula due dita), cambio di fuso orario, navigazione a 3 anni di distanza; poi CI.
+  - Compleanni: l'API restituisce solo i compleanni salvati come eventi `eventType=birthday` nel calendario principale (3 sul tuo account). Il calendario dei contatti (`addressbook#contacts@...`) non è più in `calendarList`; Google Calendar per Android legge gli altri dalla **rubrica del telefono**. Soluzione proposta: calendario locale virtuale "Compleanni" letto da `ContactsContract` (`Event.TYPE_BIRTHDAY`, anche senza anno), con permesso facoltativo `READ_CONTACTS`: nessuno scope Google in più, quindi nessuna nuova verifica OAuth; si evitano i doppioni con i compleanni già arrivati da Google. Da decidere in quale milestone (M2 extra o M6 con i calendari locali).
 - **M3** Editor: creazione, modifica, eliminazione, invitati, Meet, ricorrenze, outbox offline, conflitti; trascinamento degli eventi (spostare e ridimensionare) nelle griglie orarie, spostato qui da M2 perché richiede la scrittura su Google.
 - **M4** Notifiche: popup, sveglia di 2 minuti, promemoria email, riavvio, onboarding dei permessi.
 - **M5** Condivisione, esportazione `.ics`/CSV, stampa PDF, ACL dei calendari.
@@ -262,6 +264,13 @@ Stato del PC (verificato l'11/10/2026): Git c'è; mancano Android Studio, Androi
 11. Compleanni: colonna `event_type`, migrazione v3, icona, indagine.
 12. Preferenze in DataStore (ultima vista, zoom).
 13. Verifica e commit.
+
+**Note di implementazione**
+- Logica pura e testata in `GridLayout.kt` (`OverlapLayout`, `Lanes.assign/fit`, `weekStart`, `minutesOn`, `barSpans`); viste in `TimeGridView.kt` (griglia), `MonthView.kt` (settimane con barre sovrapposte alle celle), `MiniCalendar.kt`.
+- Eventi di 24 ore o più vanno nella fascia "tutto il giorno"; nel Mese ogni evento che copre più giorni è una barra.
+- Finestra delle istanze: `InstanceWindows.plan` (testata) decide se ricalcolare niente, solo le serie (nuovo giorno o periodo fuori finestra, con 180 giorni di margine) o tutto (nuovo fuso). La usa `SyncEngine.updateWindow`, chiamata da ogni query delle viste, all'avvio e da `TimeZoneReceiver`.
+- Preferenze in DataStore (`AppPreferences`, in `:core:data`): ultima vista, altezza dell'ora, ora d'inizio giornata, eventi passati attenuati, finestra delle istanze.
+- Room v3: colonna `event_type`, `MIGRATION_2_3` azzera i `syncToken`.
 
 **5. Verifica di M2**
 - Unit test: `OverlapLayout` (gli stessi casi del desktop), corsie delle barre multi-giorno, inizio della settimana per locale, divisione degli eventi a mezzanotte, estensione della finestra delle istanze, migrazione v3.

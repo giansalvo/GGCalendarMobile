@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.time.LocalDate
 import java.time.ZoneId
 import java.util.UUID
 import javax.inject.Inject
@@ -30,6 +31,7 @@ class SyncEngine @Inject constructor(
     private val db: GGCalendarDatabase,
     private val api: GoogleCalendarApi,
     private val authorizer: GoogleAuthorizer,
+    private val prefs: AppPreferences,
 ) {
     private val mutex = Mutex()
     private val _syncing = MutableStateFlow(false)
@@ -41,9 +43,13 @@ class SyncEngine @Inject constructor(
     private val instances get() = db.instanceDao()
     private val messages get() = db.syncMessageDao()
 
+    /** The days the instances cover; null until first read from the preferences. */
+    @Volatile private var window: InstanceWindow? = null
+
     suspend fun syncAll() = mutex.withLock {
         _syncing.value = true
         try {
+            updateWindowLocked(null, null)
             accounts.getAll().forEach { syncAccount(it.email) }
         } finally {
             _syncing.value = false
@@ -149,13 +155,37 @@ class SyncEngine @Inject constructor(
         }
     }
 
+    /**
+     * Moves the instance window to a new day or time zone, or extends it to the days [from, to) that a view shows,
+     * and rebuilds the instances that change. Cheap when nothing changed: that check runs without the lock.
+     */
+    suspend fun updateWindow(from: LocalDate? = null, to: LocalDate? = null) {
+        val cached = window
+        val unchanged = cached != null &&
+            InstanceWindows.plan(cached, LocalDate.now(), ZoneId.systemDefault().id, from, to).scope == InstanceWindows.Scope.NONE
+        if (!unchanged) mutex.withLock { updateWindowLocked(from, to) }
+    }
+
+    private suspend fun updateWindowLocked(from: LocalDate?, to: LocalDate?) {
+        val plan = InstanceWindows.plan(window ?: prefs.instanceWindow(), LocalDate.now(), ZoneId.systemDefault().id, from, to)
+        window = plan.window
+        if (plan.scope == InstanceWindows.Scope.NONE) return
+        db.withTransaction {
+            val ids = if (plan.scope == InstanceWindows.Scope.ALL) events.masterIds() else events.seriesIds()
+            ids.forEach { recomputeInstances(it) }
+        }
+        prefs.setInstanceWindow(plan.window)
+    }
+
     /** Rebuilds the instances of an event and of its exceptions (a series' modified or cancelled occurrences). */
     private suspend fun recomputeInstances(eventId: String) {
         val event = events.get(eventId) ?: return
         val zone = ZoneId.systemDefault()
+        val days = window ?: InstanceWindows.default(LocalDate.now(), zone.id)
+        val range = RecurrenceExpander.Window(days.from.atStartOfDay(zone).toInstant(), days.to.atStartOfDay(zone).toInstant())
         val exceptions = if (event.rrule != null) events.getExceptions(eventId) else emptyList()
         instances.deleteForEvent(eventId)
-        instances.insert(RecurrenceExpander.expand(event, exceptions, RecurrenceExpander.defaultWindow(), zone))
+        instances.insert(RecurrenceExpander.expand(event, exceptions, range, zone))
         exceptions.forEach { ex ->
             instances.deleteForEvent(ex.id)
             RecurrenceExpander.single(ex, zone)?.let { instances.insert(listOf(it)) }

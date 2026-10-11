@@ -39,6 +39,7 @@ internal fun GoogleEvent.toEntity(id: String, calendarId: String, masterId: Stri
         attendees = attendees,
         reminders = local,
         hasAlarm = effective.any { it.method == ReminderMethod.POPUP && it.minutes in alarmMinutes },
+        eventType = eventType,
     )
     return when (val t = time) {
         is EventTime.Timed -> base.copy(allDay = false, startUtc = t.start.toEpochMilli(), endUtc = t.end.toEpochMilli(), timeZone = t.zoneId)

@@ -26,6 +26,7 @@ dependencies {
     implementation(project(":core:auth"))
 
     implementation(libs.lib.recur)
+    implementation(libs.androidx.datastore.preferences)
     api(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)
     ksp(libs.androidx.hilt.compiler)

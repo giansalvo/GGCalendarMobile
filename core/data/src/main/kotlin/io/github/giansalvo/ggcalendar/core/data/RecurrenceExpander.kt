@@ -4,7 +4,6 @@ import io.github.giansalvo.ggcalendar.core.database.EventEntity
 import io.github.giansalvo.ggcalendar.core.database.InstanceEntity
 import org.dmfs.rfc5545.DateTime
 import org.dmfs.rfc5545.recur.RecurrenceRule
-import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -18,10 +17,6 @@ object RecurrenceExpander {
     data class Window(val from: Instant, val to: Instant)
 
     private const val MAX_ITERATIONS = 100_000
-
-    /** One year back, two years ahead: enough for the views; the window moves on with each full recomputation. */
-    fun defaultWindow(now: Instant = Instant.now()) =
-        Window(now.minus(Duration.ofDays(365)), now.plus(Duration.ofDays(730)))
 
     /**
      * Instances of [event]. For a series, [exceptions] are its modified or cancelled occurrences: their original

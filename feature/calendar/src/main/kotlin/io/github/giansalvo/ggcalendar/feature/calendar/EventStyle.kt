@@ -1,9 +1,13 @@
 package io.github.giansalvo.ggcalendar.feature.calendar
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
+import kotlinx.coroutines.delay
 import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -42,3 +46,12 @@ internal fun EventInstance.daysIn(from: LocalDate, to: LocalDate): Sequence<Loca
     val last = minOf(endDay, to)
     return generateSequence(first) { it.plusDays(1) }.takeWhile { it < last }
 }
+
+/** The current time, updated at the start of every minute (now lines, dimmed past events). */
+@Composable
+internal fun rememberNow(): Instant = produceState(Instant.now()) {
+    while (true) {
+        delay(60_000 - System.currentTimeMillis() % 60_000)
+        value = Instant.now()
+    }
+}.value

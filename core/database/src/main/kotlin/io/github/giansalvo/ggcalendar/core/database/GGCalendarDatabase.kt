@@ -18,7 +18,7 @@ import kotlinx.serialization.json.Json
         InstanceEntity::class,
         SyncMessageEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -35,6 +35,14 @@ abstract class GGCalendarDatabase : RoomDatabase() {
         /** v2: events.list also asks for birthdays, so every calendar needs a full sync (new sync tokens). */
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("UPDATE calendars SET sync_token = NULL")
+            }
+        }
+
+        /** v3: events.event_type (birthday icon); a full sync fills it for the events already stored. */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE events ADD COLUMN event_type TEXT NOT NULL DEFAULT 'default'")
                 db.execSQL("UPDATE calendars SET sync_token = NULL")
             }
         }

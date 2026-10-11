@@ -62,6 +62,8 @@ data class GoogleEvent(
     val guestsCanSeeList: Boolean = true,
     /** Minutes of the popup reminders that are alarms (extendedProperties.private.ggAlarm), shared with the desktop app. */
     val alarmMinutes: Set<Int> = emptySet(),
+    /** "default", "birthday", "focusTime", "outOfOffice", "workingLocation" or "fromGmail". */
+    val eventType: String = "default",
 )
 
 /** Conversion of Google Calendar v3 event resources, ported from the desktop app's GoogleEventMapper. */
@@ -144,6 +146,7 @@ object GoogleEventMapper {
             guestsCanInvite = e.bool("guestsCanInviteOthers") ?: true,
             guestsCanSeeList = e.bool("guestsCanSeeOtherGuests") ?: true,
             alarmMinutes = alarms,
+            eventType = e.str("eventType") ?: "default",
         )
     }
 

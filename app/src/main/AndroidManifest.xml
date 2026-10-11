@@ -23,6 +23,15 @@
             </intent-filter>
         </activity>
 
+        <!-- ACTION_TIMEZONE_CHANGED is one of the broadcasts still delivered to manifest receivers. -->
+        <receiver
+            android:name=".TimeZoneReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
         <!-- WorkManager is initialized by GGCalendarApp (Hilt worker factory), not by App Startup. -->
         <provider
             android:name="androidx.startup.InitializationProvider"

@@ -3,6 +3,9 @@ package io.github.giansalvo.ggcalendar.feature.calendar
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,14 +26,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -49,11 +51,11 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -69,9 +71,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.giansalvo.ggcalendar.core.model.CalendarInfo
 import kotlinx.coroutines.launch
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneOffset
 import java.time.format.TextStyle
 import java.util.Locale
 
@@ -81,7 +81,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
-    var pickingDate by rememberSaveable { mutableStateOf(false) }
+    var miniOpen by rememberSaveable { mutableStateOf(false) }
 
     val pickAccount = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         viewModel.onAccountChosen(it.resultCode, it.data)
@@ -135,7 +135,11 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                 CalendarTopBar(
                     state = state,
                     onMenu = { scope.launch { drawerState.open() } },
-                    onTitle = { pickingDate = true },
+                    miniOpen = miniOpen,
+                    onTitle = {
+                        miniOpen = !miniOpen
+                        if (!miniOpen) viewModel.showMiniMonth(null)
+                    },
                     onToday = viewModel::goToToday,
                 )
             },
@@ -152,59 +156,56 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                 } else {
                     Spacer(Modifier.height(2.dp))
                 }
+                AnimatedVisibility(miniOpen, enter = expandVertically(), exit = shrinkVertically()) {
+                    MiniCalendar(
+                        selected = state.date,
+                        eventDays = state.eventDays,
+                        onMonthChange = viewModel::showMiniMonth,
+                        onPick = {
+                            viewModel.goTo(it)
+                            miniOpen = false
+                            viewModel.showMiniMonth(null)
+                        },
+                    )
+                }
                 when (state.view) {
-                    CalendarView.SCHEDULE -> ScheduleView(state.date, state.instances)
+                    CalendarView.SCHEDULE -> ScheduleView(
+                        date = state.date,
+                        from = state.scheduleFrom,
+                        to = state.scheduleTo,
+                        instances = state.instances,
+                        onVisibleDay = viewModel::scheduleScrolled,
+                        onReachStart = { viewModel.extendSchedule(past = true) },
+                        onReachEnd = { viewModel.extendSchedule(past = false) },
+                    )
                     CalendarView.MONTH -> MonthView(
                         date = state.date,
                         instances = state.instances,
                         onMonthChange = viewModel::showMonth,
                         onDayClick = viewModel::openDay,
                     )
-                    else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            stringResource(R.string.view_placeholder, stringResource(state.view.label)),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    CalendarView.DAY, CalendarView.SIX_DAYS, CalendarView.WEEK -> key(state.view) {
+                        TimeGridView(
+                            date = state.date,
+                            dayCount = state.view.dayCount,
+                            instances = state.instances,
+                            hourHeight = state.hourHeight,
+                            dayStartHour = state.dayStartHour,
+                            dimPast = state.dimPast,
+                            onHourHeightChange = viewModel::setHourHeight,
+                            onPageChange = viewModel::showDays,
+                            onDayClick = viewModel::openDay,
                         )
                     }
                 }
             }
         }
     }
-
-    if (pickingDate) {
-        JumpToDateDialog(
-            initial = state.date,
-            onPick = {
-                viewModel.goTo(it)
-                pickingDate = false
-            },
-            onDismiss = { pickingDate = false },
-        )
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun JumpToDateDialog(initial: LocalDate, onPick: (LocalDate) -> Unit, onDismiss: () -> Unit) {
-    // The Material date picker works in UTC milliseconds.
-    val picker = rememberDatePickerState(initialSelectedDateMillis = initial.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli())
-    DatePickerDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = {
-                picker.selectedDateMillis?.let { onPick(Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate()) } ?: onDismiss()
-            }) { Text(stringResource(android.R.string.ok)) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(android.R.string.cancel)) } },
-    ) {
-        DatePicker(picker)
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun CalendarTopBar(state: CalendarUiState, onMenu: () -> Unit, onTitle: () -> Unit, onToday: () -> Unit) {
+private fun CalendarTopBar(state: CalendarUiState, miniOpen: Boolean, onMenu: () -> Unit, onTitle: () -> Unit, onToday: () -> Unit) {
     val locale = Locale.getDefault()
     val month = state.date.month.getDisplayName(TextStyle.FULL_STANDALONE, locale).replaceFirstChar { it.titlecase(locale) }
     val title = if (state.date.year == LocalDate.now().year) month else "$month ${state.date.year}"
@@ -215,7 +216,10 @@ private fun CalendarTopBar(state: CalendarUiState, onMenu: () -> Unit, onTitle: 
         title = {
             Row(Modifier.clickable(onClick = onTitle).padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(title)
-                Icon(Icons.Filled.ArrowDropDown, contentDescription = stringResource(R.string.go_to_date))
+                Icon(
+                    if (miniOpen) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
+                    contentDescription = stringResource(R.string.go_to_date),
+                )
             }
         },
         actions = {

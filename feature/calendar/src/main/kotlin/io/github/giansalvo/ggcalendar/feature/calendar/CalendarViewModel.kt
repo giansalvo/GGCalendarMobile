@@ -16,7 +16,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -28,9 +31,19 @@ import javax.inject.Inject
 data class CalendarUiState(
     val view: CalendarView = CalendarView.SCHEDULE,
     val date: LocalDate = LocalDate.now(),
+    /** Days loaded by the schedule, [scheduleFrom, scheduleTo): they grow as the user scrolls. */
+    val scheduleFrom: LocalDate = LocalDate.now().minusMonths(1),
+    val scheduleTo: LocalDate = LocalDate.now().plusMonths(4),
     val accounts: List<AccountWithCalendars> = emptyList(),
     val instances: List<EventInstance> = emptyList(),
     val syncing: Boolean = false,
+    /** Height of one hour in the time grids, in dp (pinch to zoom). */
+    val hourHeight: Float = DEFAULT_HOUR_HEIGHT,
+    /** First hour shown when a time grid opens on a period without today. */
+    val dayStartHour: Int = 7,
+    val dimPast: Boolean = true,
+    /** Days with events around the month shown by the mini calendar (empty while it is closed). */
+    val eventDays: Set<LocalDate> = emptySet(),
     val busy: Boolean = false,
     /** Set when Google needs the user's consent; the screen launches it and calls [CalendarViewModel.onConsentResult]. */
     val consent: AuthorizationOutcome.NeedsConsent? = null,
@@ -38,7 +51,16 @@ data class CalendarUiState(
     val message: SyncMessageEntity? = null,
 )
 
-private data class Navigation(val view: CalendarView, val date: LocalDate)
+private data class Navigation(
+    val view: CalendarView,
+    val date: LocalDate,
+    val scheduleFrom: LocalDate = date.minusMonths(1),
+    val scheduleTo: LocalDate = date.plusMonths(4),
+) {
+    /** Moves to [day]; the schedule starts again around it when it falls outside the loaded months. */
+    fun jumpTo(day: LocalDate): Navigation =
+        if (day >= scheduleFrom && day < scheduleTo) copy(date = day) else Navigation(view, day)
+}
 
 private data class Transient(
     val busy: Boolean = false,
@@ -54,43 +76,84 @@ class CalendarViewModel @Inject constructor(
 ) : ViewModel() {
     private val navigation = MutableStateFlow(Navigation(CalendarView.SCHEDULE, LocalDate.now()))
     private val transient = MutableStateFlow(Transient())
+    private val grid = repository.viewPreferences
+    private val miniMonth = MutableStateFlow<YearMonth?>(null)
+
+    private val eventDays = miniMonth.flatMapLatest { month ->
+        if (month == null) return@flatMapLatest flowOf(emptySet())
+        val from = monthGrid(month.minusMonths(1)).first
+        val to = monthGrid(month.plusMonths(1)).second
+        repository.instances(from, to).map { list -> list.flatMapTo(HashSet()) { it.daysIn(from, to).asIterable() } }
+    }
 
     // The account whose consent screen is showing: the state's consent is cleared as soon as it is launched.
     private var consentEmail: String? = null
 
-    private val instances = navigation.flatMapLatest { nav ->
-        val (from, to) = range(nav.view, nav.date)
-        repository.instances(from, to)
-    }
+    // Re-query only when the loaded days change, not at every scroll of the schedule.
+    private val instances = navigation
+        .map { nav -> if (nav.view == CalendarView.SCHEDULE) nav.scheduleFrom to nav.scheduleTo else range(nav.view, nav.date) }
+        .distinctUntilChanged()
+        .flatMapLatest { (from, to) -> repository.instances(from, to) }
 
     val state: StateFlow<CalendarUiState> = combine(
         navigation,
         repository.accounts,
         instances,
         combine(repository.syncing, transient, repository.messages.map { it.firstOrNull() }, ::Triple),
-    ) { nav, accounts, list, (syncing, t, message) ->
+        combine(grid, eventDays, ::Pair),
+    ) { nav, accounts, list, (syncing, t, message), (g, days) ->
         CalendarUiState(
-            view = nav.view, date = nav.date, accounts = accounts, instances = list, syncing = syncing,
+            view = nav.view, date = nav.date, scheduleFrom = nav.scheduleFrom, scheduleTo = nav.scheduleTo, accounts = accounts, instances = list, syncing = syncing,
+            hourHeight = g.hourHeight, dayStartHour = g.dayStartHour, dimPast = g.dimPast, eventDays = days,
             busy = t.busy, consent = t.consent, error = t.error, message = message,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CalendarUiState())
 
     init {
         repository.syncNow()
+        // Reopen the last view used.
+        viewModelScope.launch {
+            val last = repository.viewPreferences.first().lastView
+            CalendarView.entries.firstOrNull { it.name == last }?.let { view -> navigation.update { it.copy(view = view) } }
+        }
     }
 
-    fun selectView(view: CalendarView) = navigation.update { it.copy(view = view) }
+    fun selectView(view: CalendarView) {
+        navigation.update { it.copy(view = view) }
+        viewModelScope.launch { repository.setLastView(view.name) }
+    }
 
-    fun goToToday() = navigation.update { it.copy(date = LocalDate.now()) }
+    fun goToToday() = navigation.update { it.jumpTo(LocalDate.now()) }
 
-    fun goTo(date: LocalDate) = navigation.update { it.copy(date = date) }
+    fun goTo(date: LocalDate) = navigation.update { it.jumpTo(date) }
+
+    /** The schedule scrolled to [day]: only the title follows, the loaded months stay. */
+    fun scheduleScrolled(day: LocalDate) = navigation.update { it.copy(date = day) }
+
+    /** The schedule is near its first or last loaded day: load three more months on that side. */
+    fun extendSchedule(past: Boolean) = navigation.update {
+        if (past) it.copy(scheduleFrom = it.scheduleFrom.minusMonths(3)) else it.copy(scheduleTo = it.scheduleTo.plusMonths(3))
+    }
 
     /** The month pager settled on [month]: keep the day of the month when possible. */
     fun showMonth(month: YearMonth) = navigation.update {
-        if (YearMonth.from(it.date) == month) it else it.copy(date = month.atDay(minOf(it.date.dayOfMonth, month.lengthOfMonth())))
+        if (YearMonth.from(it.date) == month) it else it.jumpTo(month.atDay(minOf(it.date.dayOfMonth, month.lengthOfMonth())))
     }
 
-    fun openDay(date: LocalDate) = navigation.update { Navigation(CalendarView.DAY, date) }
+    /** A time grid settled on the [days] days from [start]: keep the selected date if it is among them. */
+    fun showDays(start: LocalDate, days: Int) = navigation.update {
+        if (it.date >= start && it.date < start.plusDays(days.toLong())) it else it.jumpTo(start)
+    }
+
+    /** The mini calendar shows [month] (null: closed): load the days with events around it. */
+    fun showMiniMonth(month: YearMonth?) = miniMonth.update { month }
+
+    fun setHourHeight(height: Float) = viewModelScope.launch { repository.setHourHeight(height) }
+
+    fun openDay(date: LocalDate) {
+        navigation.update { it.copy(view = CalendarView.DAY).jumpTo(date) }
+        viewModelScope.launch { repository.setLastView(CalendarView.DAY.name) }
+    }
 
     fun refresh() = repository.syncNow()
 
@@ -148,12 +211,12 @@ class CalendarViewModel @Inject constructor(
     }
 
     private companion object {
-        /** Days loaded for each view: the schedule shows four months from the selected day; the month view three grids. */
+        /** Days loaded for the month view (three grids) and the time grids; the schedule has its own months. */
         fun range(view: CalendarView, date: LocalDate): Pair<LocalDate, LocalDate> = when (view) {
-            CalendarView.SCHEDULE -> date to date.plusMonths(4)
             CalendarView.MONTH -> YearMonth.from(date).minusMonths(1).atDay(1).minusDays(7) to
                 YearMonth.from(date).plusMonths(1).atEndOfMonth().plusDays(14)
-            else -> date.minusDays(7) to date.plusDays(14)
+            // Time grids: the page with the date and its neighbours, whatever the alignment of the pages.
+            else -> date.minusDays(14) to date.plusDays(21)
         }
     }
 }

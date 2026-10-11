@@ -14,16 +14,24 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Alarm
+import androidx.compose.material.icons.outlined.Cake
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -31,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
+import kotlinx.coroutines.flow.distinctUntilChanged
 import java.time.Instant
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -39,30 +48,80 @@ import java.util.Locale
 
 private sealed interface ScheduleItem {
     val key: String
+    val day: LocalDate
 
     data class WeekHeader(val start: LocalDate) : ScheduleItem {
         override val key = "w$start"
+        override val day = start
     }
 
-    data class Event(val day: LocalDate, val instance: EventInstance, val firstOfDay: Boolean) : ScheduleItem {
+    data class Event(override val day: LocalDate, val instance: EventInstance, val firstOfDay: Boolean) : ScheduleItem {
         override val key = "e$day${instance.eventId}${instance.begin}"
     }
 
-    data class NowLine(val day: LocalDate, val firstOfDay: Boolean) : ScheduleItem {
+    data class NowLine(override val day: LocalDate, val firstOfDay: Boolean) : ScheduleItem {
         override val key = "now"
     }
 
-    data class Empty(val day: LocalDate) : ScheduleItem {
+    data class Empty(override val day: LocalDate) : ScheduleItem {
         override val key = "empty$day"
     }
 }
 
-/** Programma: days with events from [from], as in Google Calendar's schedule (multi-day events on each of their days). */
+/**
+ * Programma: days with events in [from, to), as in Google Calendar's schedule (multi-day events on each of their
+ * days). It opens on [date] and scrolls endlessly: near an edge it asks for more months with [onReachStart] or
+ * [onReachEnd]; while the user scrolls, [onVisibleDay] reports the first day on screen (title of the top bar).
+ */
 @Composable
-internal fun ScheduleView(from: LocalDate, instances: List<EventInstance>, modifier: Modifier = Modifier) {
+internal fun ScheduleView(
+    date: LocalDate,
+    from: LocalDate,
+    to: LocalDate,
+    instances: List<EventInstance>,
+    onVisibleDay: (LocalDate) -> Unit,
+    onReachStart: () -> Unit,
+    onReachEnd: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val today = LocalDate.now()
-    val items = remember(from, instances) { buildItems(from, instances, today, Instant.now()) }
-    LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 88.dp)) {
+    val items = remember(from, to, instances) { buildItems(from, to, instances, today, Instant.now()) }
+    fun indexOf(day: LocalDate) = items.indexOfFirst { it !is ScheduleItem.WeekHeader && it.day >= day }.let { if (it < 0) items.lastIndex else it }.coerceAtLeast(0)
+
+    val list = rememberLazyListState(initialFirstVisibleItemIndex = indexOf(date))
+    // Keep the list on the date while the data loads and when it jumps (Today, date picker), but not on the dates
+    // that the list itself reported while the user scrolled.
+    var touched by remember { mutableStateOf(false) }
+    var reported by remember { mutableStateOf<LocalDate?>(null) }
+    LaunchedEffect(date, items.size) {
+        if (date != reported) list.scrollToItem(indexOf(date))
+    }
+    val visibleDay by rememberUpdatedState(onVisibleDay)
+    val reachStart by rememberUpdatedState(onReachStart)
+    val reachEnd by rememberUpdatedState(onReachEnd)
+    LaunchedEffect(list) {
+        snapshotFlow { list.isScrollInProgress }.collect { if (it) touched = true }
+    }
+    LaunchedEffect(list, items) {
+        snapshotFlow { list.firstVisibleItemIndex }.distinctUntilChanged().collect { index ->
+            if (!list.isScrollInProgress) return@collect
+            items.getOrNull(index)?.day?.let {
+                reported = it
+                visibleDay(it)
+            }
+        }
+    }
+    LaunchedEffect(list) {
+        snapshotFlow { touched && list.firstVisibleItemIndex < 3 }.distinctUntilChanged().collect { if (it) reachStart() }
+    }
+    LaunchedEffect(list) {
+        snapshotFlow {
+            val last = list.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            touched && last >= list.layoutInfo.totalItemsCount - 5
+        }.distinctUntilChanged().collect { if (it) reachEnd() }
+    }
+
+    LazyColumn(modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 88.dp)) {
         items(items, key = { it.key }) { item ->
             when (item) {
                 is ScheduleItem.WeekHeader -> WeekHeader(item.start)
@@ -81,8 +140,7 @@ internal fun ScheduleView(from: LocalDate, instances: List<EventInstance>, modif
     }
 }
 
-private fun buildItems(from: LocalDate, instances: List<EventInstance>, today: LocalDate, now: Instant): List<ScheduleItem> {
-    val to = from.plusMonths(4)
+private fun buildItems(from: LocalDate, to: LocalDate, instances: List<EventInstance>, today: LocalDate, now: Instant): List<ScheduleItem> {
     val byDay = sortedMapOf<LocalDate, MutableList<EventInstance>>()
     instances.forEach { i -> i.daysIn(from, to).forEach { byDay.getOrPut(it) { mutableListOf() } += i } }
     if (today in from..<to) byDay.getOrPut(today) { mutableListOf() }
@@ -91,9 +149,9 @@ private fun buildItems(from: LocalDate, instances: List<EventInstance>, today: L
     val out = mutableListOf<ScheduleItem>()
     var week: LocalDate? = null
     byDay.forEach { (day, list) ->
-        val weekStart = day.minusDays(((day.dayOfWeek.value - firstDay.value + 7) % 7).toLong())
-        if (week != null && weekStart != week) out += ScheduleItem.WeekHeader(weekStart)
-        week = weekStart
+        val start = weekStart(day, firstDay)
+        if (week != null && start != week) out += ScheduleItem.WeekHeader(start)
+        week = start
         val sorted = list.sortedWith(compareByDescending<EventInstance> { it.allDay }.thenBy { it.begin })
         if (sorted.isEmpty()) {
             out += ScheduleItem.Empty(day)
@@ -171,6 +229,7 @@ private fun EventCard(instance: EventInstance, day: LocalDate) {
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
+        if (instance.isBirthday) Icon(Icons.Outlined.Cake, contentDescription = stringResource(R.string.birthday), tint = content)
         if (instance.hasAlarm) Icon(Icons.Outlined.Alarm, contentDescription = stringResource(R.string.alarm), tint = content)
         if (instance.hasMeet) Icon(Icons.Outlined.Videocam, contentDescription = "Google Meet", tint = content)
     }

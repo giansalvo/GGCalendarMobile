@@ -58,6 +58,13 @@ interface EventDao {
     @Query("SELECT remote_id AS remoteId, id FROM events WHERE calendar_id = :calendarId AND remote_id IS NOT NULL")
     suspend fun remoteIds(calendarId: String): List<RemoteLink>
 
+    /** Events that own their instances: single events and series masters (not the occurrences of a series). */
+    @Query("SELECT id FROM events WHERE series_master_id IS NULL")
+    suspend fun masterIds(): List<String>
+
+    @Query("SELECT id FROM events WHERE series_master_id IS NULL AND rrule IS NOT NULL")
+    suspend fun seriesIds(): List<String>
+
     @Query("SELECT * FROM events WHERE series_master_id = :masterId")
     suspend fun getExceptions(masterId: String): List<EventEntity>
 
@@ -86,7 +93,8 @@ interface InstanceDao {
                COALESCE(e.color, c.color) AS colorHex, i.all_day AS allDay, i.begin_utc AS beginUtc, i.end_utc AS endUtc,
                i.start_day AS startDay, i.end_day AS endDay,
                (e.meet_link IS NOT NULL OR e.add_meet) AS hasMeet, e.has_alarm AS hasAlarm,
-               (e.rrule IS NOT NULL OR e.series_master_id IS NOT NULL) AS isRecurring
+               (e.rrule IS NOT NULL OR e.series_master_id IS NOT NULL) AS isRecurring,
+               (e.event_type = 'birthday') AS isBirthday
         FROM instances i
         JOIN events e ON e.id = i.event_id
         JOIN calendars c ON c.id = e.calendar_id

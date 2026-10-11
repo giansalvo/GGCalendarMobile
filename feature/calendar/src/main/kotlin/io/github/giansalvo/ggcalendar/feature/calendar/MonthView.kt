@@ -2,7 +2,6 @@ package io.github.giansalvo.ggcalendar.feature.calendar
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -10,8 +9,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -25,7 +26,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
@@ -40,9 +40,10 @@ private const val CENTER = PAGES / 2
 private val BASE_MONTH: YearMonth = YearMonth.now()
 
 private const val CHIP_HEIGHT_DP = 18
+private const val CHIP_ROW_DP = CHIP_HEIGHT_DP + 2
 private const val DAY_HEADER_DP = 26
 
-/** Mese: six-week grids that swipe horizontally; events as colored chips with truncated titles, then "+N". */
+/** Mese: six-week grids that swipe horizontally; events as colored chips with truncated titles, then "+N" per day. */
 @Composable
 internal fun MonthView(
     date: LocalDate,
@@ -85,59 +86,93 @@ internal fun MonthView(
 
 @Composable
 private fun MonthGrid(month: YearMonth, instances: List<EventInstance>, onDayClick: (LocalDate) -> Unit) {
-    val firstDay = firstDayOfWeek()
-    val first = month.atDay(1)
-    val gridStart = first.minusDays(((first.dayOfWeek.value - firstDay.value + 7) % 7).toLong())
-    val gridEnd = gridStart.plusDays(42)
-    val byDay = remember(month, instances) {
-        val map = HashMap<LocalDate, MutableList<EventInstance>>()
-        instances.forEach { i -> i.daysIn(gridStart, gridEnd).forEach { map.getOrPut(it) { mutableListOf() } += i } }
-        map.mapValues { (_, list) -> list.sortedWith(compareByDescending<EventInstance> { it.allDay || it.endDay > it.startDay.plusDays(1) }.thenBy { it.begin }) }
-    }
+    val gridStart = weekStart(month.atDay(1), firstDayOfWeek())
     val today = LocalDate.now()
-
     BoxWithConstraints(Modifier.fillMaxSize().padding(horizontal = 4.dp)) {
         val cellHeight = maxHeight / 6
-        val slots = ((cellHeight.value - DAY_HEADER_DP) / (CHIP_HEIGHT_DP + 2)).toInt().coerceAtLeast(1)
+        val slots = ((cellHeight.value - DAY_HEADER_DP - 3) / CHIP_ROW_DP).toInt().coerceAtLeast(1)
         Column(Modifier.fillMaxSize()) {
             (0 until 6).forEach { week ->
-                Row(Modifier.weight(1f).fillMaxWidth()) {
-                    (0 until 7).forEach { d ->
-                        val day = gridStart.plusDays((week * 7 + d).toLong())
-                        DayCell(
-                            day = day,
-                            inMonth = YearMonth.from(day) == month,
-                            isToday = day == today,
-                            events = byDay[day].orEmpty(),
-                            slots = slots,
-                            onClick = { onDayClick(day) },
-                            modifier = Modifier.weight(1f).fillMaxSize(),
-                        )
-                    }
-                }
+                WeekRow(
+                    start = gridStart.plusDays(week * 7L),
+                    month = month,
+                    today = today,
+                    instances = instances,
+                    slots = slots,
+                    onDayClick = onDayClick,
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                )
+            }
+        }
+    }
+}
+
+/** One week: the day cells, then every event as a chip; events of several days are continuous bars. */
+@Composable
+private fun WeekRow(
+    start: LocalDate,
+    month: YearMonth,
+    today: LocalDate,
+    instances: List<EventInstance>,
+    slots: Int,
+    onDayClick: (LocalDate) -> Unit,
+    modifier: Modifier,
+) {
+    val lanes = remember(start, instances) {
+        val end = start.plusDays(7)
+        val spans = instances
+            .filter { it.startDay < end && it.endDay > start }
+            .sortedWith(compareByDescending<EventInstance> { it.isBar }.thenBy { it.begin })
+            .map { Span(it, ChronoUnit.DAYS.between(start, maxOf(it.startDay, start)).toInt(), ChronoUnit.DAYS.between(start, minOf(it.endDay, end)).toInt()) }
+        Lanes.assign(spans)
+    }
+    val (visible, more) = remember(lanes, slots) { Lanes.fit(lanes, 7, slots) }
+
+    BoxWithConstraints(modifier) {
+        val column = maxWidth / 7
+        Row(Modifier.fillMaxSize()) {
+            (0 until 7).forEach { d ->
+                val day = start.plusDays(d.toLong())
+                DayCell(day, YearMonth.from(day) == month, day == today, { onDayClick(day) }, Modifier.weight(1f).fillMaxSize())
+            }
+        }
+        // The chips are not clickable: a tap goes through to the day cell below.
+        visible.forEach { l ->
+            val inMonth = YearMonth.from(start.plusDays(l.span.startCol.toLong())) == month ||
+                YearMonth.from(start.plusDays(l.span.endCol - 1L)) == month
+            EventBar(
+                l.span.item,
+                onClick = null,
+                modifier = Modifier
+                    .offset(x = column * l.span.startCol + 3.dp, y = (DAY_HEADER_DP + 1.5 + CHIP_ROW_DP * l.lane).dp)
+                    .width(column * (l.span.endCol - l.span.startCol) - 6.dp)
+                    .height(CHIP_HEIGHT_DP.dp)
+                    .alpha(if (inMonth) 1f else 0.5f),
+            )
+        }
+        more.forEachIndexed { c, n ->
+            if (n > 0) {
+                Text(
+                    "+$n",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .offset(x = column * c + 6.dp, y = (DAY_HEADER_DP + 1.5 + CHIP_ROW_DP * (slots - 1)).dp),
+                )
             }
         }
     }
 }
 
 @Composable
-private fun DayCell(
-    day: LocalDate,
-    inMonth: Boolean,
-    isToday: Boolean,
-    events: List<EventInstance>,
-    slots: Int,
-    onClick: () -> Unit,
-    modifier: Modifier,
-) {
-    Column(
+private fun DayCell(day: LocalDate, inMonth: Boolean, isToday: Boolean, onClick: () -> Unit, modifier: Modifier) {
+    Box(
         modifier
             .padding(1.5.dp)
             .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 2.dp)
             .alpha(if (inMonth) 1f else 0.5f),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+        contentAlignment = Alignment.TopCenter,
     ) {
         Box(Modifier.fillMaxWidth().height(DAY_HEADER_DP.dp), contentAlignment = Alignment.Center) {
             if (isToday) {
@@ -148,34 +183,5 @@ private fun DayCell(
                 Text(day.dayOfMonth.toString(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
             }
         }
-        val shown = if (events.size > slots) slots - 1 else events.size
-        events.take(shown).forEach { EventChip(it) }
-        if (events.size > shown) {
-            Text(
-                "+${events.size - shown}",
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 3.dp),
-            )
-        }
     }
-}
-
-@Composable
-private fun EventChip(instance: EventInstance) {
-    val background = parseColor(instance.colorHex)
-    Text(
-        instance.title.ifBlank { "…" },
-        fontSize = 11.sp,
-        lineHeight = 13.sp,
-        maxLines = 1,
-        softWrap = false,
-        overflow = TextOverflow.Clip,
-        color = contentColorOn(background),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(CHIP_HEIGHT_DP.dp)
-            .background(background, RoundedCornerShape(4.dp))
-            .padding(horizontal = 3.dp, vertical = 2.dp),
-    )
 }
