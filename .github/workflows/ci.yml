@@ -17,6 +17,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - name: No signed binaries or secrets in the repository
+        run: |
+          # Signed APKs, keystores and OAuth secrets must never be tracked, even if added with "git add -f".
+          bad=$(git ls-files | grep -E '\.(apk|aab|apks|jks|keystore|p12|pem)$|(^|/)keystore\.properties$|(^|/)client_secret.*\.json$|(^|/)google-services\.json$|^dist/|^OAuth/' || true)
+          if [ -n "$bad" ]; then echo "Tracked files that must stay local:"; echo "$bad"; exit 1; fi
       - uses: actions/setup-java@v5
         with:
           distribution: temurin

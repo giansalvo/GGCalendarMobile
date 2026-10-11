@@ -17,6 +17,12 @@ client_secret*.json
 keystore.properties
 google-services.json
 
+# APK firmati da consegnare (cartella dist/) e qualunque binario di installazione
+/dist/
+*.apk
+*.aab
+*.apks
+
 # Screenshot di riferimento con dati personali (account, eventi reali)
 img/*.jpeg
 img/*.png
