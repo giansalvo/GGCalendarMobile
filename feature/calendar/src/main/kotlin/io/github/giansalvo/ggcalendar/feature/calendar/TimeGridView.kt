@@ -216,7 +216,8 @@ internal fun TimeGridView(
                     )
                     .verticalScroll(scroll),
             ) {
-              Row {
+              // Room below the last hour, so that it can scroll above the "+" button.
+              Row(Modifier.padding(bottom = 88.dp)) {
                 HourLabels(hourDp)
                 days.forEachIndexed { index, day ->
                     DayColumn(
