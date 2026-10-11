@@ -177,11 +177,12 @@ I test xUnit (`tests/GGCalendar.Core.Tests`) vengono tradotti in JUnit con gli s
 ## Milestone
 - **M0** Setup: repository, scheletro multi-modulo, CI, icona e tema, client OAuth Android aggiunti al progetto Google Cloud esistente, privacy policy pubblicata su Altervista, OAuth funzionante sul Samsung.
 - **M1** Login con più account, sincronizzazione in lettura, Room, viste agenda e mese.
+  - CI verde (run 38097542767).
   - Stato all'11/10/2026: fatto. Moduli `:core:database` (Room v2, schema esportato in `core/database/schemas`) e `:core:data` (sync, ricorrenze con lib-recur, repository, `SyncWorker` ogni 15 minuti, Hilt WorkManager). Programma e Mese verificati sul Samsung con 2 account e 21 calendari; compleanni dei contatti richiesti con `eventTypes`.
   - Semplificazioni da sistemare in M2: nel Mese gli eventi di più giorni sono chip ripetuti (non barre continue); il Programma parte dal giorno selezionato e non scorre verso il passato; il titolo del mese apre un DatePicker invece del mini-calendario a tendina.
   - Da indagare: alcuni compleanni visibili in Google Calendar (es. "Babbo", "Nietta") non arrivano dall'API.
-- **M2** Viste giorno, 6 giorni, settimana, con trascinamento.
-- **M3** Editor: creazione, modifica, eliminazione, invitati, Meet, ricorrenze, outbox offline, conflitti.
+- **M2** Viste giorno, 6 giorni e settimana (sola lettura) e rifinitura delle viste di M1. Dettaglio nella sezione "M2: piano dettagliato".
+- **M3** Editor: creazione, modifica, eliminazione, invitati, Meet, ricorrenze, outbox offline, conflitti; trascinamento degli eventi (spostare e ridimensionare) nelle griglie orarie, spostato qui da M2 perché richiede la scrittura su Google.
 - **M4** Notifiche: popup, sveglia di 2 minuti, promemoria email, riavvio, onboarding dei permessi.
 - **M5** Condivisione, esportazione `.ics`/CSV, stampa PDF, ACL dei calendari.
 - **M6** Impostazioni, calendari locali, importazione `.ics`, suoni personalizzati, secondo fuso orario, rifinitura i18n, aggiornamenti in-app; aggiornamento del desktop C# per `ggAlarm`.
@@ -215,6 +216,58 @@ Stato del PC (verificato l'11/10/2026): Git c'è; mancano Android Studio, Androi
 - **M0 completata (11/10/2026)**: repo pubblico `giansalvo/GGCalendarMobile` creato, push di `main`, CI verde (run 38095758963).
 
 **Criterio di completamento di M0**: l'APK di debug si installa sul Samsung, il login Google mostra la schermata di consenso di GGCalendar e l'app elenca i calendari dell'account; la CI su GitHub è verde.
+
+## M2: piano dettagliato
+**Obiettivo**: le viste Giorno, 6 giorni e Settimana a griglia oraria, come `img/vista_settimana.jpeg`, in sola lettura, più le rifiniture rimandate da M1. Nessuna scrittura su Google: il trascinamento è in M3.
+
+**Decisioni**
+- Griglia di 24 ore scorrevole in verticale, come Google Calendar. All'apertura si posiziona sull'ora attuale meno un'ora se il periodo contiene oggi, altrimenti sull'ora d'inizio giornata (7:00, impostazione `dayStartHour`).
+- Tocco su uno spazio vuoto: compare un segnaposto "(Nuovo evento)" di un'ora, agganciato al quarto d'ora; in M3 aprirà l'editor con data e ora precompilate.
+- Tocco su un evento: per ora nessuna azione; il dettaglio arriva in M3.
+- Paginazione orizzontale: la settimana parte dal primo giorno della settimana del locale (lunedì in Italia); Giorno e 6 giorni partono dalla data selezionata e avanzano di 1 o 6 giorni, come i "3 giorni" di Google.
+
+**1. Componente `TimeGrid`** (`feature/calendar`, condiviso dalle tre viste, parametri `startDate` e `dayCount` = 1, 6 o 7)
+- Intestazione dei giorni: nome breve e numero, oggi nel cerchio blu. Il tocco su un giorno apre la vista Giorno.
+- Fascia "tutto il giorno": eventi di tutto il giorno e di più giorni come barre continue tra le colonne, con corsie assegnate come nel Mese; al massimo 2 righe più "+N", con espansione al tocco.
+- Area oraria: colonna delle ore (48 dp) e celle orarie arrotondate come nello screenshot. Ogni evento è un blocco arrotondato del colore del calendario, con il titolo che va a capo e l'orario se c'è spazio; altezza minima di 18 dp per gli eventi brevi.
+- Eventi sovrapposti affiancati: porting di `OverlapLayout` del desktop, con i suoi test.
+- Eventi con orario che attraversano la mezzanotte: divisi tra i giorni.
+- Linea dell'ora attuale con il pallino, aggiornata ogni minuto; eventi passati attenuati (`dimPast`, attivo di default come nel desktop).
+- Zoom con il pinch sull'altezza dell'ora (da 32 a 120 dp, default 48 come nel desktop), mantenuto tra le pagine e salvato nelle preferenze.
+- Layout Compose personalizzato (`Layout` con misure calcolate), senza una lista per colonna; scroll verticale condiviso tra le pagine, così scorrendo di lato l'ora resta la stessa.
+
+**2. Rifiniture delle viste di M1**
+- Mese: gli eventi di più giorni diventano barre continue all'interno di ogni settimana (corsie stabili), con "+N" calcolato per giorno.
+- Programma: scorrimento infinito anche verso il passato. Il periodo caricato si estende di qualche mese quando ci si avvicina a un bordo e la lista si apre sulla data selezionata.
+- Titolo del mese: un mini-calendario a tendina sotto la barra in alto (scorrevole tra i mesi, con un pallino nei giorni con eventi) sostituisce il DatePicker.
+- Icona della torta per i compleanni (`eventType` = `birthday`): nuova colonna `event_type` con migrazione v3, che azzera anche i `syncToken` per riscaricare i tipi.
+- Indagine sui compleanni mancanti ("Babbo", "Nietta"): confronto con la risposta grezza dell'API; possibili cause sono i contatti senza anno di nascita e i compleanni da "Altri contatti". Se l'API non li espone, lo si documenta come limite noto.
+
+**3. Dati e ciclo di vita**
+- Finestra delle istanze mobile: se l'utente naviga oltre −1/+2 anni, il repository estende la finestra e ricalcola le serie; la finestra si sposta anche con il passare del tempo, al primo avvio di ogni giorno.
+- Cambio di fuso orario del telefono (`ACTION_TIMEZONE_CHANGED`): ricalcolo delle istanze, perché i giorni dipendono dal fuso.
+- Preferenze minime in DataStore, senza schermata, che arriva in M6: ultima vista usata (riaperta all'avvio), `dayStartHour`, altezza dell'ora, `dimPast`.
+
+**4. Ordine di lavoro**
+1. Porting di `OverlapLayout` e test (unit test JVM).
+2. `TimeGrid` statica per una settimana: intestazione, ore, celle, eventi posizionati.
+3. Fascia "tutto il giorno" con le barre continue (logica delle corsie condivisa con il Mese), con test.
+4. Paginazione e viste Giorno e 6 giorni; navigazione dal Mese e dalle intestazioni al Giorno.
+5. Linea dell'ora attuale, eventi passati attenuati, scroll iniziale.
+6. Zoom con il pinch e segnaposto del tocco su uno spazio vuoto.
+7. Barre continue nel Mese.
+8. Programma con scorrimento infinito.
+9. Mini-calendario a tendina.
+10. Finestra delle istanze mobile e cambio di fuso.
+11. Compleanni: colonna `event_type`, migrazione v3, icona, indagine.
+12. Preferenze in DataStore (ultima vista, zoom).
+13. Verifica e commit.
+
+**5. Verifica di M2**
+- Unit test: `OverlapLayout` (gli stessi casi del desktop), corsie delle barre multi-giorno, inizio della settimana per locale, divisione degli eventi a mezzanotte, estensione della finestra delle istanze, migrazione v3.
+- Sul Samsung, confronto con gli screenshot di Google in `img/`: settimana dell'11 ottobre contro `vista_settimana.jpeg` (stessi blocchi negli stessi orari e affiancati quando si sovrappongono), Mese con barre continue, Programma che scorre nel passato.
+- Prove manuali: pinch, scorrimento tra le settimane con l'ora mantenuta, cambio del fuso orario nelle impostazioni del telefono, navigazione a 3 anni di distanza.
+- CI verde.
 
 ## Verifica
 - Test unitari: SyncEngine (syncToken, 410, 412 → conflitto), espansione RRULE, mapping dei DTO, scrittore ICS, scheduler degli allarmi. Le chiamate API sono simulate con MockWebServer.
