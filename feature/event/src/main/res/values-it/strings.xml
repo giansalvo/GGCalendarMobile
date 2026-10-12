@@ -151,4 +151,16 @@
     <string name="no_contacts">Nessun contatto trovato</string>
     <string name="write_to_guests">Scrivi agli invitati</string>
     <string name="write_no_mail_app">Nessuna app di posta trovata</string>
+    <string name="export_title">Esporta in .ics</string>
+    <string name="export_calendars">Calendari</string>
+    <string name="export_range">Giorni</string>
+    <string name="export_range_invalid">Il giorno finale è prima di quello iniziale</string>
+    <string name="export_note">Si possono esportare anche i calendari nascosti. Una serie viene esportata una sola volta, con le sue modifiche.</string>
+    <string name="export_action">Esporta</string>
+    <string name="export_nothing">Nessun evento in questi giorni</string>
+    <string name="export_failed">Impossibile salvare il file</string>
+    <plurals name="export_done">
+        <item quantity="one">%d evento esportato</item>
+        <item quantity="other">%d eventi esportati</item>
+    </plurals>
 </resources>

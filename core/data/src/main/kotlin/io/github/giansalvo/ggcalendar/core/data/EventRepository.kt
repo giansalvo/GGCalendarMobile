@@ -21,6 +21,9 @@ data class EventDetail(val event: EventEntity, val calendar: CalendarEntity, val
             (event.organizerEmail == null || event.organizerEmail == calendar.remoteId || event.organizerEmail == calendar.accountEmail || event.guestsCanModify)
 }
 
+/** One event to export: a single event or a series master, with the exceptions of the series. */
+class ExportItem(val event: EventEntity, val calendar: CalendarEntity, val exceptions: List<EventEntity>)
+
 /** Events for the detail sheet and the editor; changes go through [EventWriter]. */
 @Singleton
 class EventRepository @Inject constructor(
@@ -39,6 +42,21 @@ class EventRepository @Inject constructor(
 
     /** The modified and cancelled occurrences of a series (for sharing and exporting it). */
     suspend fun exceptionsOf(masterId: String): List<EventEntity> = db.eventDao().getExceptions(masterId)
+
+    /**
+     * Every event of [calendarIds] with an occurrence in the days [from, to] (both included), for exporting: each series
+     * once, with its modified and cancelled occurrences.
+     */
+    suspend fun forExport(calendarIds: Collection<String>, from: java.time.LocalDate, to: java.time.LocalDate): List<ExportItem> {
+        if (calendarIds.isEmpty()) return emptyList()
+        val ids = db.eventDao().exportRootIds(calendarIds.toList(), from.toEpochDay(), to.toEpochDay() + 1)
+        val calendars = db.calendarDao().observeAll().first().associateBy { it.id }
+        // SQLite limits the number of variables of one query: read the events in chunks.
+        return ids.chunked(500).flatMap { db.eventDao().getAll(it) }.mapNotNull { e ->
+            val calendar = calendars[e.calendarId] ?: return@mapNotNull null
+            ExportItem(e, calendar, if (e.rrule.isNullOrBlank()) emptyList() else db.eventDao().getExceptions(e.id))
+        }.sortedWith(compareBy({ it.event.startUtc ?: (it.event.startDay ?: 0) * 86_400_000L }, { it.event.title }))
+    }
 
     /** Calendars where the user can create events, account by account in the order they were added. */
     val writableCalendars: Flow<List<CalendarEntity>> =

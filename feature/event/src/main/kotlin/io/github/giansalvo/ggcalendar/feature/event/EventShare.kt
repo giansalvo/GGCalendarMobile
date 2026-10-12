@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.res.Resources
 import androidx.core.content.FileProvider
 import io.github.giansalvo.ggcalendar.core.data.EventDetail
+import io.github.giansalvo.ggcalendar.core.database.CalendarEntity
 import io.github.giansalvo.ggcalendar.core.database.EventEntity
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
 import io.github.giansalvo.ggcalendar.core.model.EventTime
@@ -25,16 +26,7 @@ internal object EventShare {
     fun ics(detail: EventDetail, instance: EventInstance, wholeSeries: Boolean, exceptions: List<EventEntity>, now: Instant = Instant.now()): String {
         val master = master(detail)
         val reminders = detail.event.reminders ?: detail.calendar.defaultReminders
-        if (master != null && wholeSeries) {
-            val uid = uidOf(master)
-            val cancelled = exceptions.filter { it.isCancelled }.mapNotNull(::originalStart)
-            val series = icsEvent(master, uid, master.reminders ?: detail.calendar.defaultReminders, timeOf(master))
-                .copy(exdates = (master.exdates + cancelled).distinct())
-            val modified = exceptions.filter { !it.isCancelled }.mapNotNull { e ->
-                originalStart(e)?.let { icsEvent(e, uid, e.reminders ?: master.reminders ?: detail.calendar.defaultReminders, timeOf(e)).copy(recurrenceId = it) }
-            }
-            return IcsWriter.write(listOf(series) + modified, now)
-        }
+        if (master != null && wholeSeries) return IcsWriter.write(seriesEvents(master, detail.calendar, exceptions), now)
         val time = if (instance.allDay) EventTime.AllDay(instance.startDay, instance.endDay)
         else EventTime.Timed(instance.begin, instance.end, detail.event.timeZone)
         val base = uidOf(master ?: detail.event)
@@ -42,6 +34,18 @@ internal object EventShare {
         val uid = if (master != null) "$base-${instance.begin.toEpochMilli()}" else base
         val single = icsEvent(detail.event, uid, reminders, time).copy(rrule = null, exdates = emptyList(), recurrenceId = null)
         return IcsWriter.write(listOf(single), now)
+    }
+
+    /** The `VEVENT`s of a series: the series itself (with the cancelled occurrences excluded) and each modified occurrence. */
+    fun seriesEvents(master: EventEntity, calendar: CalendarEntity, exceptions: List<EventEntity>): List<IcsEvent> {
+        val uid = uidOf(master)
+        val cancelled = exceptions.filter { it.isCancelled }.mapNotNull(::originalStart)
+        val series = icsEvent(master, uid, master.reminders ?: calendar.defaultReminders, timeOf(master))
+            .copy(exdates = (master.exdates + cancelled).distinct())
+        val modified = exceptions.filter { !it.isCancelled }.mapNotNull { e ->
+            originalStart(e)?.let { icsEvent(e, uid, e.reminders ?: master.reminders ?: calendar.defaultReminders, timeOf(e)).copy(recurrenceId = it) }
+        }
+        return listOf(series) + modified
     }
 
     /** The series an event belongs to: itself if it repeats, or the series a modified occurrence replaces. */

@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.outlined.Alarm
@@ -78,6 +79,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import io.github.giansalvo.ggcalendar.feature.event.ExportDialog
 import io.github.giansalvo.ggcalendar.feature.event.EditorRequest
 import io.github.giansalvo.ggcalendar.feature.event.EventDetailSheet
 import io.github.giansalvo.ggcalendar.feature.event.EventEditorSheet
@@ -112,6 +114,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
     var notificationsOpen by rememberSaveable { mutableStateOf(false) }
     var alarmsOpen by rememberSaveable { mutableStateOf(false) }
     var aboutOpen by rememberSaveable { mutableStateOf(false) }
+    var exportOpen by rememberSaveable { mutableStateOf(false) }
     var searchOpen by rememberSaveable { mutableStateOf(false) }
 
     val pickAccount = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -171,6 +174,10 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                 },
                 onActiveAlarms = {
                     alarmsOpen = true
+                    scope.launch { drawerState.close() }
+                },
+                onExport = {
+                    exportOpen = true
                     scope.launch { drawerState.close() }
                 },
                 onAbout = {
@@ -306,6 +313,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
         )
     }
     if (notificationsOpen) NotificationsSheet(onDismiss = { notificationsOpen = false })
+    if (exportOpen) ExportDialog(accounts = state.accounts, onDismiss = { exportOpen = false })
     if (aboutOpen) AboutSheet(onDismiss = { aboutOpen = false })
     if (searchOpen) {
         SearchScreen(search = viewModel::search, refreshKey = state.selected, onOpen = viewModel::openEvent, onClose = { searchOpen = false })
@@ -390,6 +398,7 @@ private fun CalendarDrawer(
     onAddAccount: () -> Unit,
     onNotifications: () -> Unit,
     onActiveAlarms: () -> Unit,
+    onExport: () -> Unit,
     onAbout: () -> Unit,
 ) {
     ModalDrawerSheet {
@@ -444,6 +453,12 @@ private fun CalendarDrawer(
                 onClick = onAddAccount,
             )
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
+            NavigationDrawerItem(
+                icon = { Icon(Icons.Outlined.FileUpload, contentDescription = null) },
+                label = { Text(stringResource(R.string.export_ics)) },
+                selected = false,
+                onClick = onExport,
+            )
             NavigationDrawerItem(
                 icon = { Icon(Icons.Outlined.Info, contentDescription = null) },
                 label = { Text(stringResource(R.string.about)) },

@@ -154,4 +154,16 @@
     <string name="no_contacts">No contacts found</string>
     <string name="write_to_guests">Write to the guests</string>
     <string name="write_no_mail_app">No mail app found</string>
+    <string name="export_title">Export to .ics</string>
+    <string name="export_calendars">Calendars</string>
+    <string name="export_range">Days</string>
+    <string name="export_range_invalid">The last day is before the first</string>
+    <string name="export_note">Hidden calendars can be exported too. A series is exported once, with its changes.</string>
+    <string name="export_action">Export</string>
+    <string name="export_nothing">No events in these days</string>
+    <string name="export_failed">The file could not be saved</string>
+    <plurals name="export_done">
+        <item quantity="one">%d event exported</item>
+        <item quantity="other">%d events exported</item>
+    </plurals>
 </resources>

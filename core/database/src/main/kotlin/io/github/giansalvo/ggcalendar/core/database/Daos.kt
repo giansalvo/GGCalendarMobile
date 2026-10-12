@@ -71,6 +71,22 @@ interface EventDao {
     @Query("SELECT * FROM events WHERE series_master_id = :masterId")
     suspend fun getExceptions(masterId: String): List<EventEntity>
 
+    /**
+     * The events to export from [calendarIds] for the days [fromDay, toDay): single events and series (not their
+     * occurrences) that have at least one occurrence in the days. Hidden calendars count.
+     */
+    @Query(
+        """
+        SELECT DISTINCT COALESCE(e.series_master_id, e.id) FROM instances i
+        JOIN events e ON e.id = i.event_id
+        WHERE e.calendar_id IN (:calendarIds) AND i.start_day < :toDay AND i.end_day > :fromDay
+        """,
+    )
+    suspend fun exportRootIds(calendarIds: List<String>, fromDay: Long, toDay: Long): List<String>
+
+    @Query("SELECT * FROM events WHERE id IN (:ids)")
+    suspend fun getAll(ids: List<String>): List<EventEntity>
+
     @Upsert
     suspend fun upsert(events: List<EventEntity>)
 
