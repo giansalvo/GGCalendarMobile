@@ -97,6 +97,8 @@ fun EventDetailSheet(
     val detail by remember(instance.eventId) { viewModel.observe(instance.eventId) }.collectAsStateWithLifecycle(null)
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     var sharing by remember { mutableStateOf(false) }
+    // A deletion that waits for the answer on telling the guests; the scope is null for an event that does not repeat.
+    var deleting by remember { mutableStateOf<PendingDelete?>(null) }
     val context = LocalContext.current
     val shareScope = rememberCoroutineScope()
     detail?.let { d ->
@@ -115,6 +117,16 @@ fun EventDetailSheet(
             )
         }
     }
+    detail?.let { d ->
+        deleting?.let { pending ->
+            NotifyGuestsDialog(onCancel = { deleting = null }) { notify ->
+                deleting = null
+                if (pending.scope == null) viewModel.delete(d.event.id, notify == true)
+                else viewModel.deleteOccurrence(d.event.id, instance.occurrence(), pending.scope, notify == true)
+                onDismiss()
+            }
+        }
+    }
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet) {
         detail?.let { d ->
             DetailContent(
@@ -124,8 +136,12 @@ fun EventDetailSheet(
                 onShare = { sharing = true },
                 onEdit = { onEdit(d, instance) },
                 onDelete = { scope ->
-                    if (scope == null) viewModel.delete(d.event.id) else viewModel.deleteOccurrence(d.event.id, instance.occurrence(), scope)
-                    onDismiss()
+                    if (d.event.attendees.isNotEmpty()) {
+                        deleting = PendingDelete(scope)
+                    } else {
+                        if (scope == null) viewModel.delete(d.event.id) else viewModel.deleteOccurrence(d.event.id, instance.occurrence(), scope)
+                        onDismiss()
+                    }
                 },
             )
         } ?: Spacer(Modifier.height(120.dp))
@@ -341,3 +357,5 @@ private fun descriptionText(text: String): AnnotatedString {
         append(text.substring(last))
     }
 }
+
+private class PendingDelete(val scope: SeriesScope?)

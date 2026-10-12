@@ -22,11 +22,11 @@ class EventDetailViewModel @Inject constructor(private val repository: EventRepo
         return EventShare.ics(detail, instance, wholeSeries, exceptions)
     }
 
-    fun delete(eventId: String) {
-        viewModelScope.launch { repository.writer.delete(eventId) }
+    fun delete(eventId: String, notify: Boolean = true) {
+        viewModelScope.launch { repository.writer.delete(eventId, notify) }
     }
 
-    fun deleteOccurrence(masterId: String, occurrence: Occurrence, scope: SeriesScope) {
-        viewModelScope.launch { repository.series.delete(masterId, occurrence, scope) }
+    fun deleteOccurrence(masterId: String, occurrence: Occurrence, scope: SeriesScope, notify: Boolean = true) {
+        viewModelScope.launch { repository.series.delete(masterId, occurrence, scope, notify) }
     }
 }
