@@ -159,6 +159,10 @@
     <string name="export_action">Esporta</string>
     <string name="export_nothing">Nessun evento in questi giorni</string>
     <string name="export_failed">Impossibile salvare il file</string>
+    <plurals name="export_skipped_private">
+        <item quantity="one">%d evento non esportato: è privato.</item>
+        <item quantity="other">%d eventi non esportati: sono privati.</item>
+    </plurals>
     <plurals name="export_done">
         <item quantity="one">%d evento esportato</item>
         <item quantity="other">%d eventi esportati</item>

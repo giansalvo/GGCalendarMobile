@@ -1,6 +1,5 @@
 package io.github.giansalvo.ggcalendar.feature.event
 
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -61,6 +60,12 @@ fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, vi
     var picking by remember { mutableStateOf<Boolean?>(null) } // true: the first day, false: the last
     var busy by remember { mutableStateOf(false) }
     var pending by remember { mutableStateOf<ExportResult?>(null) }
+    // What the export did, shown when it ends: events written and events left out, with the reason.
+    var summary by remember { mutableStateOf<String?>(null) }
+    fun summaryOf(r: ExportResult, saved: Boolean): String = buildString {
+        append(if (!saved) context.getString(R.string.export_failed) else context.resources.getQuantityString(R.plurals.export_done, r.count, r.count))
+        if (r.skippedPrivate > 0) append("\n").append(context.resources.getQuantityString(R.plurals.export_skipped_private, r.skippedPrivate, r.skippedPrivate))
+    }
 
     val all = accounts.flatMap { it.calendars }
     val selected = chosen ?: all.filter { it.isVisible }.map { it.id }.toSet()
@@ -79,11 +84,18 @@ fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, vi
             val ok = withContext(Dispatchers.IO) {
                 runCatching { context.contentResolver.openOutputStream(uri, "wt")!!.use { it.write(result.content.toByteArray(Charsets.UTF_8)) } }.isSuccess
             }
-            val text = if (ok) context.resources.getQuantityString(R.plurals.export_done, result.count, result.count) else context.getString(R.string.export_failed)
-            Toast.makeText(context, text, Toast.LENGTH_LONG).show()
+            summary = summaryOf(result, ok)
             busy = false
-            if (ok) onDismiss()
         }
+    }
+
+    summary?.let { text ->
+        AlertDialog(
+            onDismissRequest = { summary = null; onDismiss() },
+            title = { Text(stringResource(R.string.export_title)) },
+            text = { Text(text) },
+            confirmButton = { TextButton(onClick = { summary = null; onDismiss() }) { Text(stringResource(android.R.string.ok)) } },
+        )
     }
 
     AlertDialog(
@@ -120,7 +132,7 @@ fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, vi
                 scope.launch {
                     val result = viewModel.ics(selected, fromDay, toDay)
                     if (result.count == 0) {
-                        Toast.makeText(context, R.string.export_nothing, Toast.LENGTH_LONG).show()
+                        summary = context.getString(R.string.export_nothing) + (if (result.skippedPrivate > 0) "\n" + context.resources.getQuantityString(R.plurals.export_skipped_private, result.skippedPrivate, result.skippedPrivate) else "")
                         busy = false
                     } else {
                         pending = result
