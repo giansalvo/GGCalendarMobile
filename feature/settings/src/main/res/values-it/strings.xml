@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">Impostazioni</string>
+    <string name="settings_back">Indietro</string>
+    <string name="settings_appearance">Aspetto</string>
+    <string name="theme_system">Come il sistema</string>
+    <string name="theme_light">Chiaro</string>
+    <string name="theme_dark">Scuro</string>
+    <string name="settings_dynamic">Colori dello sfondo</string>
+    <string name="settings_dynamic_hint">Usa i colori dello sfondo del telefono (Android 12 e successivi)</string>
+    <string name="settings_calendar">Calendario</string>
+    <string name="settings_day_start">Inizio della giornata</string>
+    <string name="settings_day_start_hint">Da dove si aprono le viste giorno e settimana quando non mostrano oggi</string>
+    <string name="settings_dim_past">Attenua gli eventi passati</string>
+    <string name="settings_dim_past_hint">Gli eventi già finiti appaiono più chiari</string>
+    <string name="settings_notifications">Notifiche</string>
+    <string name="settings_notifications_alarms">Notifiche e sveglie</string>
+    <string name="settings_notifications_hint">Permessi e durata della sveglia</string>
+</resources>

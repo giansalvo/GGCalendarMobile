@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Notifications
@@ -85,6 +86,7 @@ import io.github.giansalvo.ggcalendar.feature.event.EventDetailSheet
 import io.github.giansalvo.ggcalendar.feature.event.EventEditorSheet
 import io.github.giansalvo.ggcalendar.feature.event.NotifyGuestsDialog
 import io.github.giansalvo.ggcalendar.feature.event.SeriesScopeDialog
+import io.github.giansalvo.ggcalendar.feature.settings.SettingsScreen
 import io.github.giansalvo.ggcalendar.feature.event.occurrence
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -116,6 +118,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
     var alarmsOpen by rememberSaveable { mutableStateOf(false) }
     var aboutOpen by rememberSaveable { mutableStateOf(false) }
     var exportOpen by rememberSaveable { mutableStateOf(false) }
+    var settingsOpen by rememberSaveable { mutableStateOf(false) }
     var searchOpen by rememberSaveable { mutableStateOf(false) }
 
     val pickAccount = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -175,6 +178,10 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                 },
                 onActiveAlarms = {
                     alarmsOpen = true
+                    scope.launch { drawerState.close() }
+                },
+                onSettings = {
+                    settingsOpen = true
                     scope.launch { drawerState.close() }
                 },
                 onExport = {
@@ -314,6 +321,9 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
         )
     }
     if (notificationsOpen) NotificationsSheet(onDismiss = { notificationsOpen = false })
+    if (settingsOpen) {
+        SettingsScreen(onClose = { settingsOpen = false }, onOpenNotifications = { notificationsOpen = true })
+    }
     if (exportOpen) ExportDialog(accounts = state.accounts, onDismiss = { exportOpen = false })
     if (aboutOpen) AboutSheet(onDismiss = { aboutOpen = false })
     if (searchOpen) {
@@ -403,6 +413,7 @@ private fun CalendarDrawer(
     onAddAccount: () -> Unit,
     onNotifications: () -> Unit,
     onActiveAlarms: () -> Unit,
+    onSettings: () -> Unit,
     onExport: () -> Unit,
     onAbout: () -> Unit,
 ) {
@@ -458,6 +469,12 @@ private fun CalendarDrawer(
                 onClick = onAddAccount,
             )
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
+            NavigationDrawerItem(
+                icon = { Icon(Icons.Outlined.Settings, contentDescription = null) },
+                label = { Text(stringResource(R.string.settings)) },
+                selected = false,
+                onClick = onSettings,
+            )
             NavigationDrawerItem(
                 icon = { Icon(Icons.Outlined.FileUpload, contentDescription = null) },
                 label = { Text(stringResource(R.string.export_ics)) },

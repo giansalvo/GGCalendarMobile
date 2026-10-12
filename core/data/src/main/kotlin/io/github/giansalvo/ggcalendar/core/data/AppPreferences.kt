@@ -28,6 +28,11 @@ data class ViewPreferences(
     val dimPast: Boolean = true,
 )
 
+/** How the app looks: light, dark or as the system, and the wallpaper colors of Android 12 and later. */
+enum class ThemeMode { SYSTEM, LIGHT, DARK }
+
+data class Appearance(val theme: ThemeMode = ThemeMode.SYSTEM, val dynamicColor: Boolean = false)
+
 /** The days covered by the `instances` table, the time zone they were computed in and when. */
 data class InstanceWindow(val from: LocalDate, val to: LocalDate, val zoneId: String, val computedOn: LocalDate)
 
@@ -46,6 +51,8 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         val reminderLastCheck = longPreferencesKey("reminder_last_check")
         val askedNotifications = booleanPreferencesKey("asked_notifications")
         val bootCount = intPreferencesKey("handled_boot_count")
+        val theme = stringPreferencesKey("theme")
+        val dynamicColor = booleanPreferencesKey("dynamic_color")
     }
 
     /** How long an alarm rings before it stops by itself and becomes a "missed alarm", in minutes (1 to 10). */
@@ -91,6 +98,29 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
             dayStartHour = it[Keys.dayStartHour] ?: defaults.dayStartHour,
             dimPast = it[Keys.dimPast] ?: defaults.dimPast,
         )
+    }
+
+    val appearance: Flow<Appearance> = context.dataStore.data.map {
+        Appearance(
+            theme = it[Keys.theme]?.let { name -> ThemeMode.entries.firstOrNull { m -> m.name == name } } ?: ThemeMode.SYSTEM,
+            dynamicColor = it[Keys.dynamicColor] ?: false,
+        )
+    }
+
+    suspend fun setTheme(mode: ThemeMode) {
+        context.dataStore.edit { it[Keys.theme] = mode.name }
+    }
+
+    suspend fun setDynamicColor(on: Boolean) {
+        context.dataStore.edit { it[Keys.dynamicColor] = on }
+    }
+
+    suspend fun setDayStartHour(hour: Int) {
+        context.dataStore.edit { it[Keys.dayStartHour] = hour.coerceIn(0, 12) }
+    }
+
+    suspend fun setDimPast(on: Boolean) {
+        context.dataStore.edit { it[Keys.dimPast] = on }
     }
 
     suspend fun setLastView(view: String) {

@@ -69,6 +69,7 @@ dependencies {
     implementation(project(":core:notifications"))
     implementation(project(":feature:calendar"))
     implementation(project(":feature:event"))
+    implementation(project(":feature:settings"))
     implementation(libs.androidx.hilt.work)
     ksp(libs.androidx.hilt.compiler)
 

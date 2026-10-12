@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">Settings</string>
+    <string name="settings_back">Back</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="theme_system">As the system</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="settings_dynamic">Wallpaper colors</string>
+    <string name="settings_dynamic_hint">Use the colors of the wallpaper (Android 12 and later)</string>
+    <string name="settings_calendar">Calendar</string>
+    <string name="settings_day_start">Start of the day</string>
+    <string name="settings_day_start_hint">Where the day and week views open when they do not show today</string>
+    <string name="settings_dim_past">Dim past events</string>
+    <string name="settings_dim_past_hint">Events that are over look lighter</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_notifications_alarms">Notifications and alarms</string>
+    <string name="settings_notifications_hint">Permissions and the length of the alarm</string>
+</resources>

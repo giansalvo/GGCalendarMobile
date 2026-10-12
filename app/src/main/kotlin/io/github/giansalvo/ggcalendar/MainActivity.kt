@@ -7,7 +7,14 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import android.graphics.Color
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.DisposableEffect
+import io.github.giansalvo.ggcalendar.core.data.ThemeMode
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -39,8 +46,24 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         readLink(intent)
         askForNotifications()
+        // Read once before the first frame so that a chosen dark or light theme does not flash the other one.
+        val first = runBlocking { prefs.appearance.first() }
         setContent {
-            GGCalendarTheme {
+            val appearance by prefs.appearance.collectAsState(first)
+            val dark = when (appearance.theme) {
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+            }
+            // The status and navigation bars icons follow the chosen theme, not the system one.
+            DisposableEffect(dark) {
+                enableEdgeToEdge(
+                    statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { dark },
+                    navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { dark },
+                )
+                onDispose {}
+            }
+            GGCalendarTheme(darkTheme = dark, dynamicColor = appearance.dynamicColor) {
                 val open by link.collectAsState()
                 CalendarScreen(link = open, onLinkHandled = { link.value = null })
             }

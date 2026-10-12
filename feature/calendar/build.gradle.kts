@@ -27,6 +27,7 @@ dependencies {
     implementation(project(":core:notifications"))
     implementation(project(":core:auth"))
     implementation(project(":feature:event"))
+    implementation(project(":feature:settings"))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)

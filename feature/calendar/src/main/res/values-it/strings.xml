@@ -56,4 +56,5 @@
     <string name="about_source">Codice sorgente</string>
     <string name="active_alarms">Sveglie attive</string>
     <string name="export_ics">Esporta (.ics, CSV)</string>
+    <string name="settings">Impostazioni</string>
 </resources>
