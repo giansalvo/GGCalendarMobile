@@ -531,11 +531,6 @@ Per installarla:
 3) Aprila, tocca ☰ → "Aggiungi account Google" e scegli il tuo account.
 4) Google dirà che l'app non è verificata: è normale, perché è ancora in prova. Tocca "Avanzate" → "Vai a GGCalendar" e consenti.
 
-Attenzione: l'app lavora sul tuo vero Google Calendar, quindi per le prove crea eventi di prova e cancellali dopo.
-
-Se qualcosa non va, scrivimi: modello del telefono, versione di Android e cosa è successo. Grazie! 🙏
-
-(Per controllare che il file non sia stato alterato, l'impronta SHA-256 è: [SHA-256 del file])
 ```
 
   - Se WhatsApp rifiuta o rinomina il file `.apk`: mandarlo come documento, o in formato ZIP da estrarre, oppure con un link (Google Drive).
@@ -554,6 +549,75 @@ Se qualcosa non va, scrivimi: modello del telefono, versione di Android e cosa �
   - licenza GPL-3.0 e link al codice su GitHub (giansalvo/GGCalendarMobile), come già deciso per il progetto.
 - Versione e data non si scrivono a mano nel testo: la versione viene da `BuildConfig.VERSION_NAME`, la data di build da un campo `BuildConfig` generato da Gradle a ogni build, così non resta indietro rispetto all'APK consegnato (la versione e la data della scheda devono coincidere con quelle del nome del file, vedi punto 2).
 - Testi in italiano e inglese. Verifica: apertura dal menu laterale, tocco sul sito, tema chiaro e scuro, versione e data uguali a quelle dell'APK installato (`dumpsys package`).
+
+## M5: piano dettagliato
+**Obiettivo**: portare fuori dall'app gli eventi e i calendari (condividere, esportare, stampare, scrivere agli invitati), dare ad altre persone accesso ai propri calendari Google (ACL), e chiudere i due punti rimasti da M4 (consensi per la batteria e prova del Doze profondo). Nessuno scope Google nuovo: lo scope `calendar` già concesso copre anche l'ACL. Nuovo modulo `:feature:share` (come nella sezione 1); per l'ACL servono in più le chiamate in `:core:network`.
+
+**1. Condividere un evento (testo e `.ics`)**
+- Cosa serve: dal dettaglio ⋮ → Condividi, con due scelte: testo e file `.ics`.
+- Testo: titolo, data e ora (nel fuso dell'evento), luogo, link Meet, descrizione; testo semplice, nella lingua dell'app.
+- `.ics`: un solo evento scritto dal nuovo scrittore iCalendar (punto 3), salvato nella cache e consegnato con `FileProvider` e il foglio di condivisione di Android (`ACTION_SEND`, tipo `text/calendar`). Il FileProvider va dichiarato nel manifest dell'app, con un percorso solo per i file temporanei.
+- Da decidere: per un evento di una serie, condividere l'occorrenza (con `RECURRENCE-ID`) o tutta la serie. Proposta: chiedere come per modifica ed eliminazione (solo questo / tutta la serie).
+- Verifica: aprire il `.ics` in un altro calendario (Google, Samsung) e controllare ora, fuso, promemoria e link.
+
+**2. Scrivere agli invitati**
+- Cosa serve: voce "Scrivi agli invitati" nel dettaglio (se ci sono invitati). Si apre l'app di posta con `ACTION_SENDTO` e `mailto:`: destinatari = invitati (esclusi sé stessi e le risorse), oggetto = titolo, corpo = data, ora, luogo, link Meet.
+- Nessuna chiamata a Google e nessun permesso: l'utente scrive dalla sua app di posta. Alternativa scartata: Gmail API (scope in più, nuova verifica OAuth).
+- Verifica: con invitati reali e con un evento senza invitati (la voce non deve comparire).
+
+**3. Esportare in `.ics` (scrittore iCalendar proprio)**
+- Cosa serve: un `IcsWriter` portato dal desktop (`IcsWriter`/`IcsParser` del C#), lo stesso che serve ai punti 1 e 3, più i suoi test (gli stessi casi del desktop).
+- Contenuto di ogni `VEVENT`: `UID` (iCalUID), `DTSTAMP`, `SUMMARY`, `LOCATION`, `DESCRIPTION`, `DTSTART`/`DTEND` con `TZID` per gli eventi con orario e `VALUE=DATE` (fine esclusa) per quelli di tutto il giorno, `RRULE`, `EXDATE`, eccezioni con `RECURRENCE-ID`, `ORGANIZER`, `ATTENDEE`, `VALARM` per i promemoria (non email), link Meet.
+- Regole di formato da rispettare: escape di virgola, punto e virgola, backslash e a capo; righe lunghe piegate a 75 byte (contando i byte UTF-8, non i caratteri); a capo `CRLF`; fusi con un `VTIMEZONE` o in UTC.
+- Interfaccia: "Esporta" per un calendario o un intervallo di date (inizio e fine), con scelta dei calendari. Il file si salva dove sceglie l'utente con il selettore di file di sistema (`CreateDocument`), senza permessi di archiviazione.
+- Verifica: importare il file nel calendario Google sul web e nel desktop GGCalendar; confronto con serie ed eccezioni.
+
+**4. Esportare in CSV**
+- Cosa serve: stessi calendari e intervalli del punto 3, formato CSV (RFC 4180), codifica UTF-8 con BOM perché Excel apra bene gli accenti.
+- Colonne proposte: calendario, titolo, inizio, fine, tutto il giorno, fuso, luogo, descrizione, link Meet, invitati, ricorrenza, promemoria. Data e ora in ISO 8601.
+- Da decidere: separatore (virgola o punto e virgola: Excel italiano usa il punto e virgola) e se una serie esce come una riga o come una riga per occorrenza nell'intervallo. Proposta: punto e virgola e una riga per occorrenza.
+- Verifica: apertura in Excel e LibreOffice con testi che contengono virgole, virgolette e a capo.
+
+**5. Stampa PDF**
+- Cosa serve: un generatore di PDF con `PdfDocument` e il servizio di stampa di sistema (`PrintManager`), con tre formati:
+  - **scheda di un evento**: dettagli, invitati con risposta, link Meet; una pagina A4 verticale;
+  - **vista corrente** (giorno, settimana o mese): A4 orizzontale, disegnata con la `Canvas` del PDF. Le composable non si riusano così come sono (hanno scroll, colori dinamici e dimensioni dello schermo); si riusa la logica di layout già testata (`OverlapLayout`, corsie delle barre);
+  - **agenda per un intervallo di date**: elenco per giorno su più pagine, con interruzione di pagina e intestazione ripetuta.
+- Interfaccia: voce "Stampa" nel dettaglio e nel menu della vista; scelta del formato e dell'intervallo, anteprima e stampa nell'interfaccia di sistema, che offre anche "Salva come PDF".
+- Difficoltà: testo lungo che va a capo e pagine multiple (misurare con `StaticLayout`), fusi e lingua, colori per il bianco e nero (un bordo oltre al riempimento).
+- Verifica: stampare su PDF e controllare a vista; test unitari della paginazione (quanti eventi per pagina).
+
+**6. ACL dei calendari (condivisione dei calendari)**
+- Cosa vuol dire: ACL sta per *Access Control List*, la lista di chi ha accesso a un calendario e con quale ruolo. Nell'API di Google Calendar è la risorsa `acl`: ogni voce lega una persona (o un gruppo, un dominio, tutti) a un ruolo. Ruoli: `freeBusyReader` (vede solo occupato/libero), `reader` (legge gli eventi), `writer` (modifica gli eventi), `owner` (gestisce anche la condivisione). È la funzione "Condividi con persone specifiche" di Google Calendar sul web.
+- Cosa serve: una schermata "Condividi calendario", raggiungibile dal menu laterale (tocco prolungato o ⋮ sul calendario), solo per i calendari in cui l'utente è `owner`. Mostra l'elenco delle persone con il loro ruolo; permette di aggiungere una persona (email e ruolo: lettore o scrittore, come nel piano iniziale), di cambiare il ruolo e di togliere l'accesso.
+- Chiamate API (in `:core:network`, stesso client di oggi): `acl.list`, `acl.insert` (con `sendNotifications` per l'email di invito di Google), `acl.patch`, `acl.delete`; errori 403 (non sei owner o il dominio vieta la condivisione esterna) e 404 mostrati con un messaggio chiaro.
+- Da decidere: **offline**. Proposta: le operazioni ACL sono solo online (nessuna coda di invio), con un messaggio se manca la rete: sono rare e gli errori devono essere immediati.
+- Fuori da M5: condivisione pubblica ("chiunque con il link", scope `default`) e con un intero dominio; rischiose per la riservatezza, da valutare dopo.
+- Verifica: con i due account di prova (profgusinu e itiangioy): aggiungere itiangioy come lettore al calendario di profgusinu e controllare che lo veda, passarlo a scrittore, togliere l'accesso; dopo ogni prova ripulire.
+
+**7. Consensi per l'uso della batteria (soluzione 7 di M4)**
+- Cosa serve: in "Notifiche e sveglie" mostrare lo stato con `PowerManager.isIgnoringBatteryOptimizations()`, `ActivityManager.isBackgroundRestricted()` e il gruppo di standby (`UsageStatsManager`, bucket "Restricted"); un pulsante che chiede l'esclusione con `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` (il permesso è già nel manifest) e, dove la schermata manca, apre le impostazioni dell'app.
+- Samsung: istruzioni a parole per "App mai in sospensione" (Batteria → Limiti uso in background), perché l'elenco non ha un'API. Avviso anche nel dettaglio dell'evento quando l'app è limitata.
+- Chiedere il consenso una sola volta, al primo avvio o alla prima sveglia, non a ogni apertura.
+- Nota dalle prove: sul Samsung il ripristino funziona anche senza esclusioni (prove B e C di M4): è una guida per gli altri telefoni, non un requisito.
+- Verifica: attivare e togliere l'esclusione e controllare che lo stato cambi; provare su un telefono non Samsung se disponibile.
+
+**8. Prova del Doze profondo**
+- Cosa serve: nessun codice. Telefono fermo, non in carica, schermo spento, con una sveglia e una notifica programmate a circa un'ora; controllare che suonino all'ora giusta. Con adb non si riesce a forzare il Doze profondo perché il sensore di movimento lo impedisce.
+- Registrare il risultato nel piano; se la sveglia ritarda, indagare con `dumpsys deviceidle` e `dumpsys alarm`.
+
+**Ordine di lavoro proposto** (commit e prova sul Samsung a ogni blocco)
+1. `IcsWriter` con test (serve a 1 e 3), poi condivisione dell'evento (1) e posta agli invitati (2).
+2. Esportazione `.ics` e CSV con il selettore di file (3 e 4).
+3. Stampa PDF: prima la scheda dell'evento, poi l'agenda, infine la vista corrente (5).
+4. ACL: client e schermata (6).
+5. Consensi batteria (7), poi la prova del Doze lasciata girare un'ora (8).
+6. Verifica, plan.md, CI verde e chiusura di M5.
+
+**Verifica di M5**
+- Unit test: scrittore iCalendar (escape, righe piegate, fusi, ricorrenze, tutto il giorno), CSV (citazioni), paginazione della stampa, mapping dell'ACL con MockWebServer (ruoli, errori 403 e 404).
+- Sul Samsung: i file aperti in un altro calendario e in Excel; PDF stampati su file; ACL con i due account; stato della batteria; Doze.
+- CI verde.
 
 ## Verifica
 - Test unitari: SyncEngine (syncToken, 410, 412 → conflitto), espansione RRULE, mapping dei DTO, scrittore ICS, scheduler degli allarmi. Le chiamate API sono simulate con MockWebServer.
