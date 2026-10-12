@@ -204,18 +204,7 @@ fun EventEditorSheet(
     }
 
     if (viewModel.askNotify) {
-        AlertDialog(
-            onDismissRequest = viewModel::cancelNotify,
-            title = { Text(stringResource(R.string.notify_guests_title)) },
-            text = { Text(stringResource(R.string.notify_guests_text)) },
-            confirmButton = { TextButton(onClick = { viewModel.saveNotifying(close, true) }) { Text(stringResource(R.string.notify_guests_send)) } },
-            dismissButton = {
-                Row {
-                    TextButton(onClick = viewModel::cancelNotify) { Text(stringResource(android.R.string.cancel)) }
-                    TextButton(onClick = { viewModel.saveNotifying(close, false) }) { Text(stringResource(R.string.notify_guests_dont)) }
-                }
-            },
-        )
+        NotifyGuestsDialog(onCancel = viewModel::cancelNotify) { notify -> viewModel.saveNotifying(close, notify!!) }
     }
 
     if (viewModel.askScope) {
@@ -846,6 +835,23 @@ private fun ColorDialog(current: String?, onDismiss: () -> Unit, onPick: (String
                         Text(stringResource(label as Int), color = if (hex.equals(current, ignoreCase = true)) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
                     }
                 }
+            }
+        },
+    )
+}
+
+/** Whether to tell the guests about a change: Google sends them the email only when asked to. */
+@Composable
+fun NotifyGuestsDialog(onCancel: () -> Unit, onChoose: (Boolean?) -> Unit) {
+    AlertDialog(
+        onDismissRequest = onCancel,
+        title = { Text(stringResource(R.string.notify_guests_title)) },
+        text = { Text(stringResource(R.string.notify_guests_text)) },
+        confirmButton = { TextButton(onClick = { onChoose(true) }) { Text(stringResource(R.string.notify_guests_send)) } },
+        dismissButton = {
+            Row {
+                TextButton(onClick = onCancel) { Text(stringResource(android.R.string.cancel)) }
+                TextButton(onClick = { onChoose(false) }) { Text(stringResource(R.string.notify_guests_dont)) }
             }
         },
     )

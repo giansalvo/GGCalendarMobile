@@ -64,7 +64,19 @@ data class CalendarUiState(
     val message: SyncMessageEntity? = null,
 )
 
-data class PendingMove(val instance: EventInstance, val begin: Instant, val end: Instant)
+/**
+ * A drag that waits for answers: the scope first (a series), then whether to tell the guests (an event with guests).
+ */
+data class PendingMove(
+    val instance: EventInstance,
+    val begin: Instant,
+    val end: Instant,
+    val recurring: Boolean,
+    val guests: Boolean,
+    val scope: SeriesScope? = null,
+) {
+    val needsScope: Boolean get() = recurring && scope == null
+}
 
 private data class Navigation(
     val view: CalendarView,
@@ -194,27 +206,41 @@ class CalendarViewModel @Inject constructor(
 
     fun openEvent(instance: EventInstance?) = transient.update { it.copy(selected = instance) }
 
-    /** A drag in a time grid ended: save the new times, asking the scope first for a series. */
+    /** A drag in a time grid ended: save the new times, asking the scope for a series and about notifying the guests. */
     fun moveEvent(instance: EventInstance, begin: Instant, end: Instant) {
         viewModelScope.launch {
             val event = events.observe(instance.eventId).first()?.event ?: return@launch
-            if (event.rrule != null) {
-                transient.update { it.copy(pendingMove = PendingMove(instance, begin, end)) }
-            } else {
-                events.writer.save(event.copy(startUtc = begin.toEpochMilli(), endUtc = end.toEpochMilli()))
-            }
+            val move = PendingMove(instance, begin, end, recurring = event.rrule != null, guests = event.attendees.isNotEmpty())
+            if (move.recurring || move.guests) transient.update { it.copy(pendingMove = move) } else commitMove(move, null, true)
         }
     }
 
     /** The scope for [CalendarUiState.pendingMove], or null to cancel the move. */
     fun confirmMove(scope: SeriesScope?) {
         val move = transient.value.pendingMove ?: return
-        transient.update { it.copy(pendingMove = null) }
-        if (scope == null) return
-        viewModelScope.launch {
-            val event = events.observe(move.instance.eventId).first()?.event ?: return@launch
-            events.series.save(event.id, move.instance.occurrence(), event.copy(startUtc = move.begin.toEpochMilli(), endUtc = move.end.toEpochMilli()), scope)
+        when {
+            scope == null -> transient.update { it.copy(pendingMove = null) }
+            move.guests -> transient.update { it.copy(pendingMove = move.copy(scope = scope)) }
+            else -> {
+                transient.update { it.copy(pendingMove = null) }
+                viewModelScope.launch { commitMove(move, scope, true) }
+            }
         }
+    }
+
+    /** Whether to tell the guests about [CalendarUiState.pendingMove] (null: cancel the move). */
+    fun confirmNotify(notify: Boolean?) {
+        val move = transient.value.pendingMove ?: return
+        transient.update { it.copy(pendingMove = null) }
+        if (notify == null) return
+        viewModelScope.launch { commitMove(move, move.scope, notify) }
+    }
+
+    private suspend fun commitMove(move: PendingMove, scope: SeriesScope?, notify: Boolean) {
+        val event = events.observe(move.instance.eventId).first()?.event ?: return
+        val moved = event.copy(startUtc = move.begin.toEpochMilli(), endUtc = move.end.toEpochMilli())
+        if (move.recurring && scope != null) events.series.save(event.id, move.instance.occurrence(), moved, scope, notify)
+        else events.writer.save(moved, notify)
     }
 
     /** Opens the editor (closing the details) or closes it with null. */

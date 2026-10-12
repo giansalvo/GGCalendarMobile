@@ -83,6 +83,7 @@ import io.github.giansalvo.ggcalendar.feature.event.ExportDialog
 import io.github.giansalvo.ggcalendar.feature.event.EditorRequest
 import io.github.giansalvo.ggcalendar.feature.event.EventDetailSheet
 import io.github.giansalvo.ggcalendar.feature.event.EventEditorSheet
+import io.github.giansalvo.ggcalendar.feature.event.NotifyGuestsDialog
 import io.github.giansalvo.ggcalendar.feature.event.SeriesScopeDialog
 import io.github.giansalvo.ggcalendar.feature.event.occurrence
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -318,8 +319,12 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
     if (searchOpen) {
         SearchScreen(search = viewModel::search, refreshKey = state.selected, onOpen = viewModel::openEvent, onClose = { searchOpen = false })
     }
-    if (state.pendingMove != null) {
-        SeriesScopeDialog(deleting = false, onDismiss = { viewModel.confirmMove(null) }, onConfirm = viewModel::confirmMove)
+    state.pendingMove?.let { move ->
+        if (move.needsScope) {
+            SeriesScopeDialog(deleting = false, onDismiss = { viewModel.confirmMove(null) }, onConfirm = viewModel::confirmMove)
+        } else {
+            NotifyGuestsDialog(onCancel = { viewModel.confirmNotify(null) }, onChoose = viewModel::confirmNotify)
+        }
     }
     state.editing?.let { request ->
         EventEditorSheet(request = request, onDismiss = { viewModel.openEditor(null) })
