@@ -91,6 +91,8 @@ class SyncEngine @Inject constructor(
                     pullCalendar(cal, token)
                 } catch (e: Exception) {
                     if (e is kotlinx.coroutines.CancellationException) throw e
+                    // No network is not an error to show: the next sync (the worker waits for a connection) picks up again.
+                    if (e is java.io.IOException) return@forEach
                     messages.insert(SyncMessageEntity(accountEmail = email, kind = "error", text = "${cal.name}: ${e.message}"))
                 }
             }
@@ -98,6 +100,7 @@ class SyncEngine @Inject constructor(
             if (conflicts) pusher.push(email, token, ::recomputeInstances)
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
+            if (e is java.io.IOException) return
             messages.insert(SyncMessageEntity(accountEmail = email, kind = "error", text = e.message ?: e.toString()))
         }
     }
