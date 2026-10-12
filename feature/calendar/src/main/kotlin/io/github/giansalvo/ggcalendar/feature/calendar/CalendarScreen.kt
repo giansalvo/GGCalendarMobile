@@ -254,6 +254,8 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                         onReachStart = { viewModel.extendSchedule(past = true) },
                         onReachEnd = { viewModel.extendSchedule(past = false) },
                         onEventClick = viewModel::openEvent,
+                        refreshing = state.syncing,
+                        onRefresh = viewModel::refresh,
                     )
                     CalendarView.MONTH -> MonthView(
                         date = state.date,
