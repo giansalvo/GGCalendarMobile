@@ -19,5 +19,6 @@ class SettingsViewModel @Inject constructor(private val prefs: AppPreferences) :
     fun setTheme(mode: ThemeMode) = viewModelScope.launch { prefs.setTheme(mode) }
     fun setDynamicColor(on: Boolean) = viewModelScope.launch { prefs.setDynamicColor(on) }
     fun setDayStartHour(hour: Int) = viewModelScope.launch { prefs.setDayStartHour(hour) }
+    fun setWeekStart(day: java.time.DayOfWeek) = viewModelScope.launch { prefs.setWeekStart(day) }
     fun setDimPast(on: Boolean) = viewModelScope.launch { prefs.setDimPast(on) }
 }

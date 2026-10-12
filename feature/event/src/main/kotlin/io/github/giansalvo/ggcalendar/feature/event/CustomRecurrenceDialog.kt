@@ -183,4 +183,4 @@ private fun RadioRow(label: String, selected: Boolean, onClick: () -> Unit) {
     }
 }
 
-internal fun firstDayOfWeek(): DayOfWeek = java.time.temporal.WeekFields.of(Locale.getDefault()).firstDayOfWeek
+internal fun firstDayOfWeek(): DayOfWeek = WeekSettings.firstDay

@@ -46,7 +46,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import io.github.giansalvo.ggcalendar.core.data.Appearance
 import io.github.giansalvo.ggcalendar.core.data.ThemeMode
 import io.github.giansalvo.ggcalendar.core.data.ViewPreferences
+import io.github.giansalvo.ggcalendar.feature.event.WeekSettings
+import java.time.DayOfWeek
 import java.time.LocalTime
+import java.time.format.TextStyle
+import java.util.Locale
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
@@ -86,6 +90,7 @@ fun SettingsScreen(onClose: () -> Unit, onOpenNotifications: () -> Unit, viewMod
                     }
 
                     Section(stringResource(R.string.settings_calendar))
+                    WeekStartRow(view.weekStart ?: weekOf(WeekSettings.localeDefault()), viewModel::setWeekStart)
                     DayStartRow(view.dayStartHour, viewModel::setDayStartHour)
                     SwitchRow(stringResource(R.string.settings_dim_past), stringResource(R.string.settings_dim_past_hint), view.dimPast, viewModel::setDimPast)
 
@@ -148,6 +153,28 @@ private fun DayStartRow(hour: Int, onChange: (Int) -> Unit) {
                     open = false
                     onChange(h)
                 })
+            }
+        }
+    }
+}
+
+/** Only Monday, Saturday or Sunday start a week anywhere; the language of the phone may say another day. */
+private fun weekOf(day: DayOfWeek): DayOfWeek = if (day in WEEK_STARTS) day else DayOfWeek.MONDAY
+
+private val WEEK_STARTS = listOf(DayOfWeek.MONDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY)
+
+@Composable
+private fun WeekStartRow(selected: DayOfWeek, onChange: (DayOfWeek) -> Unit) {
+    Column(Modifier.padding(top = 8.dp)) {
+        Text(stringResource(R.string.settings_week_start), Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.bodyLarge)
+        Text(stringResource(R.string.settings_week_start_hint), Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        WEEK_STARTS.forEach { day ->
+            Row(
+                Modifier.fillMaxWidth().selectable(selected = selected == day, role = Role.RadioButton) { onChange(day) }.padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RadioButton(selected = selected == day, onClick = null)
+                Text(day.getDisplayName(TextStyle.FULL, Locale.getDefault()).replaceFirstChar { it.uppercase() }, Modifier.padding(start = 16.dp), style = MaterialTheme.typography.bodyLarge)
             }
         }
     }

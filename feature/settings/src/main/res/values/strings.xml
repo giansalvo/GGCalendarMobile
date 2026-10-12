@@ -16,4 +16,6 @@
     <string name="settings_notifications">Notifications</string>
     <string name="settings_notifications_alarms">Notifications and alarms</string>
     <string name="settings_notifications_hint">Permissions and the length of the alarm</string>
+    <string name="settings_week_start">First day of the week</string>
+    <string name="settings_week_start_hint">Used by the week view, the month and the mini calendar</string>
 </resources>

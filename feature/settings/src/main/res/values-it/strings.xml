@@ -16,4 +16,6 @@
     <string name="settings_notifications">Notifiche</string>
     <string name="settings_notifications_alarms">Notifiche e sveglie</string>
     <string name="settings_notifications_hint">Permessi e durata della sveglia</string>
+    <string name="settings_week_start">Inizio della settimana</string>
+    <string name="settings_week_start_hint">Vale per la vista settimana, il mese e il mini-calendario</string>
 </resources>

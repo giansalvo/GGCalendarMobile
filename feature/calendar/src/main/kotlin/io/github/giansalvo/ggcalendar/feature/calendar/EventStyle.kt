@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
 import kotlinx.coroutines.delay
+import io.github.giansalvo.ggcalendar.feature.event.WeekSettings
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -21,7 +22,7 @@ internal fun parseColor(hex: String): Color =
 /** White or near-black text, whichever reads better on [background]. */
 internal fun contentColorOn(background: Color): Color = if (background.luminance() > 0.5f) Color(0xFF1F1F1F) else Color.White
 
-internal fun firstDayOfWeek(): DayOfWeek = WeekFields.of(Locale.getDefault()).firstDayOfWeek
+internal fun firstDayOfWeek(): DayOfWeek = WeekSettings.firstDay
 
 private val timeFormat: DateTimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
 

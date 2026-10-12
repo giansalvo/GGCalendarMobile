@@ -24,6 +24,7 @@ kotlin {
 dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:data"))
+    implementation(project(":feature:event"))
 
     implementation(libs.androidx.core.ktx)
 

@@ -26,6 +26,8 @@ data class ViewPreferences(
     val hourHeight: Float = 48f,
     val dayStartHour: Int = 7,
     val dimPast: Boolean = true,
+    /** The first day of the week; null follows the language of the phone. */
+    val weekStart: java.time.DayOfWeek? = null,
 )
 
 /** How the app looks: light, dark or as the system, and the wallpaper colors of Android 12 and later. */
@@ -52,6 +54,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         val askedNotifications = booleanPreferencesKey("asked_notifications")
         val bootCount = intPreferencesKey("handled_boot_count")
         val theme = stringPreferencesKey("theme")
+        val weekStart = stringPreferencesKey("week_start")
         val dynamicColor = booleanPreferencesKey("dynamic_color")
     }
 
@@ -97,6 +100,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
             hourHeight = it[Keys.hourHeight] ?: defaults.hourHeight,
             dayStartHour = it[Keys.dayStartHour] ?: defaults.dayStartHour,
             dimPast = it[Keys.dimPast] ?: defaults.dimPast,
+            weekStart = it[Keys.weekStart]?.let { name -> java.time.DayOfWeek.entries.firstOrNull { d -> d.name == name } },
         )
     }
 
@@ -117,6 +121,10 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
 
     suspend fun setDayStartHour(hour: Int) {
         context.dataStore.edit { it[Keys.dayStartHour] = hour.coerceIn(0, 12) }
+    }
+
+    suspend fun setWeekStart(day: java.time.DayOfWeek) {
+        context.dataStore.edit { it[Keys.weekStart] = day.name }
     }
 
     suspend fun setDimPast(on: Boolean) {

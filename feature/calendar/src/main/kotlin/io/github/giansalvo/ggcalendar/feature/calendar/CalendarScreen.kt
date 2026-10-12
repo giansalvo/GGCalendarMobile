@@ -243,6 +243,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                         },
                     )
                 }
+                key(state.firstDay) {
                 when (state.view) {
                     CalendarView.SCHEDULE -> ScheduleView(
                         date = state.date,
@@ -284,6 +285,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                             onEventMoved = viewModel::moveEvent,
                         )
                     }
+                }
                 }
             }
         }

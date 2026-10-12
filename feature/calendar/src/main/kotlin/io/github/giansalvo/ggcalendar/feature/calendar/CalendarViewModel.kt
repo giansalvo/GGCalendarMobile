@@ -11,6 +11,7 @@ import io.github.giansalvo.ggcalendar.core.data.AccountWithCalendars
 import io.github.giansalvo.ggcalendar.core.data.CalendarRepository
 import io.github.giansalvo.ggcalendar.core.database.SyncMessageEntity
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
+import io.github.giansalvo.ggcalendar.feature.event.WeekSettings
 import io.github.giansalvo.ggcalendar.feature.event.EditorRequest
 import io.github.giansalvo.ggcalendar.feature.event.occurrence
 import io.github.giansalvo.ggcalendar.core.data.EventRepository
@@ -49,6 +50,7 @@ data class CalendarUiState(
     /** First hour shown when a time grid opens on a period without today. */
     val dayStartHour: Int = 7,
     val dimPast: Boolean = true,
+    val firstDay: java.time.DayOfWeek = WeekSettings.firstDay,
     /** Days with events around the month shown by the mini calendar (empty while it is closed). */
     val eventDays: Set<LocalDate> = emptySet(),
     /** The occurrence whose details are open. */
@@ -133,9 +135,11 @@ class CalendarViewModel @Inject constructor(
         combine(repository.syncing, transient, repository.messages.map { it.firstOrNull() }, ::Triple),
         combine(grid, eventDays, repository.pendingChanges, ::Triple),
     ) { nav, accounts, list, (syncing, t, message), (g, days, pending) ->
+        // Set before the state goes out: the views read the first day of the week while they compose.
+        WeekSettings.firstDay = g.weekStart ?: WeekSettings.localeDefault()
         CalendarUiState(
             view = nav.view, date = nav.date, scheduleFrom = nav.scheduleFrom, scheduleTo = nav.scheduleTo, accounts = accounts, instances = list, syncing = syncing,
-            hourHeight = g.hourHeight, dayStartHour = g.dayStartHour, dimPast = g.dimPast, eventDays = days, pending = pending,
+            hourHeight = g.hourHeight, dayStartHour = g.dayStartHour, dimPast = g.dimPast, firstDay = WeekSettings.firstDay, eventDays = days, pending = pending,
             selected = t.selected, editing = t.editing, pendingMove = t.pendingMove, busy = t.busy, consent = t.consent, error = t.error, message = message,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CalendarUiState())
