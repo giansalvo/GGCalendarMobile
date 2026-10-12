@@ -36,12 +36,12 @@ class EventShareTest {
     private fun lines(ics: String) = ics.replace("\r\n ", "").split("\r\n").filter { it.isNotEmpty() }
 
     @Test
-    fun anEventThatDoesNotRepeatIsWrittenAsItIsWithTheCalendarsReminders() {
+    fun anEventThatDoesNotRepeatIsWrittenAsItIsWithoutRemindersOrPrivacyClass() {
         val l = lines(EventShare.ics(EventDetail(event(), calendar, null), instance(), wholeSeries = true, exceptions = emptyList(), now = now))
         assertEquals(1, l.count { it == "BEGIN:VEVENT" })
         assertTrue("UID:uid1@google.com" in l)
         assertTrue("DTSTART:20261008T083000Z" in l)
-        assertTrue("TRIGGER:-PT30M" in l)
+        assertFalse(l.any { it.startsWith("TRIGGER") || it.startsWith("CLASS") })
         assertFalse(l.any { it.startsWith("RRULE") })
     }
 
