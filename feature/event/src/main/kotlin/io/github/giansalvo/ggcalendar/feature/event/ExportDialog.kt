@@ -5,7 +5,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -113,9 +116,9 @@ fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, vi
         text = {
             // The days stay in view at the top; only the list of calendars scrolls when there are many.
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(selected = !csv, onClick = { csv = false }, modifier = Modifier.weight(1f), label = { Text(stringResource(R.string.export_format_ics), Modifier.fillMaxWidth(), textAlign = TextAlign.Center) })
-                    FilterChip(selected = csv, onClick = { csv = true }, modifier = Modifier.weight(1f), label = { Text(stringResource(R.string.export_format_csv), Modifier.fillMaxWidth(), textAlign = TextAlign.Center) })
+                Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(selected = !csv, onClick = { csv = false }, modifier = Modifier.weight(1f).fillMaxHeight(), label = { Text(stringResource(R.string.export_format_ics), Modifier.fillMaxWidth(), textAlign = TextAlign.Center, maxLines = 2) })
+                    FilterChip(selected = csv, onClick = { csv = true }, modifier = Modifier.weight(1f).fillMaxHeight(), label = { Text(stringResource(R.string.export_format_csv), Modifier.fillMaxWidth(), textAlign = TextAlign.Center, maxLines = 2) })
                 }
                 Text(stringResource(R.string.export_range), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(bottom = 2.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {

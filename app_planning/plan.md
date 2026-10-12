@@ -1,7 +1,7 @@
 # GGCalendar: architettura, strumenti, repository e landing page
 
 ## Contesto
-Si parte da una cartella vuota (`GGCalendarAndroid`). Vogliamo un'app Android di calendario simile a Google Calendar, sincronizzata in entrambe le direzioni con uno o più account Google tramite la Calendar API. Funzioni: eventi con Google Meet e invitati; tre tipi di notifica (popup, sveglia, email); viste giorno, 6 giorni (N configurabile), settimana, mese e programma (agenda); niente vista anno; stampa, invio, condivisione ed esportazione. L'app funziona anche offline. All'inizio si distribuisce come APK tramite una landing page su Altervista (profgusinu.altervista.org/GGCalendarMobile), senza Play Store. Il codice è open source con licenza GPL-3.0. Lo sviluppo avviene su Windows 11 e il dispositivo principale è un Samsung con One UI 8.5 (Android 16).
+Si parte da una cartella vuota (`GGCalendarAndroid`). Vogliamo un'app Android di calendario simile a Google Calendar, sincronizzata in entrambe le direzioni con uno o più account Google tramite la Calendar API. Funzioni: eventi con Google Meet e invitati; tre tipi di notifica (popup, sveglia, email); viste giorno, 6 giorni (N configurabile), settimana, mese e programma (agenda); niente vista anno; invio, condivisione ed esportazione (la stampa è stata eliminata il 12/10/2026). L'app funziona anche offline. All'inizio si distribuisce come APK tramite una landing page su Altervista (profgusinu.altervista.org/GGCalendarMobile), senza Play Store. Il codice è open source con licenza GPL-3.0. Lo sviluppo avviene su Windows 11 e il dispositivo principale è un Samsung con One UI 8.5 (Android 16).
 
 ## Decisioni prese
 | Tema | Scelta |
@@ -34,7 +34,7 @@ Clean Architecture leggera + MVVM/UDF (ViewModel che espone `StateFlow`), con de
 - `:feature:calendar`: le viste
 - `:feature:event`: dettaglio ed editor
 - `:feature:settings`
-- `:feature:share`: esportazione, stampa e invio
+- `:feature:share`: esportazione e invio (mai creato: il codice sta in `:feature:event`)
 
 ### 1b. Modello dati (Room)
 Parte dal `CalendarStore` del desktop (SQLite, `events.data` in JSON, `outbox` con `payload` e `base`, `sync_state`), con tre differenze:
@@ -88,10 +88,10 @@ Parte dal `CalendarStore` del desktop (SQLite, `events.data` in JSON, `outbox` c
 - Selettore della vista, salto a una data, colori per calendario, visibilità dei calendari per account.
 - Calendari iscritti (festività, compleanni, calendari condivisi da altri) letti da `calendarList`. Se l'`accessRole` non consente la modifica sono in sola lettura e l'editor è disabilitato. Google Tasks e le risposte RSVP sono esclusi dall'MVP.
 
-**Condivisione, esportazione, stampa**
+**Condivisione ed esportazione**
 - Evento come `.ics` o testo (con il link Meet) tramite FileProvider e Sharesheet.
 - Esportazione di un intervallo o di un calendario in `.ics` (scrittore iCalendar proprio) e CSV.
-- Stampa: PDF generato con `PdfDocument` e inviato a `PrintManager`. Tre formati: scheda del singolo evento (dettagli, invitati, link Meet), vista corrente (giorno, settimana o mese in A4 orizzontale), agenda per un intervallo di date.
+- ~~Stampa: PDF con `PdfDocument` e `PrintManager` (scheda dell'evento, vista corrente, agenda).~~ **Eliminata dal progetto il 12/10/2026 (decisione dell'utente).**
 - ~~Condivisione dei calendari tramite l'ACL API (lettore, scrittore).~~ **Eliminata dal piano il 12/10/2026 (decisione dell'utente).**
 
 **Funzioni riprese dal desktop**
@@ -156,7 +156,7 @@ Differenze rispetto a Google Calendar: nessuna icona e nessun calendario Tasks; 
 8. **Sveglia** (activity a schermo intero, anche con lo schermo bloccato): titolo, ora, luogo, pulsanti Chiudi e Posticipa.
 9. **Ricerca**: testo libero su titolo, luogo, descrizione e invitati, con risultati in stile agenda.
 10. **Impostazioni**, a sezioni: Generali (**tema chiaro / scuro / di sistema**, lingua, orologio a 24 ore), Calendario, Notifiche, Fusi orari, Account Google (aggiungi, scollega e revoca, risincronizza tutto), Informazioni e aggiornamenti, Privacy.
-11. **Stampa ed esportazione**: scelta del formato e dell'intervallo, poi anteprima di stampa di sistema.
+11. **Esportazione**: scelta del formato (`.ics` o CSV), dei calendari e dell'intervallo (la stampa è stata eliminata il 12/10/2026).
 12. **Riepilogo importazione `.ics`**.
 
 **Gesti**: scorrimento orizzontale per cambiare periodo; pinch per lo zoom della griglia oraria; tocco su uno spazio vuoto per creare un evento a quell'ora; pressione prolungata su un evento per trascinarlo o ridimensionarlo (con lo scatto delle impostazioni); pull-to-refresh nel Programma.
@@ -201,7 +201,7 @@ I test xUnit (`tests/GGCalendar.Core.Tests`) vengono tradotti in JUnit con gli s
   - **Spostati dopo M4 (decisione del 12/10/2026)**: (1) prova del Doze profondo vero (telefono fermo e non in carica, circa un'ora), in M5; (2) soluzione 7, cioè i consensi per l'uso della batteria, in M6 insieme alle Impostazioni (richiesta di esclusione dall'ottimizzazione, "App mai in sospensione" di Samsung, avviso con `isBackgroundRestricted()`).
   - **M4 completata (12/10/2026)**: notifiche, sveglia, promemoria email, direct boot, ripristino dopo il riavvio, cambio di fuso, due account. CI verde (run 38179955704, commit 613b544; i commit successivi toccano solo plan.md).
 - **M4bis** Vista "Mese + Programma" e APK di prova da condividere (anche via WhatsApp) prima della pubblicazione ufficiale, più la scheda informativa dell'app (autore, sito, versione 0.4.0 e data di build). Dettaglio nella sezione "M4bis: piano dettagliato".
-- **M5** Condivisione, esportazione `.ics`/CSV, stampa PDF; più un punto rimasto da M4: la **prova del Doze profondo**.
+- **M5** Condivisione, esportazione `.ics`/CSV; più un punto rimasto da M4: la **prova del Doze profondo**.
 - **M6** Impostazioni e **consensi per l'uso della batteria** (soluzione 7 di M4: richiesta di esclusione dall'ottimizzazione batteria, guida "App mai in sospensione" di Samsung, avviso nel dettaglio dell'evento e in "Notifiche e sveglie" quando l'app è limitata; spostati da M5 il 12/10/2026) (schermata unica a sezioni, vedi 5b; include la **scelta del tema: chiaro, scuro o come il sistema**, applicata subito e ricordata, con i colori dinamici di Android 12+ attivabili a parte), calendari locali, calendario "Compleanni" dalla rubrica del telefono (`READ_CONTACTS`, vedi M2), importazione `.ics`, suoni personalizzati, secondo fuso orario, rifinitura i18n, aggiornamenti in-app; aggiornamento del desktop C# per `ggAlarm`. Assegnati il 12/10/2026: **onboarding del primo avvio** (benvenuto, login Google con possibilità di saltare, permessi guidati, prima sincronizzazione con avanzamento: schermata 1 della sezione 5b), **pull-to-refresh nel Programma**, pulsante **"Invia log"** per i crash (deciso: si fa).
 - **M7** Landing page completa e release v1.0. La privacy policy estesa ad Android si pubblica già in M0; la verifica dello scope `calendar` si invia in parallelo, prima possibile. Assegnati il 12/10/2026: **infrastruttura GitHub** (`release.yml` con APK firmato su tag `v*`, `site.yml` con deploy FTP su Altervista, Dependabot, template per issue e PR, detekt e ktlint nella CI), **test strumentali e UI Compose** sugli emulatori API 26 e 36 (prima va ripristinato l'emulatore locale, oggi non risponde), **invio e verifica dello scope `calendar` su Google** (azione in Google Cloud, con il video già pronto; da avviare presto perché toglie l'avviso "app non verificata" e il limite di 100 utenti).
 
@@ -329,7 +329,7 @@ Stato del PC (verificato l'11/10/2026): Git c'è; mancano Android Studio, Androi
 
 **3. Dettaglio evento** (`:feature:event`, nuovo modulo)
 - Bottom sheet aperto dal tocco su un evento in ogni vista: titolo con il colore, data e ora (con il fuso se diverso da quello del telefono), testo della ricorrenza ("Si ripete ogni giorno; per 5 volte"), pulsante "Partecipa con Google Meet", luogo (apre Maps), promemoria, invitati con le risposte, descrizione con link cliccabili, calendario e account.
-- Azioni: ✎ modifica, ⋮ elimina e duplica. Email agli invitati, condividi, esporta e stampa arrivano in M5.
+- Azioni: ✎ modifica, ⋮ elimina e duplica. Email agli invitati, condividi ed esporta arrivano in M5 (la stampa è stata eliminata).
 
 **4. Editor** (`:feature:event`)
 - Bottom sheet a schermo intero (mockup 6): titolo; calendario come chip scorrevoli (solo quelli modificabili); tutto il giorno; date e ore di inizio e fine (la fine segue l'inizio mantenendo la durata); fuso orario; ricorrenza; invitati con "Invia inviti" e permessi; Meet; luogo; promemoria; colore (palette Google dei `colorId`); disponibilità e visibilità; descrizione.
@@ -559,7 +559,7 @@ Per installarla:
 - Testi in italiano e inglese. Verifica: apertura dal menu laterale, tocco sul sito, tema chiaro e scuro, versione e data uguali a quelle dell'APK installato (`dumpsys package`).
 
 ## M5: piano dettagliato
-**Obiettivo**: portare fuori dall'app gli eventi e i calendari (condividere, esportare, stampare, scrivere agli invitati), e chiudere il punto rimasto da M4 (prova del Doze profondo); i consensi per la batteria sono passati a M6 con le Impostazioni. **La condivisione dei calendari tramite l'ACL di Google è stata eliminata da M5 (decisione dell'utente, 12/10/2026): non si fa, e non serve nessun scope in più.** Nessuno scope Google nuovo. Il codice di condivisione ed esportazione sta in `:feature:event` (nel piano iniziale era un modulo `:feature:share`, mai creato).
+**Obiettivo**: portare fuori dall'app gli eventi e i calendari (condividere, esportare, scrivere agli invitati; la stampa PDF è stata eliminata il 12/10/2026 su richiesta dell'utente), e chiudere il punto rimasto da M4 (prova del Doze profondo); i consensi per la batteria sono passati a M6 con le Impostazioni. **La condivisione dei calendari tramite l'ACL di Google è stata eliminata da M5 (decisione dell'utente, 12/10/2026): non si fa, e non serve nessun scope in più.** Nessuno scope Google nuovo. Il codice di condivisione ed esportazione sta in `:feature:event` (nel piano iniziale era un modulo `:feature:share`, mai creato).
 
 **1. Condividere un evento (testo e `.ics`)**
 - Cosa serve: dal dettaglio ⋮ → Condividi, con due scelte: testo e file `.ics`.
@@ -591,14 +591,7 @@ Per installarla:
 - Verifica: apertura in Excel e LibreOffice con testi che contengono virgole, virgolette e a capo.
 - **Fatto (12/10/2026), da provare sul telefono e in Excel**: nella stessa finestra "Esporta" (voce del menu laterale ora "Esporta (.ics, CSV)") si sceglie il formato, "Calendario (.ics)" o "Testo (.csv)"; calendari e giorni sono gli stessi, il file si salva con il selettore di Android (`GGCalendar_<da>_<a>.csv`). **Una riga per occorrenza** (una serie dà una riga per ogni suo giorno nell'intervallo; le occorrenze modificate escono con i loro dati). Colonne (intestazioni nella lingua dell'app): Calendario, Titolo, Data inizio, Ora inizio, Data fine, Ora fine, Tutto il giorno (Sì/No), Fuso orario, Luogo, Descrizione, Google Meet, Invitati (email separate da virgola), Ripetizione (RRULE), Promemoria (anche quelli predefiniti del calendario, con tipo e anticipo). Date come `aaaa-mm-gg` e ore come `HH:mm` in colonne separate (Excel le riconosce; un'unica colonna ISO con la T no), nel fuso dell'evento; per gli eventi di tutto il giorno la data di fine è l'ultimo giorno e le ore sono vuote. Formato: separatore punto e virgola, UTF-8 con BOM, righe `CRLF`, virgolette raddoppiate; un testo che comincia con `=`, `+`, `-`, `@` ha un apostrofo davanti, così Excel non lo esegue come formula. Stessa regola dei privati (non esportati) e stesso riepilogo finale ("N occorrenze esportate", "M eventi non esportati: sono privati"). 5 test (`CsvWriterTest`).
 
-**5. Stampa PDF**
-- Cosa serve: un generatore di PDF con `PdfDocument` e il servizio di stampa di sistema (`PrintManager`), con tre formati:
-  - **scheda di un evento**: dettagli, invitati con risposta, link Meet; una pagina A4 verticale;
-  - **vista corrente** (giorno, settimana o mese): A4 orizzontale, disegnata con la `Canvas` del PDF. Le composable non si riusano così come sono (hanno scroll, colori dinamici e dimensioni dello schermo); si riusa la logica di layout già testata (`OverlapLayout`, corsie delle barre);
-  - **agenda per un intervallo di date**: elenco per giorno su più pagine, con interruzione di pagina e intestazione ripetuta.
-- Interfaccia: voce "Stampa" nel dettaglio e nel menu della vista; scelta del formato e dell'intervallo, anteprima e stampa nell'interfaccia di sistema, che offre anche "Salva come PDF".
-- Difficoltà: testo lungo che va a capo e pagine multiple (misurare con `StaticLayout`), fusi e lingua, colori per il bianco e nero (un bordo oltre al riempimento).
-- Verifica: stampare su PDF e controllare a vista; test unitari della paginazione (quanti eventi per pagina).
+**5. Stampa PDF: eliminata dal progetto (12/10/2026, decisione dell'utente).** Nessun codice scritto; non si fa in nessuna milestone.
 
 **6. Prova del Doze profondo**
 - Cosa serve: nessun codice. Telefono fermo, non in carica, schermo spento, con una sveglia e una notifica programmate a circa un'ora; controllare che suonino all'ora giusta. Con adb non si riesce a forzare il Doze profondo perché il sensore di movimento lo impedisce.
@@ -607,15 +600,15 @@ Per installarla:
 **Ordine di lavoro proposto** (commit e prova sul Samsung a ogni blocco)
 1. `IcsWriter` con test (serve a 1 e 3), poi condivisione dell'evento (1) e posta agli invitati (2).
 2. Esportazione `.ics` e CSV con il selettore di file (3 e 4).
-3. Stampa PDF: prima la scheda dell'evento, poi l'agenda, infine la vista corrente (5).
+3. ~~Stampa PDF~~ (eliminata).
 4. La prova del Doze lasciata girare un'ora (6).
 5. Verifica, plan.md, CI verde e chiusura di M5.
 
 (Il punto "ACL dei calendari" era qui: eliminato il 12/10/2026 su richiesta dell'utente.)
 
 **Verifica di M5**
-- Unit test: scrittore iCalendar (escape, righe piegate, fusi, ricorrenze, tutto il giorno), CSV (citazioni), paginazione della stampa.
-- Sul Samsung: i file aperti in un altro calendario e in Excel; PDF stampati su file; Doze.
+- Unit test: scrittore iCalendar (escape, righe piegate, fusi, ricorrenze, tutto il giorno), CSV (citazioni).
+- Sul Samsung: i file aperti in un altro calendario e in Excel; Doze.
 - CI verde.
 
 ## Verifica

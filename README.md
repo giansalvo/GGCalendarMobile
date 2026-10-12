@@ -22,7 +22,7 @@
 - Sincronizzazione bidirezionale con uno o più account Google Calendar, anche offline, con gestione dei conflitti
 - Eventi ricorrenti, invitati, link Google Meet
 - Promemoria con notifica, sveglia (suona finché non la spegni, al massimo 2 minuti) ed email inviata da Google
-- Condivisione, esportazione `.ics`, stampa
+- Condivisione ed esportazione (`.ics`, CSV)
 - Calendari locali e importazione `.ics`
 - Italiano e inglese, tema chiaro e scuro
 
