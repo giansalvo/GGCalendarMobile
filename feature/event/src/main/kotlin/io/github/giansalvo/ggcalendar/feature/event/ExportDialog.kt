@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -20,6 +22,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TriStateCheckbox
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -105,12 +109,30 @@ fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, vi
             Column(Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(stringResource(R.string.export_calendars), style = MaterialTheme.typography.titleSmall)
                 accounts.forEach { account ->
-                    Text(account.email, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
+                    // The master checkbox of the account: all of its calendars or none; a dash when only some are chosen.
+                    val ids = account.calendars.map { it.id }
+                    val picked = ids.count { it in selected }
+                    val all = picked == ids.size && ids.isNotEmpty()
+                    Row(
+                        Modifier.fillMaxWidth().padding(top = 6.dp).clickable { chosen = if (all) selected - ids.toSet() else selected + ids },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TriStateCheckbox(
+                            state = when {
+                                all -> ToggleableState.On
+                                picked == 0 -> ToggleableState.Off
+                                else -> ToggleableState.Indeterminate
+                            },
+                            onClick = { chosen = if (all) selected - ids.toSet() else selected + ids },
+                        )
+                        Text(account.email, style = MaterialTheme.typography.titleSmall, maxLines = 1)
+                    }
                     account.calendars.forEach { c ->
                         Row(
                             Modifier.fillMaxWidth().clickable { chosen = if (c.id in selected) selected - c.id else selected + c.id },
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
+                            Spacer(Modifier.width(24.dp))
                             Checkbox(checked = c.id in selected, onCheckedChange = { chosen = if (it) selected + c.id else selected - c.id })
                             Text(if (c.isPrimary) account.email else c.name, maxLines = 1)
                         }
