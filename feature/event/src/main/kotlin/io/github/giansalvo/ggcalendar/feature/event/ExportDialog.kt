@@ -36,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -113,8 +114,8 @@ fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, vi
             // The days stay in view at the top; only the list of calendars scrolls when there are many.
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(selected = !csv, onClick = { csv = false }, label = { Text(stringResource(R.string.export_format_ics)) })
-                    FilterChip(selected = csv, onClick = { csv = true }, label = { Text(stringResource(R.string.export_format_csv)) })
+                    FilterChip(selected = !csv, onClick = { csv = false }, modifier = Modifier.weight(1f), label = { Text(stringResource(R.string.export_format_ics), Modifier.fillMaxWidth(), textAlign = TextAlign.Center) })
+                    FilterChip(selected = csv, onClick = { csv = true }, modifier = Modifier.weight(1f), label = { Text(stringResource(R.string.export_format_csv), Modifier.fillMaxWidth(), textAlign = TextAlign.Center) })
                 }
                 Text(stringResource(R.string.export_range), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(bottom = 2.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {

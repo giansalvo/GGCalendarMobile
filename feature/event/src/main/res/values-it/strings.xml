@@ -172,7 +172,7 @@
     <string name="notify_guests_send">Invia</string>
     <string name="notify_guests_dont">Non inviare</string>
     <string name="export_format_ics">Calendario (.ics)</string>
-    <string name="export_format_csv">Foglio di calcolo (CSV)</string>
+    <string name="export_format_csv">Testo (.csv)</string>
     <plurals name="export_rows_done">
         <item quantity="one">%d occorrenza esportata</item>
         <item quantity="other">%d occorrenze esportate</item>
