@@ -100,6 +100,14 @@ class EventShareTest {
     }
 
     @Test
+    fun theFileHasNoOrganizerNorGuestsSoOtherAccountsCanImportIt() {
+        val guests = listOf(Attendee("a@b.it"))
+        val detail = EventDetail(event().copy(attendees = guests, organizerEmail = "me@x.com"), calendar, null)
+        val ics = EventShare.ics(detail, instance(), wholeSeries = true, exceptions = emptyList(), now = now)
+        assertFalse(ics.contains("ORGANIZER") || ics.contains("ATTENDEE"))
+    }
+
+    @Test
     fun theMailGoesToTheGuestsExceptMeAndRooms() {
         val guests = listOf(
             Attendee("me@x.com"), Attendee("Anna@b.it"), Attendee("anna@B.it"), Attendee("sala@resource.calendar.google.com"),

@@ -71,8 +71,8 @@ internal object EventShare {
         description = e.description,
         rrule = e.rrule,
         exdates = e.exdates,
-        organizerEmail = e.organizerEmail,
-        attendees = e.attendees,
+        // No organizer or guests: Google refuses to import events that another account organizes, and an exported file
+        // is a copy of the event, not an invitation.
         reminders = reminders,
         meetLink = e.meetLink,
         busy = e.availability != "FREE",
