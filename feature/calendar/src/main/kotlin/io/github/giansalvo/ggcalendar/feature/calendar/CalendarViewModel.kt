@@ -41,6 +41,8 @@ data class CalendarUiState(
     val scheduleFrom: LocalDate = LocalDate.now().minusMonths(1),
     val scheduleTo: LocalDate = LocalDate.now().plusMonths(4),
     val accounts: List<AccountWithCalendars> = emptyList(),
+    /** The calendar made from the birthdays of the phone's contacts, when turned on. */
+    val birthdays: io.github.giansalvo.ggcalendar.core.model.CalendarInfo? = null,
     val instances: List<EventInstance> = emptyList(),
     val syncing: Boolean = false,
     /** Changes waiting to reach Google. */
@@ -130,15 +132,15 @@ class CalendarViewModel @Inject constructor(
 
     val state: StateFlow<CalendarUiState> = combine(
         navigation,
-        repository.accounts,
+        combine(repository.accounts, repository.birthdayCalendar, ::Pair),
         instances,
         combine(repository.syncing, transient, repository.messages.map { it.firstOrNull() }, ::Triple),
         combine(grid, eventDays, repository.pendingChanges, ::Triple),
-    ) { nav, accounts, list, (syncing, t, message), (g, days, pending) ->
+    ) { nav, (accounts, birthdays), list, (syncing, t, message), (g, days, pending) ->
         // Set before the state goes out: the views read the first day of the week while they compose.
         WeekSettings.firstDay = g.weekStart ?: WeekSettings.localeDefault()
         CalendarUiState(
-            view = nav.view, date = nav.date, scheduleFrom = nav.scheduleFrom, scheduleTo = nav.scheduleTo, accounts = accounts, instances = list, syncing = syncing,
+            view = nav.view, date = nav.date, scheduleFrom = nav.scheduleFrom, scheduleTo = nav.scheduleTo, accounts = accounts, birthdays = birthdays, instances = list, syncing = syncing,
             hourHeight = g.hourHeight, dayStartHour = g.dayStartHour, dimPast = g.dimPast, firstDay = WeekSettings.firstDay, eventDays = days, pending = pending,
             selected = t.selected, editing = t.editing, pendingMove = t.pendingMove, busy = t.busy, consent = t.consent, error = t.error, message = message,
         )
@@ -146,6 +148,7 @@ class CalendarViewModel @Inject constructor(
 
     init {
         repository.syncNow()
+        viewModelScope.launch { runCatching { repository.syncBirthdays() } }
         // Reopen the last view used.
         viewModelScope.launch {
             val last = repository.viewPreferences.first().lastView

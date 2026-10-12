@@ -84,6 +84,10 @@ interface EventDao {
     )
     suspend fun exportRootIds(calendarIds: List<String>, fromDay: Long, toDay: Long): List<String>
 
+    /** Birthday events that come from Google (the contacts of an account), not from the phone's contacts. */
+    @Query("SELECT * FROM events WHERE event_type = 'birthday' AND calendar_id != :exceptCalendarId")
+    suspend fun birthdaysOutside(exceptCalendarId: String): List<EventEntity>
+
     @Query("SELECT * FROM events WHERE id IN (:ids)")
     suspend fun getAll(ids: List<String>): List<EventEntity>
 

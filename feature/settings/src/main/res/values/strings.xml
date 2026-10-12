@@ -22,4 +22,6 @@
     <string name="settings_discard_question">Discard the changes?</string>
     <string name="settings_discard">Discard</string>
     <string name="settings_keep_editing">Keep editing</string>
+    <string name="settings_birthdays">Birthdays from contacts</string>
+    <string name="settings_birthdays_hint">Shows the birthdays saved in the phone contacts, in a calendar of their own. Needs the permission to read the contacts.</string>
 </resources>

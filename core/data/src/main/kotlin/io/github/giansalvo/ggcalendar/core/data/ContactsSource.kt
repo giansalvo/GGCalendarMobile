@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.provider.ContactsContract.CommonDataKinds.Email
+import android.provider.ContactsContract.CommonDataKinds.Event
+import android.provider.ContactsContract.Data
 import androidx.core.content.ContextCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.giansalvo.ggcalendar.core.model.Attendee
@@ -17,6 +19,30 @@ import javax.inject.Singleton
 class ContactsSource @Inject constructor(@ApplicationContext private val context: Context) {
     val granted: Boolean
         get() = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
+
+    /** The birthdays saved in the contacts (with or without the year of birth); empty without the permission. */
+    suspend fun birthdays(): List<ContactBirthday> {
+        if (!granted) return emptyList()
+        return withContext(Dispatchers.IO) {
+            val out = mutableListOf<ContactBirthday>()
+            runCatching {
+                context.contentResolver.query(
+                    Data.CONTENT_URI,
+                    arrayOf(Data.CONTACT_ID, Data.DISPLAY_NAME_PRIMARY, Event.START_DATE),
+                    "${Data.MIMETYPE} = ? AND ${Event.TYPE} = ?",
+                    arrayOf(Event.CONTENT_ITEM_TYPE, Event.TYPE_BIRTHDAY.toString()),
+                    null,
+                )?.use { c ->
+                    while (c.moveToNext()) {
+                        val day = Birthdays.parse(c.getString(2)) ?: continue
+                        val name = c.getString(1)?.trim().orEmpty()
+                        if (name.isNotEmpty()) out += ContactBirthday(c.getString(0).orEmpty(), name, day)
+                    }
+                }
+            }
+            out
+        }
+    }
 
     suspend fun emails(): List<Attendee> {
         if (!granted) return emptyList()

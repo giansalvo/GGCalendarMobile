@@ -1,6 +1,9 @@
 package io.github.giansalvo.ggcalendar.feature.settings
 
+import android.Manifest
 import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -73,6 +76,9 @@ fun SettingsScreen(onClose: () -> Unit, onOpenNotifications: () -> Unit, viewMod
         val scope = rememberCoroutineScope()
         val dirty = draft != original
         val leave = { if (dirty) confirmDiscard = true else onClose() }
+        val askContacts = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            draft = draft.copy(birthdays = granted)
+        }
         BackHandler(onBack = leave)
 
         Dialog(onDismissRequest = leave, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
@@ -112,6 +118,10 @@ fun SettingsScreen(onClose: () -> Unit, onOpenNotifications: () -> Unit, viewMod
                         WeekStartRow(draft.weekStart) { draft = draft.copy(weekStart = it) }
                         DayStartRow(draft.dayStartHour) { draft = draft.copy(dayStartHour = it) }
                         SwitchRow(stringResource(R.string.settings_dim_past), stringResource(R.string.settings_dim_past_hint), draft.dimPast) { draft = draft.copy(dimPast = it) }
+                        SwitchRow(stringResource(R.string.settings_birthdays), stringResource(R.string.settings_birthdays_hint), draft.birthdays) { on ->
+                            // The contacts are read only with the permission, asked when the user turns this on.
+                            if (on && !viewModel.contactsGranted) askContacts.launch(Manifest.permission.READ_CONTACTS) else draft = draft.copy(birthdays = on)
+                        }
 
                         Section(stringResource(R.string.settings_notifications))
                         Row(

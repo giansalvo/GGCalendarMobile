@@ -32,6 +32,7 @@ class CalendarRepository @Inject constructor(
     private val engine: SyncEngine,
     private val scheduler: SyncScheduler,
     private val prefs: AppPreferences,
+    private val birthdays: BirthdaySync,
 ) {
     val syncing: StateFlow<Boolean> get() = engine.syncing
 
@@ -46,6 +47,14 @@ class CalendarRepository @Inject constructor(
                 )
             }
         }
+
+    /** The "Birthdays" calendar of the phone's contacts, when turned on. */
+    val birthdayCalendar: Flow<CalendarInfo?> = db.calendarDao().observeAll().map { all ->
+        all.firstOrNull { it.id == BirthdaySync.CALENDAR_ID }?.let { CalendarInfo(it.id, it.accountEmail, it.name, it.color, it.isVisible, it.canWrite, it.isPrimary) }
+    }
+
+    /** Rebuilds the birthdays from the contacts (or removes them when off or without the permission). */
+    suspend fun syncBirthdays() = birthdays.sync()
 
     val messages: Flow<List<SyncMessageEntity>> = db.syncMessageDao().observeUnread()
 

@@ -54,6 +54,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         val askedNotifications = booleanPreferencesKey("asked_notifications")
         val bootCount = intPreferencesKey("handled_boot_count")
         val theme = stringPreferencesKey("theme")
+        val birthdays = booleanPreferencesKey("birthdays_from_contacts")
         val weekStart = stringPreferencesKey("week_start")
         val dynamicColor = booleanPreferencesKey("dynamic_color")
     }
@@ -109,6 +110,13 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
             theme = it[Keys.theme]?.let { name -> ThemeMode.entries.firstOrNull { m -> m.name == name } } ?: ThemeMode.SYSTEM,
             dynamicColor = it[Keys.dynamicColor] ?: false,
         )
+    }
+
+    /** The "Birthdays" calendar made from the phone's contacts; off until the user turns it on (it needs a permission). */
+    val birthdaysEnabled: Flow<Boolean> = context.dataStore.data.map { it[Keys.birthdays] ?: false }
+
+    suspend fun setBirthdaysEnabled(on: Boolean) {
+        context.dataStore.edit { it[Keys.birthdays] = on }
     }
 
     suspend fun setTheme(mode: ThemeMode) {

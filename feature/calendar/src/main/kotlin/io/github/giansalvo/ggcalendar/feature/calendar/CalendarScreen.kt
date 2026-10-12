@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Cake
 import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
@@ -459,6 +460,13 @@ private fun CalendarDrawer(
                     }
                 }
                 account.calendars.forEach { CalendarRow(it, onToggleCalendar) }
+            }
+            state.birthdays?.let { birthdays ->
+                Row(Modifier.padding(16.dp, 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Outlined.Cake, contentDescription = null)
+                    Text(stringResource(R.string.contacts), Modifier.padding(start = 16.dp), style = MaterialTheme.typography.bodyLarge)
+                }
+                CalendarRow(birthdays, onToggleCalendar)
             }
             NavigationDrawerItem(
                 icon = { Icon(Icons.Outlined.PersonAdd, contentDescription = null) },

@@ -4,4 +4,5 @@
     <string name="conflict_suffix">" (conflict)"</string>
     <string name="message_conflict">\"%1$s\" was changed both here and on Google: Google\'s version was kept, yours is saved as \"%2$s\".</string>
     <string name="message_rejected">Google did not accept a change (%1$d): %2$s</string>
+    <string name="birthdays_calendar">Birthdays (contacts)</string>
 </resources>
