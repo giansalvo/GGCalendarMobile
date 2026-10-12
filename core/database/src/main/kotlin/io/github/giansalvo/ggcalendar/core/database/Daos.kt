@@ -200,6 +200,16 @@ interface InstanceDao {
     )
     fun observeRange(fromDay: Long, toDay: Long): Flow<List<InstanceRow>>
 
+    /** Every occurrence of the events of [calendarIds] in the days [fromDay, toDay), in time order, to export as a table. */
+    @Query(
+        """
+        SELECT i.* FROM instances i JOIN events e ON e.id = i.event_id
+        WHERE e.calendar_id IN (:calendarIds) AND i.start_day < :toDay AND i.end_day > :fromDay
+        ORDER BY i.begin_utc, i.event_id
+        """,
+    )
+    suspend fun exportInstances(calendarIds: List<String>, fromDay: Long, toDay: Long): List<InstanceEntity>
+
     /**
      * Occurrences of the visible calendars whose event matches [pattern] (a LIKE pattern, `!` escapes) in title, place,
      * description or guests (names and emails), soonest first; only the days the instances table covers.

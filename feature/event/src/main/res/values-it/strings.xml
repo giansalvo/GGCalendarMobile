@@ -151,7 +151,7 @@
     <string name="no_contacts">Nessun contatto trovato</string>
     <string name="write_to_guests">Scrivi agli invitati</string>
     <string name="write_no_mail_app">Nessuna app di posta trovata</string>
-    <string name="export_title">Esporta in .ics</string>
+    <string name="export_title">Esporta</string>
     <string name="export_calendars">Calendari</string>
     <string name="export_range">Giorni</string>
     <string name="export_range_invalid">Il giorno finale è prima di quello iniziale</string>
@@ -171,4 +171,26 @@
     <string name="notify_guests_text">Google manda agli invitati un messaggio di posta con le modifiche.</string>
     <string name="notify_guests_send">Invia</string>
     <string name="notify_guests_dont">Non inviare</string>
+    <string name="export_format_ics">Calendario (.ics)</string>
+    <string name="export_format_csv">Foglio di calcolo (CSV)</string>
+    <plurals name="export_rows_done">
+        <item quantity="one">%d occorrenza esportata</item>
+        <item quantity="other">%d occorrenze esportate</item>
+    </plurals>
+    <string name="csv_calendar">Calendario</string>
+    <string name="csv_title">Titolo</string>
+    <string name="csv_start_date">Data inizio</string>
+    <string name="csv_start_time">Ora inizio</string>
+    <string name="csv_end_date">Data fine</string>
+    <string name="csv_end_time">Ora fine</string>
+    <string name="csv_all_day">Tutto il giorno</string>
+    <string name="csv_time_zone">Fuso orario</string>
+    <string name="csv_location">Luogo</string>
+    <string name="csv_description">Descrizione</string>
+    <string name="csv_meet">Google Meet</string>
+    <string name="csv_guests">Invitati</string>
+    <string name="csv_repeats">Ripetizione</string>
+    <string name="csv_reminders">Promemoria</string>
+    <string name="csv_yes">Sì</string>
+    <string name="csv_no">No</string>
 </resources>

@@ -24,6 +24,11 @@ data class EventDetail(val event: EventEntity, val calendar: CalendarEntity, val
 /** One event to export: a single event or a series master, with the exceptions of the series. */
 class ExportItem(val event: EventEntity, val calendar: CalendarEntity, val exceptions: List<EventEntity>)
 
+/** One occurrence to export in a table: its event, the series it belongs to (itself if single), calendar and times. */
+class ExportRow(val event: EventEntity, val series: EventEntity, val calendar: CalendarEntity, val instance: io.github.giansalvo.ggcalendar.core.database.InstanceEntity)
+
+class ExportOccurrences(val rows: List<ExportRow>, val skippedPrivate: Int)
+
 /** Events for the detail sheet and the editor; changes go through [EventWriter]. */
 @Singleton
 class EventRepository @Inject constructor(
@@ -56,6 +61,33 @@ class EventRepository @Inject constructor(
             val calendar = calendars[e.calendarId] ?: return@mapNotNull null
             ExportItem(e, calendar, if (e.rrule.isNullOrBlank()) emptyList() else db.eventDao().getExceptions(e.id))
         }.sortedWith(compareBy({ it.event.startUtc ?: (it.event.startDay ?: 0) * 86_400_000L }, { it.event.title }))
+    }
+
+    /**
+     * Every occurrence of [calendarIds] in the days [from, to] (both included), one row each, for exporting as a table.
+     * Occurrences of private events are left out and counted by event in [ExportOccurrences.skippedPrivate].
+     */
+    suspend fun occurrencesForExport(calendarIds: Collection<String>, from: java.time.LocalDate, to: java.time.LocalDate): ExportOccurrences {
+        if (calendarIds.isEmpty()) return ExportOccurrences(emptyList(), 0)
+        val instances = db.instanceDao().exportInstances(calendarIds.toList(), from.toEpochDay(), to.toEpochDay() + 1)
+        val events = HashMap<String, EventEntity>()
+        // SQLite limits the number of variables of one query: read the events in chunks.
+        suspend fun load(ids: Collection<String>) = ids.distinct().filter { it !in events }.chunked(500).forEach { chunk -> db.eventDao().getAll(chunk).forEach { events[it.id] = it } }
+        load(instances.map { it.eventId })
+        load(instances.mapNotNull { events[it.eventId]?.seriesMasterId })
+        val calendars = db.calendarDao().observeAll().first().associateBy { it.id }
+        val privateRoots = HashSet<String>()
+        val rows = instances.mapNotNull { i ->
+            val event = events[i.eventId] ?: return@mapNotNull null
+            val master = event.seriesMasterId?.let { events[it] }
+            val calendar = calendars[event.calendarId] ?: return@mapNotNull null
+            if (event.visibility == "PRIVATE" || master?.visibility == "PRIVATE") {
+                privateRoots += master?.id ?: event.id
+                return@mapNotNull null
+            }
+            ExportRow(event, master ?: event, calendar, i)
+        }
+        return ExportOccurrences(rows, privateRoots.size)
     }
 
     /** Calendars where the user can create events, account by account in the order they were added. */

@@ -18,6 +18,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -63,11 +64,12 @@ fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, vi
     var to by rememberSaveable { mutableStateOf(LocalDate.of(year, 12, 31).toString()) }
     var picking by remember { mutableStateOf<Boolean?>(null) } // true: the first day, false: the last
     var busy by remember { mutableStateOf(false) }
+    var csv by rememberSaveable { mutableStateOf(false) }
     var pending by remember { mutableStateOf<ExportResult?>(null) }
     // What the export did, shown when it ends: events written and events left out, with the reason.
     var summary by remember { mutableStateOf<String?>(null) }
     fun summaryOf(r: ExportResult, saved: Boolean): String = buildString {
-        append(if (!saved) context.getString(R.string.export_failed) else context.resources.getQuantityString(R.plurals.export_done, r.count, r.count))
+        append(if (!saved) context.getString(R.string.export_failed) else context.resources.getQuantityString(if (r.occurrences) R.plurals.export_rows_done else R.plurals.export_done, r.count, r.count))
         if (r.skippedPrivate > 0) append("\n").append(context.resources.getQuantityString(R.plurals.export_skipped_private, r.skippedPrivate, r.skippedPrivate))
     }
 
@@ -77,21 +79,23 @@ fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, vi
     val toDay = LocalDate.parse(to)
     val valid = selected.isNotEmpty() && !toDay.isBefore(fromDay)
 
-    val save = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/calendar")) { uri ->
+    val onSaved: (android.net.Uri?) -> Unit = { uri ->
         val result = pending
         pending = null
         if (uri == null || result == null) {
             busy = false
-            return@rememberLauncherForActivityResult
-        }
-        scope.launch {
-            val ok = withContext(Dispatchers.IO) {
-                runCatching { context.contentResolver.openOutputStream(uri, "wt")!!.use { it.write(result.content.toByteArray(Charsets.UTF_8)) } }.isSuccess
+        } else {
+            scope.launch {
+                val ok = withContext(Dispatchers.IO) {
+                    runCatching { context.contentResolver.openOutputStream(uri, "wt")!!.use { it.write(result.content.toByteArray(Charsets.UTF_8)) } }.isSuccess
+                }
+                summary = summaryOf(result, ok)
+                busy = false
             }
-            summary = summaryOf(result, ok)
-            busy = false
         }
     }
+    val saveIcs = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/calendar"), onSaved)
+    val saveCsv = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv"), onSaved)
 
     summary?.let { text ->
         AlertDialog(
@@ -108,6 +112,10 @@ fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, vi
         text = {
             // The days stay in view at the top; only the list of calendars scrolls when there are many.
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(selected = !csv, onClick = { csv = false }, label = { Text(stringResource(R.string.export_format_ics)) })
+                    FilterChip(selected = csv, onClick = { csv = true }, label = { Text(stringResource(R.string.export_format_csv)) })
+                }
                 Text(stringResource(R.string.export_range), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(bottom = 2.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     OutlinedButton(onClick = { picking = true }, Modifier.weight(1f)) { Text(day(fromDay)) }
@@ -155,13 +163,13 @@ fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, vi
             TextButton(enabled = valid && !busy, onClick = {
                 busy = true
                 scope.launch {
-                    val result = viewModel.ics(selected, fromDay, toDay)
+                    val result = if (csv) viewModel.csv(selected, fromDay, toDay, context.resources) else viewModel.ics(selected, fromDay, toDay)
                     if (result.count == 0) {
                         summary = context.getString(R.string.export_nothing) + (if (result.skippedPrivate > 0) "\n" + context.resources.getQuantityString(R.plurals.export_skipped_private, result.skippedPrivate, result.skippedPrivate) else "")
                         busy = false
                     } else {
                         pending = result
-                        save.launch("GGCalendar_${fromDay}_$toDay.ics")
+                        if (csv) saveCsv.launch("GGCalendar_${fromDay}_$toDay.csv") else saveIcs.launch("GGCalendar_${fromDay}_$toDay.ics")
                     }
                 }
             }) { Text(stringResource(R.string.export_action)) }

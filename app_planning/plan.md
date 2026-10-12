@@ -92,7 +92,7 @@ Parte dal `CalendarStore` del desktop (SQLite, `events.data` in JSON, `outbox` c
 - Evento come `.ics` o testo (con il link Meet) tramite FileProvider e Sharesheet.
 - Esportazione di un intervallo o di un calendario in `.ics` (scrittore iCalendar proprio) e CSV.
 - Stampa: PDF generato con `PdfDocument` e inviato a `PrintManager`. Tre formati: scheda del singolo evento (dettagli, invitati, link Meet), vista corrente (giorno, settimana o mese in A4 orizzontale), agenda per un intervallo di date.
-- Condivisione dei calendari tramite l'ACL API (lettore, scrittore).
+- ~~Condivisione dei calendari tramite l'ACL API (lettore, scrittore).~~ **Eliminata dal piano il 12/10/2026 (decisione dell'utente).**
 
 **Funzioni riprese dal desktop**
 - Calendari locali: esistono solo sul telefono e non hanno una `pending_op` verso Google. Un evento si può spostare tra un calendario locale e uno Google.
@@ -201,7 +201,7 @@ I test xUnit (`tests/GGCalendar.Core.Tests`) vengono tradotti in JUnit con gli s
   - **Spostati dopo M4 (decisione del 12/10/2026)**: (1) prova del Doze profondo vero (telefono fermo e non in carica, circa un'ora), in M5; (2) soluzione 7, cioè i consensi per l'uso della batteria, in M6 insieme alle Impostazioni (richiesta di esclusione dall'ottimizzazione, "App mai in sospensione" di Samsung, avviso con `isBackgroundRestricted()`).
   - **M4 completata (12/10/2026)**: notifiche, sveglia, promemoria email, direct boot, ripristino dopo il riavvio, cambio di fuso, due account. CI verde (run 38179955704, commit 613b544; i commit successivi toccano solo plan.md).
 - **M4bis** Vista "Mese + Programma" e APK di prova da condividere (anche via WhatsApp) prima della pubblicazione ufficiale, più la scheda informativa dell'app (autore, sito, versione 0.4.0 e data di build). Dettaglio nella sezione "M4bis: piano dettagliato".
-- **M5** Condivisione, esportazione `.ics`/CSV, stampa PDF, ACL dei calendari; più un punto rimasto da M4: la **prova del Doze profondo**.
+- **M5** Condivisione, esportazione `.ics`/CSV, stampa PDF; più un punto rimasto da M4: la **prova del Doze profondo**.
 - **M6** Impostazioni e **consensi per l'uso della batteria** (soluzione 7 di M4: richiesta di esclusione dall'ottimizzazione batteria, guida "App mai in sospensione" di Samsung, avviso nel dettaglio dell'evento e in "Notifiche e sveglie" quando l'app è limitata; spostati da M5 il 12/10/2026) (schermata unica a sezioni, vedi 5b; include la **scelta del tema: chiaro, scuro o come il sistema**, applicata subito e ricordata, con i colori dinamici di Android 12+ attivabili a parte), calendari locali, calendario "Compleanni" dalla rubrica del telefono (`READ_CONTACTS`, vedi M2), importazione `.ics`, suoni personalizzati, secondo fuso orario, rifinitura i18n, aggiornamenti in-app; aggiornamento del desktop C# per `ggAlarm`. Assegnati il 12/10/2026: **onboarding del primo avvio** (benvenuto, login Google con possibilità di saltare, permessi guidati, prima sincronizzazione con avanzamento: schermata 1 della sezione 5b), **pull-to-refresh nel Programma**, pulsante **"Invia log"** per i crash (deciso: si fa).
 - **M7** Landing page completa e release v1.0. La privacy policy estesa ad Android si pubblica già in M0; la verifica dello scope `calendar` si invia in parallelo, prima possibile. Assegnati il 12/10/2026: **infrastruttura GitHub** (`release.yml` con APK firmato su tag `v*`, `site.yml` con deploy FTP su Altervista, Dependabot, template per issue e PR, detekt e ktlint nella CI), **test strumentali e UI Compose** sugli emulatori API 26 e 36 (prima va ripristinato l'emulatore locale, oggi non risponde), **invio e verifica dello scope `calendar` su Google** (azione in Google Cloud, con il video già pronto; da avviare presto perché toglie l'avviso "app non verificata" e il limite di 100 utenti).
 
@@ -559,7 +559,7 @@ Per installarla:
 - Testi in italiano e inglese. Verifica: apertura dal menu laterale, tocco sul sito, tema chiaro e scuro, versione e data uguali a quelle dell'APK installato (`dumpsys package`).
 
 ## M5: piano dettagliato
-**Obiettivo**: portare fuori dall'app gli eventi e i calendari (condividere, esportare, stampare, scrivere agli invitati), dare ad altre persone accesso ai propri calendari Google (ACL), e chiudere il punto rimasto da M4 (prova del Doze profondo); i consensi per la batteria sono passati a M6 con le Impostazioni. Nessuno scope Google nuovo: lo scope `calendar` già concesso copre anche l'ACL. Nuovo modulo `:feature:share` (come nella sezione 1); per l'ACL servono in più le chiamate in `:core:network`.
+**Obiettivo**: portare fuori dall'app gli eventi e i calendari (condividere, esportare, stampare, scrivere agli invitati), e chiudere il punto rimasto da M4 (prova del Doze profondo); i consensi per la batteria sono passati a M6 con le Impostazioni. **La condivisione dei calendari tramite l'ACL di Google è stata eliminata da M5 (decisione dell'utente, 12/10/2026): non si fa, e non serve nessun scope in più.** Nessuno scope Google nuovo. Il codice di condivisione ed esportazione sta in `:feature:event` (nel piano iniziale era un modulo `:feature:share`, mai creato).
 
 **1. Condividere un evento (testo e `.ics`)**
 - Cosa serve: dal dettaglio ⋮ → Condividi, con due scelte: testo e file `.ics`.
@@ -582,13 +582,14 @@ Per installarla:
 - Interfaccia: "Esporta" per un calendario o un intervallo di date (inizio e fine), con scelta dei calendari. Il file si salva dove sceglie l'utente con il selettore di file di sistema (`CreateDocument`), senza permessi di archiviazione.
 - **Aggiunta del 12/10/2026 (richiesta dell'utente, fuori elenco M5): avviso agli invitati al salvataggio.** Salvando la modifica di un evento che ha invitati (o che li aveva, se li hai tolti) l'editor chiede "Avvisare gli invitati?" con Invia / Non inviare / Annulla; la risposta diventa `sendUpdates` (all / none) della chiamata a Google, anche per le serie (dopo la scelta dell'ambito) e per lo spostamento tra calendari. Per un evento nuovo resta la casella "Invia inviti" dell'editor. Provato dall'utente: mancava la domanda nel **trascinamento** (spostare o ridimensionare nelle griglie); corretto il 12/10/2026 con lo stesso dialogo (`NotifyGuestsDialog`), dopo la scelta dell'ambito per le serie. Da provare sul telefono. **Eliminazione** (aggiunta il 12/10/2026): anche eliminare un evento con invitati (o una sua occorrenza, dopo la scelta dell'ambito) chiede se avvisarli. Da provare sul telefono. Non chiedono nulla le copie "(conflitto)", che non hanno invitati.
 - Verifica: importare il file nel calendario Google sul web e nel desktop GGCalendar; confronto con serie ed eccezioni.
-- **Fatto (12/10/2026), da provare sul telefono**: voce "Esporta in .ics" nel menu laterale. Finestra con i calendari di ogni account (preselezionati quelli visibili, si possono esportare anche i nascosti) e due date (da gennaio a dicembre dell'anno corrente come predefinito); il file si salva con il selettore di Android (`CreateDocument`, nome `GGCalendar_<da>_<a>.ics`), senza permessi. Contenuto: ogni evento con almeno un'occorrenza nei giorni scelti (ultimo giorno compreso); una serie esce una sola volta, intera, con le eccezioni (`EventRepository.forExport`, query `exportRootIds`), per il resto lo stesso scrittore della condivisione (`EventShare.seriesEvents`). Accanto all'email di ogni account c'è una casella principale (tutti, nessuno, o un trattino se solo alcuni calendari sono scelti). Messaggi: numero di eventi esportati, "nessun evento", errore di salvataggio. 4 test sulla query (`ExportQueryTest`). Limite: solo i giorni coperti dalla tabella delle istanze (da 1 anno fa a 2 anni avanti). **Regola dell'utente (12/10/2026): gli eventi con visibilità PRIVATE non si esportano** (anche le occorrenze private modificate di una serie restano fuori); a fine esportazione una finestra riporta quanti eventi sono stati esportati e quanti no, con il motivo ("sono privati"). Vale per l'esportazione di un intervallo, non per la condivisione di un singolo evento scelto dall'utente. Da provare sul telefono.
+- **Fatto (12/10/2026), da provare sul telefono**: voce "Esporta in .ics" nel menu laterale. Finestra con i calendari di ogni account (preselezionati quelli visibili, si possono esportare anche i nascosti) e due date (da gennaio a dicembre dell'anno corrente come predefinito); il file si salva con il selettore di Android (`CreateDocument`, nome `GGCalendar_<da>_<a>.ics`), senza permessi. Contenuto: ogni evento con almeno un'occorrenza nei giorni scelti (ultimo giorno compreso); una serie esce una sola volta, intera, con le eccezioni (`EventRepository.forExport`, query `exportRootIds`), per il resto lo stesso scrittore della condivisione (`EventShare.seriesEvents`). Accanto all'email di ogni account c'è una casella principale (tutti, nessuno, o un trattino se solo alcuni calendari sono scelti). Messaggi: numero di eventi esportati, "nessun evento", errore di salvataggio. 4 test sulla query (`ExportQueryTest`). Limite: solo i giorni coperti dalla tabella delle istanze (da 1 anno fa a 2 anni avanti). **Provato dall'utente (12/10/2026): tutti i test dell'esportazione `.ics` sono passati.** **Regola dell'utente (12/10/2026): gli eventi con visibilità PRIVATE non si esportano** (anche le occorrenze private modificate di una serie restano fuori); a fine esportazione una finestra riporta quanti eventi sono stati esportati e quanti no, con il motivo ("sono privati"). Vale per l'esportazione di un intervallo, non per la condivisione di un singolo evento scelto dall'utente. Da provare sul telefono.
 
 **4. Esportare in CSV**
 - Cosa serve: stessi calendari e intervalli del punto 3, formato CSV (RFC 4180), codifica UTF-8 con BOM perché Excel apra bene gli accenti.
 - Colonne proposte: calendario, titolo, inizio, fine, tutto il giorno, fuso, luogo, descrizione, link Meet, invitati, ricorrenza, promemoria. Data e ora in ISO 8601.
 - **Deciso (12/10/2026): separatore punto e virgola** (Excel italiano). Da decidere: se una serie esce come una riga o come una riga per occorrenza nell'intervallo; proposta: una riga per occorrenza.
 - Verifica: apertura in Excel e LibreOffice con testi che contengono virgole, virgolette e a capo.
+- **Fatto (12/10/2026), da provare sul telefono e in Excel**: nella stessa finestra "Esporta" (voce del menu laterale ora "Esporta (.ics, CSV)") si sceglie il formato, "Calendario (.ics)" o "Foglio di calcolo (CSV)"; calendari e giorni sono gli stessi, il file si salva con il selettore di Android (`GGCalendar_<da>_<a>.csv`). **Una riga per occorrenza** (una serie dà una riga per ogni suo giorno nell'intervallo; le occorrenze modificate escono con i loro dati). Colonne (intestazioni nella lingua dell'app): Calendario, Titolo, Data inizio, Ora inizio, Data fine, Ora fine, Tutto il giorno (Sì/No), Fuso orario, Luogo, Descrizione, Google Meet, Invitati (email separate da virgola), Ripetizione (RRULE), Promemoria (anche quelli predefiniti del calendario, con tipo e anticipo). Date come `aaaa-mm-gg` e ore come `HH:mm` in colonne separate (Excel le riconosce; un'unica colonna ISO con la T no), nel fuso dell'evento; per gli eventi di tutto il giorno la data di fine è l'ultimo giorno e le ore sono vuote. Formato: separatore punto e virgola, UTF-8 con BOM, righe `CRLF`, virgolette raddoppiate; un testo che comincia con `=`, `+`, `-`, `@` ha un apostrofo davanti, così Excel non lo esegue come formula. Stessa regola dei privati (non esportati) e stesso riepilogo finale ("N occorrenze esportate", "M eventi non esportati: sono privati"). 5 test (`CsvWriterTest`).
 
 **5. Stampa PDF**
 - Cosa serve: un generatore di PDF con `PdfDocument` e il servizio di stampa di sistema (`PrintManager`), con tre formati:
@@ -599,15 +600,7 @@ Per installarla:
 - Difficoltà: testo lungo che va a capo e pagine multiple (misurare con `StaticLayout`), fusi e lingua, colori per il bianco e nero (un bordo oltre al riempimento).
 - Verifica: stampare su PDF e controllare a vista; test unitari della paginazione (quanti eventi per pagina).
 
-**6. ACL dei calendari (condivisione dei calendari)**
-- Cosa vuol dire: ACL sta per *Access Control List*, la lista di chi ha accesso a un calendario e con quale ruolo. Nell'API di Google Calendar è la risorsa `acl`: ogni voce lega una persona (o un gruppo, un dominio, tutti) a un ruolo. Ruoli: `freeBusyReader` (vede solo occupato/libero), `reader` (legge gli eventi), `writer` (modifica gli eventi), `owner` (gestisce anche la condivisione). È la funzione "Condividi con persone specifiche" di Google Calendar sul web.
-- Cosa serve: una schermata "Condividi calendario", raggiungibile dal menu laterale (tocco prolungato o ⋮ sul calendario), solo per i calendari in cui l'utente è `owner`. Mostra l'elenco delle persone con il loro ruolo; permette di aggiungere una persona (email e ruolo: lettore o scrittore, come nel piano iniziale), di cambiare il ruolo e di togliere l'accesso.
-- Chiamate API (in `:core:network`, stesso client di oggi): `acl.list`, `acl.insert` (con `sendNotifications` per l'email di invito di Google), `acl.patch`, `acl.delete`; errori 403 (non sei owner o il dominio vieta la condivisione esterna) e 404 mostrati con un messaggio chiaro.
-- Da decidere: **offline**. Proposta: le operazioni ACL sono solo online (nessuna coda di invio), con un messaggio se manca la rete: sono rare e gli errori devono essere immediati.
-- Fuori da M5: condivisione pubblica ("chiunque con il link", scope `default`) e con un intero dominio; rischiose per la riservatezza, da valutare dopo.
-- Verifica: con i due account di prova (profgusinu e itiangioy): aggiungere itiangioy come lettore al calendario di profgusinu e controllare che lo veda, passarlo a scrittore, togliere l'accesso; dopo ogni prova ripulire.
-
-**7. Prova del Doze profondo**
+**6. Prova del Doze profondo**
 - Cosa serve: nessun codice. Telefono fermo, non in carica, schermo spento, con una sveglia e una notifica programmate a circa un'ora; controllare che suonino all'ora giusta. Con adb non si riesce a forzare il Doze profondo perché il sensore di movimento lo impedisce.
 - Registrare il risultato nel piano; se la sveglia ritarda, indagare con `dumpsys deviceidle` e `dumpsys alarm`.
 
@@ -615,13 +608,14 @@ Per installarla:
 1. `IcsWriter` con test (serve a 1 e 3), poi condivisione dell'evento (1) e posta agli invitati (2).
 2. Esportazione `.ics` e CSV con il selettore di file (3 e 4).
 3. Stampa PDF: prima la scheda dell'evento, poi l'agenda, infine la vista corrente (5).
-4. ACL: client e schermata (6).
-5. La prova del Doze lasciata girare un'ora (7).
-6. Verifica, plan.md, CI verde e chiusura di M5.
+4. La prova del Doze lasciata girare un'ora (6).
+5. Verifica, plan.md, CI verde e chiusura di M5.
+
+(Il punto "ACL dei calendari" era qui: eliminato il 12/10/2026 su richiesta dell'utente.)
 
 **Verifica di M5**
-- Unit test: scrittore iCalendar (escape, righe piegate, fusi, ricorrenze, tutto il giorno), CSV (citazioni), paginazione della stampa, mapping dell'ACL con MockWebServer (ruoli, errori 403 e 404).
-- Sul Samsung: i file aperti in un altro calendario e in Excel; PDF stampati su file; ACL con i due account; Doze.
+- Unit test: scrittore iCalendar (escape, righe piegate, fusi, ricorrenze, tutto il giorno), CSV (citazioni), paginazione della stampa.
+- Sul Samsung: i file aperti in un altro calendario e in Excel; PDF stampati su file; Doze.
 - CI verde.
 
 ## Verifica

@@ -154,7 +154,7 @@
     <string name="no_contacts">No contacts found</string>
     <string name="write_to_guests">Write to the guests</string>
     <string name="write_no_mail_app">No mail app found</string>
-    <string name="export_title">Export to .ics</string>
+    <string name="export_title">Export</string>
     <string name="export_calendars">Calendars</string>
     <string name="export_range">Days</string>
     <string name="export_range_invalid">The last day is before the first</string>
@@ -174,4 +174,26 @@
     <string name="notify_guests_text">Google sends the guests an email with the changes.</string>
     <string name="notify_guests_send">Send</string>
     <string name="notify_guests_dont">Do not send</string>
+    <string name="export_format_ics">Calendar (.ics)</string>
+    <string name="export_format_csv">Spreadsheet (CSV)</string>
+    <plurals name="export_rows_done">
+        <item quantity="one">%d occurrence exported</item>
+        <item quantity="other">%d occurrences exported</item>
+    </plurals>
+    <string name="csv_calendar">Calendar</string>
+    <string name="csv_title">Title</string>
+    <string name="csv_start_date">Start date</string>
+    <string name="csv_start_time">Start time</string>
+    <string name="csv_end_date">End date</string>
+    <string name="csv_end_time">End time</string>
+    <string name="csv_all_day">All day</string>
+    <string name="csv_time_zone">Time zone</string>
+    <string name="csv_location">Location</string>
+    <string name="csv_description">Description</string>
+    <string name="csv_meet">Google Meet</string>
+    <string name="csv_guests">Guests</string>
+    <string name="csv_repeats">Repeats</string>
+    <string name="csv_reminders">Reminders</string>
+    <string name="csv_yes">Yes</string>
+    <string name="csv_no">No</string>
 </resources>
