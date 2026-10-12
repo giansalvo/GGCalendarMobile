@@ -22,9 +22,7 @@ import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Cake
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -75,7 +73,6 @@ private sealed interface ScheduleItem {
  * days). It opens on [date] and scrolls endlessly: near an edge it asks for more months with [onReachStart] or
  * [onReachEnd]; while the user scrolls, [onVisibleDay] reports the first day on screen (title of the top bar).
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ScheduleView(
     date: LocalDate,
@@ -86,8 +83,6 @@ internal fun ScheduleView(
     onReachStart: () -> Unit,
     onReachEnd: () -> Unit,
     onEventClick: (EventInstance) -> Unit,
-    refreshing: Boolean,
-    onRefresh: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val today = LocalDate.now()
@@ -127,9 +122,7 @@ internal fun ScheduleView(
         }.distinctUntilChanged().collect { if (it) reachEnd() }
     }
 
-    // Pulling the list down from the top syncs now, as the Refresh item of the menu does.
-    PullToRefreshBox(isRefreshing = refreshing, onRefresh = onRefresh, modifier = modifier.fillMaxSize()) {
-    LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 88.dp)) {
+    LazyColumn(modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 88.dp)) {
         items(items, key = { it.key }) { item ->
             when (item) {
                 is ScheduleItem.WeekHeader -> WeekHeader(item.start)
@@ -145,7 +138,6 @@ internal fun ScheduleView(
                 }
             }
         }
-    }
     }
 }
 

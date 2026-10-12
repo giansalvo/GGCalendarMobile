@@ -1,6 +1,7 @@
 package io.github.giansalvo.ggcalendar.feature.settings
 
 import android.os.Build
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,6 +18,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,12 +31,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,71 +48,95 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
-import io.github.giansalvo.ggcalendar.core.data.Appearance
 import io.github.giansalvo.ggcalendar.core.data.ThemeMode
-import io.github.giansalvo.ggcalendar.core.data.ViewPreferences
 import io.github.giansalvo.ggcalendar.feature.event.WeekSettings
+import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalTime
-import java.time.format.TextStyle
-import java.util.Locale
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.time.format.TextStyle
+import java.util.Locale
 
 /**
- * Settings, in sections: appearance (theme, wallpaper colors), calendar (start of the day, past events) and a way to the
- * notification screen. The other settings of the plan arrive in this screen as they are built.
+ * Settings, in sections: appearance (theme, wallpaper colors), calendar (first day of the week, start of the day, past
+ * events) and a way to the notification screen. The choices are made on a copy and apply only with Save; leaving with
+ * unsaved choices asks first.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(onClose: () -> Unit, onOpenNotifications: () -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
-    val appearance by viewModel.appearance.collectAsState(Appearance())
-    val view by viewModel.view.collectAsState(ViewPreferences())
-    Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            Scaffold(
-                contentWindowInsets = WindowInsets.safeDrawing,
-                topBar = {
-                    TopAppBar(
-                        title = { Text(stringResource(R.string.settings_title)) },
-                        navigationIcon = { IconButton(onClick = onClose) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.settings_back)) } },
-                    )
-                },
-            ) { padding ->
-                Column(Modifier.padding(padding).verticalScroll(rememberScrollState())) {
-                    Section(stringResource(R.string.settings_appearance))
-                    ThemeMode.entries.forEach { mode ->
+    val saved by produceState<SettingsDraft?>(null) { value = viewModel.load() }
+    saved?.let { original ->
+        var draft by remember { mutableStateOf(original) }
+        var confirmDiscard by remember { mutableStateOf(false) }
+        val scope = rememberCoroutineScope()
+        val dirty = draft != original
+        val leave = { if (dirty) confirmDiscard = true else onClose() }
+        BackHandler(onBack = leave)
+
+        Dialog(onDismissRequest = leave, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+            Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                Scaffold(
+                    contentWindowInsets = WindowInsets.safeDrawing,
+                    topBar = {
+                        TopAppBar(
+                            title = { Text(stringResource(R.string.settings_title)) },
+                            navigationIcon = { IconButton(onClick = leave) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.settings_back)) } },
+                            actions = {
+                                Button(
+                                    enabled = dirty,
+                                    onClick = { scope.launch { viewModel.save(draft); onClose() } },
+                                    modifier = Modifier.padding(end = 12.dp),
+                                ) { Text(stringResource(R.string.settings_save)) }
+                            },
+                        )
+                    },
+                ) { padding ->
+                    Column(Modifier.padding(padding).verticalScroll(rememberScrollState())) {
+                        Section(stringResource(R.string.settings_appearance))
+                        ThemeMode.entries.forEach { mode ->
+                            Row(
+                                Modifier.fillMaxWidth().selectable(selected = draft.theme == mode, role = Role.RadioButton) { draft = draft.copy(theme = mode) }.padding(horizontal = 16.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                RadioButton(selected = draft.theme == mode, onClick = null)
+                                Text(stringResource(modeLabel(mode)), Modifier.padding(start = 16.dp), style = MaterialTheme.typography.bodyLarge)
+                            }
+                        }
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            SwitchRow(stringResource(R.string.settings_dynamic), stringResource(R.string.settings_dynamic_hint), draft.dynamicColor) { draft = draft.copy(dynamicColor = it) }
+                        }
+
+                        Section(stringResource(R.string.settings_calendar))
+                        WeekStartRow(draft.weekStart) { draft = draft.copy(weekStart = it) }
+                        DayStartRow(draft.dayStartHour) { draft = draft.copy(dayStartHour = it) }
+                        SwitchRow(stringResource(R.string.settings_dim_past), stringResource(R.string.settings_dim_past_hint), draft.dimPast) { draft = draft.copy(dimPast = it) }
+
+                        Section(stringResource(R.string.settings_notifications))
                         Row(
-                            Modifier.fillMaxWidth().selectable(selected = appearance.theme == mode, role = Role.RadioButton) { viewModel.setTheme(mode) }.padding(horizontal = 16.dp, vertical = 8.dp),
+                            Modifier.fillMaxWidth().clickable(onClick = onOpenNotifications).padding(horizontal = 16.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            RadioButton(selected = appearance.theme == mode, onClick = null)
-                            Text(stringResource(modeLabel(mode)), Modifier.padding(start = 16.dp), style = MaterialTheme.typography.bodyLarge)
+                            Icon(Icons.Outlined.Notifications, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Column(Modifier.padding(start = 16.dp)) {
+                                Text(stringResource(R.string.settings_notifications_alarms), style = MaterialTheme.typography.bodyLarge)
+                                Text(stringResource(R.string.settings_notifications_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                         }
+                        Spacer(Modifier.height(24.dp))
                     }
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        SwitchRow(stringResource(R.string.settings_dynamic), stringResource(R.string.settings_dynamic_hint), appearance.dynamicColor, viewModel::setDynamicColor)
-                    }
-
-                    Section(stringResource(R.string.settings_calendar))
-                    WeekStartRow(view.weekStart ?: weekOf(WeekSettings.localeDefault()), viewModel::setWeekStart)
-                    DayStartRow(view.dayStartHour, viewModel::setDayStartHour)
-                    SwitchRow(stringResource(R.string.settings_dim_past), stringResource(R.string.settings_dim_past_hint), view.dimPast, viewModel::setDimPast)
-
-                    Section(stringResource(R.string.settings_notifications))
-                    Row(
-                        Modifier.fillMaxWidth().clickable(onClick = onOpenNotifications).padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Outlined.Notifications, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Column(Modifier.padding(start = 16.dp)) {
-                            Text(stringResource(R.string.settings_notifications_alarms), style = MaterialTheme.typography.bodyLarge)
-                            Text(stringResource(R.string.settings_notifications_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                    Spacer(Modifier.height(24.dp))
                 }
             }
+        }
+
+        if (confirmDiscard) {
+            AlertDialog(
+                onDismissRequest = { confirmDiscard = false },
+                text = { Text(stringResource(R.string.settings_discard_question)) },
+                confirmButton = { TextButton(onClick = { confirmDiscard = false; onClose() }) { Text(stringResource(R.string.settings_discard)) } },
+                dismissButton = { TextButton(onClick = { confirmDiscard = false }) { Text(stringResource(R.string.settings_keep_editing)) } },
+            )
         }
     }
 }
@@ -159,7 +188,7 @@ private fun DayStartRow(hour: Int, onChange: (Int) -> Unit) {
 }
 
 /** Only Monday, Saturday or Sunday start a week anywhere; the language of the phone may say another day. */
-private fun weekOf(day: DayOfWeek): DayOfWeek = if (day in WEEK_STARTS) day else DayOfWeek.MONDAY
+internal fun weekOf(day: DayOfWeek): DayOfWeek = if (day in WEEK_STARTS) day else DayOfWeek.MONDAY
 
 private val WEEK_STARTS = listOf(DayOfWeek.MONDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY)
 

@@ -18,4 +18,8 @@
     <string name="settings_notifications_hint">Permissions and the length of the alarm</string>
     <string name="settings_week_start">First day of the week</string>
     <string name="settings_week_start_hint">Used by the week view, the month and the mini calendar</string>
+    <string name="settings_save">Save</string>
+    <string name="settings_discard_question">Discard the changes?</string>
+    <string name="settings_discard">Discard</string>
+    <string name="settings_keep_editing">Keep editing</string>
 </resources>

@@ -18,4 +18,8 @@
     <string name="settings_notifications_hint">Permessi e durata della sveglia</string>
     <string name="settings_week_start">Inizio della settimana</string>
     <string name="settings_week_start_hint">Vale per la vista settimana, il mese e il mini-calendario</string>
+    <string name="settings_save">Salva</string>
+    <string name="settings_discard_question">Scartare le modifiche?</string>
+    <string name="settings_discard">Scarta</string>
+    <string name="settings_keep_editing">Continua a modificare</string>
 </resources>

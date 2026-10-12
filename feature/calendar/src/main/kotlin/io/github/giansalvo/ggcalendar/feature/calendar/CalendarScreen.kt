@@ -44,6 +44,7 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
@@ -172,10 +173,6 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                 },
                 onToggleCalendar = viewModel::toggleCalendar,
                 onAddAccount = { pickAccount.launch(viewModel.chooseAccountIntent()) },
-                onNotifications = {
-                    notificationsOpen = true
-                    scope.launch { drawerState.close() }
-                },
                 onActiveAlarms = {
                     alarmsOpen = true
                     scope.launch { drawerState.close() }
@@ -213,6 +210,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                     onToday = viewModel::goToToday,
                     onSync = viewModel::refresh,
                     onSearch = { searchOpen = true },
+                    onSettings = { settingsOpen = true },
                 )
             },
             floatingActionButton = {
@@ -254,8 +252,6 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                         onReachStart = { viewModel.extendSchedule(past = true) },
                         onReachEnd = { viewModel.extendSchedule(past = false) },
                         onEventClick = viewModel::openEvent,
-                        refreshing = state.syncing,
-                        onRefresh = viewModel::refresh,
                     )
                     CalendarView.MONTH -> MonthView(
                         date = state.date,
@@ -347,7 +343,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CalendarTopBar(state: CalendarUiState, miniOpen: Boolean, onMenu: () -> Unit, onTitle: () -> Unit, onToday: () -> Unit, onSync: () -> Unit, onSearch: () -> Unit) {
+private fun CalendarTopBar(state: CalendarUiState, miniOpen: Boolean, onMenu: () -> Unit, onTitle: () -> Unit, onToday: () -> Unit, onSync: () -> Unit, onSearch: () -> Unit, onSettings: () -> Unit) {
     val locale = Locale.getDefault()
     val month = state.date.month.getDisplayName(TextStyle.FULL_STANDALONE, locale).replaceFirstChar { it.titlecase(locale) }
     val title = if (state.date.year == LocalDate.now().year) month else "$month ${state.date.year}"
@@ -368,13 +364,18 @@ private fun CalendarTopBar(state: CalendarUiState, miniOpen: Boolean, onMenu: ()
             IconButton(onClick = onSearch) {
                 Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.search))
             }
-            if (state.pending > 0) {
-                // Changes not yet on Google: a tap syncs now (it waits for a connection when offline).
-                IconButton(onClick = onSync) {
-                    BadgedBox(badge = { Badge { Text(state.pending.toString()) } }) {
-                        Icon(Icons.Outlined.CloudUpload, contentDescription = pluralStringResource(R.plurals.pending_changes, state.pending, state.pending))
+            // Sync now. A badge counts the changes not yet on Google (they wait for a connection when offline).
+            IconButton(onClick = onSync) {
+                BadgedBox(badge = { if (state.pending > 0) Badge { Text(state.pending.toString()) } }) {
+                    if (state.syncing) {
+                        CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
+                    } else {
+                        Icon(Icons.Outlined.Refresh, contentDescription = stringResource(R.string.refresh))
                     }
                 }
+            }
+            IconButton(onClick = onSettings) {
+                Icon(Icons.Outlined.Settings, contentDescription = stringResource(R.string.settings))
             }
             IconButton(onClick = onToday) { TodayIcon(LocalDate.now().dayOfMonth) }
             Avatar(state.accounts.firstOrNull()?.email)
@@ -415,7 +416,6 @@ private fun CalendarDrawer(
     onRefresh: () -> Unit,
     onToggleCalendar: (String, Boolean) -> Unit,
     onAddAccount: () -> Unit,
-    onNotifications: () -> Unit,
     onActiveAlarms: () -> Unit,
     onSettings: () -> Unit,
     onExport: () -> Unit,
@@ -442,12 +442,6 @@ private fun CalendarDrawer(
                 label = { Text(stringResource(R.string.refresh)) },
                 selected = false,
                 onClick = onRefresh,
-            )
-            NavigationDrawerItem(
-                icon = { Icon(Icons.Outlined.Notifications, contentDescription = null) },
-                label = { Text(stringResource(R.string.notifications_alarms)) },
-                selected = false,
-                onClick = onNotifications,
             )
             NavigationDrawerItem(
                 icon = { Icon(Icons.Outlined.Alarm, contentDescription = null) },
