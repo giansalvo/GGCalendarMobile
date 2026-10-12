@@ -106,7 +106,16 @@ fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, vi
         onDismissRequest = { if (!busy) onDismiss() },
         title = { Text(stringResource(R.string.export_title)) },
         text = {
-            Column(Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            // The days stay in view at the top; only the list of calendars scrolls when there are many.
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(stringResource(R.string.export_range), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(bottom = 2.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedButton(onClick = { picking = true }, Modifier.weight(1f)) { Text(day(fromDay)) }
+                    Text("→")
+                    OutlinedButton(onClick = { picking = false }, Modifier.weight(1f)) { Text(day(toDay)) }
+                }
+                if (toDay.isBefore(fromDay)) Text(stringResource(R.string.export_range_invalid), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                Column(Modifier.padding(top = 12.dp).heightIn(max = 300.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(stringResource(R.string.export_calendars), style = MaterialTheme.typography.titleSmall)
                 accounts.forEach { account ->
                     // The master checkbox of the account: all of its calendars or none; a dash when only some are chosen.
@@ -138,13 +147,7 @@ fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, vi
                         }
                     }
                 }
-                Text(stringResource(R.string.export_range), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 12.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedButton(onClick = { picking = true }, Modifier.weight(1f)) { Text(day(fromDay)) }
-                    Text("→")
-                    OutlinedButton(onClick = { picking = false }, Modifier.weight(1f)) { Text(day(toDay)) }
                 }
-                if (toDay.isBefore(fromDay)) Text(stringResource(R.string.export_range_invalid), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 Text(stringResource(R.string.export_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
             }
         },
