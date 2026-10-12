@@ -15,6 +15,13 @@ import javax.inject.Inject
 class EventDetailViewModel @Inject constructor(private val repository: EventRepository) : ViewModel() {
     fun observe(eventId: String): Flow<EventDetail?> = repository.observe(eventId)
 
+    /** The `.ics` of the occurrence or of the whole series, with the series' exceptions read from the database. */
+    suspend fun ics(detail: EventDetail, instance: io.github.giansalvo.ggcalendar.core.model.EventInstance, wholeSeries: Boolean): String {
+        val master = EventShare.master(detail)
+        val exceptions = if (master != null && wholeSeries) repository.exceptionsOf(master.id) else emptyList()
+        return EventShare.ics(detail, instance, wholeSeries, exceptions)
+    }
+
     fun delete(eventId: String) {
         viewModelScope.launch { repository.writer.delete(eventId) }
     }

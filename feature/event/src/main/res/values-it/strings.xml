@@ -3,6 +3,14 @@
     <string name="close">Chiudi</string>
     <string name="edit">Modifica</string>
     <string name="more_options">Altre opzioni</string>
+    <string name="share">Condividi</string>
+    <string name="share_title">Condividi evento</string>
+    <string name="share_as_text">Come testo</string>
+    <string name="share_as_ics">Come file .ics</string>
+    <string name="share_scope_all">Tutta la serie</string>
+    <string name="share_scope_this">Solo questa occorrenza</string>
+    <string name="share_repeats">Si ripete: %1$s</string>
+    <string name="share_chooser">Condividi con</string>
     <string name="delete">Elimina</string>
     <string name="duplicate">Duplica</string>
     <string name="cancel">Annulla</string>

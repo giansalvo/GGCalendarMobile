@@ -37,6 +37,9 @@ class EventRepository @Inject constructor(
                 EventDetail(event, calendar, event.seriesMasterId?.let { db.eventDao().get(it) })
             }
 
+    /** The modified and cancelled occurrences of a series (for sharing and exporting it). */
+    suspend fun exceptionsOf(masterId: String): List<EventEntity> = db.eventDao().getExceptions(masterId)
+
     /** Calendars where the user can create events, account by account in the order they were added. */
     val writableCalendars: Flow<List<CalendarEntity>> =
         combine(db.accountDao().observeAll(), db.calendarDao().observeAll()) { accounts, calendars ->

@@ -25,6 +25,9 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:data"))
     implementation(project(":core:notifications"))
+    implementation(project(":core:database"))
+
+    implementation(libs.androidx.core.ktx)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)

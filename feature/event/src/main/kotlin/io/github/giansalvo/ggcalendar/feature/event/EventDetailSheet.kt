@@ -32,6 +32,7 @@ import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Notes
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -49,11 +50,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -92,12 +95,32 @@ fun EventDetailSheet(
 ) {
     val detail by remember(instance.eventId) { viewModel.observe(instance.eventId) }.collectAsStateWithLifecycle(null)
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+    var sharing by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val shareScope = rememberCoroutineScope()
+    detail?.let { d ->
+        if (sharing) {
+            ShareDialog(
+                recurring = EventShare.isRecurring(d),
+                onDismiss = { sharing = false },
+                onText = {
+                    sharing = false
+                    EventShare.shareText(context, d.event.title, EventShare.text(d, instance, context.resources))
+                },
+                onIcs = { wholeSeries ->
+                    sharing = false
+                    shareScope.launch { EventShare.shareIcs(context, d.event.title, viewModel.ics(d, instance, wholeSeries)) }
+                },
+            )
+        }
+    }
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet) {
         detail?.let { d ->
             DetailContent(
                 instance = instance,
                 detail = d,
                 onClose = onDismiss,
+                onShare = { sharing = true },
                 onEdit = { onEdit(d, instance) },
                 onDelete = { scope ->
                     if (scope == null) viewModel.delete(d.event.id) else viewModel.deleteOccurrence(d.event.id, instance.occurrence(), scope)
@@ -109,7 +132,7 @@ fun EventDetailSheet(
 }
 
 @Composable
-private fun DetailContent(instance: EventInstance, detail: EventDetail, onClose: () -> Unit, onEdit: () -> Unit, onDelete: (SeriesScope?) -> Unit) {
+private fun DetailContent(instance: EventInstance, detail: EventDetail, onClose: () -> Unit, onShare: () -> Unit, onEdit: () -> Unit, onDelete: (SeriesScope?) -> Unit) {
     val event = detail.event
     val res = LocalContext.current.resources
     val uri = LocalUriHandler.current
@@ -121,6 +144,7 @@ private fun DetailContent(instance: EventInstance, detail: EventDetail, onClose:
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onClose) { Icon(Icons.Filled.Close, stringResource(R.string.close)) }
             Spacer(Modifier.weight(1f))
+            IconButton(onClick = onShare) { Icon(Icons.Outlined.Share, stringResource(R.string.share)) }
             if (detail.canWrite) {
                 IconButton(onClick = onEdit) { Icon(Icons.Outlined.Edit, stringResource(R.string.edit)) }
                 Box {
