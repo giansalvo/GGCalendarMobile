@@ -65,6 +65,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SheetValue
@@ -153,6 +158,13 @@ fun EventEditorSheet(
     )
     val scope = rememberCoroutineScope()
     val close: () -> Unit = { scope.launch { sheet.hide() }.invokeOnCompletion { onDismiss() } }
+    // Scrolling the form past its top must not drag the sheet down: it closes only with X, Back or Save.
+    val keepSheetOpen = remember {
+        object : NestedScrollConnection {
+            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource) = available
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity) = available
+        }
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -163,7 +175,7 @@ fun EventEditorSheet(
     ) {
         val draft = viewModel.draft
         val calendars by viewModel.calendars.collectAsStateWithLifecycle()
-        Column(Modifier.fillMaxWidth().fillMaxHeight(0.96f).imePadding()) {
+        Column(Modifier.fillMaxWidth().fillMaxHeight(0.96f).imePadding().nestedScroll(keepSheetOpen)) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { if (viewModel.dirty) confirmDiscard = true else close() }) {
                     Icon(Icons.Filled.Close, stringResource(R.string.close))
