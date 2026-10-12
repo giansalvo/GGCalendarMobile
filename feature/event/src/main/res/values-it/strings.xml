@@ -163,4 +163,8 @@
         <item quantity="one">%d evento esportato</item>
         <item quantity="other">%d eventi esportati</item>
     </plurals>
+    <string name="notify_guests_title">Avvisare gli invitati?</string>
+    <string name="notify_guests_text">Google manda agli invitati un messaggio di posta con le modifiche.</string>
+    <string name="notify_guests_send">Invia</string>
+    <string name="notify_guests_dont">Non inviare</string>
 </resources>

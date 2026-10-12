@@ -203,6 +203,21 @@ fun EventEditorSheet(
         }
     }
 
+    if (viewModel.askNotify) {
+        AlertDialog(
+            onDismissRequest = viewModel::cancelNotify,
+            title = { Text(stringResource(R.string.notify_guests_title)) },
+            text = { Text(stringResource(R.string.notify_guests_text)) },
+            confirmButton = { TextButton(onClick = { viewModel.saveNotifying(close, true) }) { Text(stringResource(R.string.notify_guests_send)) } },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = viewModel::cancelNotify) { Text(stringResource(android.R.string.cancel)) }
+                    TextButton(onClick = { viewModel.saveNotifying(close, false) }) { Text(stringResource(R.string.notify_guests_dont)) }
+                }
+            },
+        )
+    }
+
     if (viewModel.askScope) {
         SeriesScopeDialog(deleting = false, onDismiss = viewModel::cancelScope) { scope -> viewModel.save(close, scope) }
     }

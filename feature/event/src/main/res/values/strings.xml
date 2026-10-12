@@ -166,4 +166,8 @@
         <item quantity="one">%d event exported</item>
         <item quantity="other">%d events exported</item>
     </plurals>
+    <string name="notify_guests_title">Notify the guests?</string>
+    <string name="notify_guests_text">Google sends the guests an email with the changes.</string>
+    <string name="notify_guests_send">Send</string>
+    <string name="notify_guests_dont">Do not send</string>
 </resources>

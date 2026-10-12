@@ -105,6 +105,18 @@ class EventEditorViewModel @Inject constructor(private val repository: EventRepo
         askScope = false
     }
 
+    /** Saving an event that has guests (or had them) waits for the answer on whether to tell them. */
+    var askNotify by mutableStateOf(false)
+        private set
+    private var pendingScope: SeriesScope? = null
+
+    fun cancelNotify() {
+        askNotify = false
+    }
+
+    /** The answer to the question about notifying the guests: save with it. */
+    fun saveNotifying(onDone: () -> Unit, notify: Boolean) = save(onDone, pendingScope, notify)
+
     var suggestions by mutableStateOf<List<Attendee>>(emptyList())
         private set
 
@@ -184,13 +196,21 @@ class EventEditorViewModel @Inject constructor(private val repository: EventRepo
     }
 
     /** Writes the draft (offline first) and queues it for Google; [scope] for an occurrence of a series. */
-    fun save(onDone: () -> Unit, scope: SeriesScope? = null) {
+    fun save(onDone: () -> Unit, scope: SeriesScope? = null, notify: Boolean? = null) {
         val d = draft ?: return
         if (occurrence != null && scope == null) {
             askScope = true
             return
         }
         askScope = false
+        // An existing event with guests: changes, new or removed guests are told only if the user wants.
+        if (notify == null && original != null && (d.attendees.isNotEmpty() || original?.attendees.orEmpty().isNotEmpty())) {
+            pendingScope = scope
+            askNotify = true
+            return
+        }
+        askNotify = false
+        val send = notify ?: d.sendInvites
         val base = original ?: EventEntity(id = d.id, calendarId = d.calendarId)
         val entity = if (d.allDay) {
             base.copy(allDay = true, startDay = d.startDate.toEpochDay(), endDay = d.endDate.toEpochDay() + 1, startUtc = null, endUtc = null, timeZone = null)
@@ -213,7 +233,7 @@ class EventEditorViewModel @Inject constructor(private val repository: EventRepo
         val occ = occurrence
         if (occ != null && scope != null) {
             viewModelScope.launch {
-                repository.series.save(original!!.id, occ, entity.copy(calendarId = original!!.calendarId), scope, d.sendInvites)
+                repository.series.save(original!!.id, occ, entity.copy(calendarId = original!!.calendarId), scope, send)
                 loadedFor = null
                 onDone()
             }
@@ -223,13 +243,13 @@ class EventEditorViewModel @Inject constructor(private val repository: EventRepo
             val previous = original
             var saved = entity.copy(calendarId = d.calendarId)
             if (previous != null && previous.calendarId != d.calendarId) {
-                repository.writer.move(previous.id, d.calendarId, d.sendInvites)
+                repository.writer.move(previous.id, d.calendarId, send)
                 // Another account: the event is created anew there, without the old Google ids.
                 if (previous.calendarId.substringBefore('|') != d.calendarId.substringBefore('|')) {
                     saved = saved.copy(remoteId = null, etag = null, iCalUid = null, meetLink = null)
                 }
             }
-            repository.writer.save(saved, d.sendInvites)
+            repository.writer.save(saved, send)
             loadedFor = null
             onDone()
         }
