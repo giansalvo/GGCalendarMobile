@@ -3,6 +3,7 @@ package io.github.giansalvo.ggcalendar.feature.event
 import io.github.giansalvo.ggcalendar.core.data.EventDetail
 import io.github.giansalvo.ggcalendar.core.database.CalendarEntity
 import io.github.giansalvo.ggcalendar.core.database.EventEntity
+import io.github.giansalvo.ggcalendar.core.model.Attendee
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
 import io.github.giansalvo.ggcalendar.core.model.Reminder
 import io.github.giansalvo.ggcalendar.core.model.ReminderMethod
@@ -96,6 +97,17 @@ class EventShareTest {
         assertTrue("DTSTART;VALUE=DATE:20261008" in l)
         assertTrue("DTEND;VALUE=DATE:20261010" in l)
         assertTrue("UID:a@ggcalendar" in l)
+    }
+
+    @Test
+    fun theMailGoesToTheGuestsExceptMeAndRooms() {
+        val guests = listOf(
+            Attendee("me@x.com"), Attendee("Anna@b.it"), Attendee("anna@B.it"), Attendee("sala@resource.calendar.google.com"),
+            Attendee("luca@c.it", optional = true), Attendee("not-an-address"),
+        )
+        val detail = EventDetail(event().copy(attendees = guests), calendar, null)
+        assertEquals(listOf("Anna@b.it", "luca@c.it"), EventShare.mailRecipients(detail))
+        assertTrue(EventShare.mailRecipients(EventDetail(event(), calendar, null)).isEmpty())
     }
 
     @Test

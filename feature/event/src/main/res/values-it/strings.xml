@@ -149,4 +149,6 @@
     <string name="browse_contacts">Contatti</string>
     <string name="search_contacts">Cerca nome o email</string>
     <string name="no_contacts">Nessun contatto trovato</string>
+    <string name="write_to_guests">Scrivi agli invitati</string>
+    <string name="write_no_mail_app">Nessuna app di posta trovata</string>
 </resources>

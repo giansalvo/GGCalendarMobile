@@ -45,6 +45,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -223,7 +224,13 @@ private fun DetailContent(instance: EventInstance, detail: EventDetail, onClose:
         val rings = (event.reminders ?: detail.calendar.defaultReminders).any { it.method != ReminderMethod.EMAIL }
         if (rings) ReminderPermissionWarning(Modifier.padding(start = 56.dp, end = 20.dp))
 
-        if (event.attendees.isNotEmpty()) Guests(event.attendees, event.organizerEmail)
+        if (event.attendees.isNotEmpty()) {
+            val recipients = remember(detail) { EventShare.mailRecipients(detail) }
+            val context = LocalContext.current
+            Guests(event.attendees, event.organizerEmail, onWrite = recipients.takeIf { it.isNotEmpty() }?.let { to ->
+                { EventShare.writeToGuests(context, to, event.title, EventShare.mailBody(detail, instance, res)) }
+            })
+        }
 
         if (event.description.isNotBlank()) {
             InfoRow(Icons.Outlined.Notes) { Text(descriptionText(event.description), style = MaterialTheme.typography.bodyMedium) }
@@ -260,7 +267,7 @@ private fun DetailContent(instance: EventInstance, detail: EventDetail, onClose:
 }
 
 @Composable
-private fun Guests(attendees: List<Attendee>, organizer: String?) {
+private fun Guests(attendees: List<Attendee>, organizer: String?, onWrite: (() -> Unit)?) {
     val yes = attendees.count { it.response == "accepted" }
     val no = attendees.count { it.response == "declined" }
     val maybe = attendees.count { it.response == "tentative" }
@@ -290,6 +297,13 @@ private fun Guests(attendees: List<Attendee>, organizer: String?) {
                             Text(notes.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
+                }
+            }
+            if (onWrite != null) {
+                TextButton(onClick = onWrite, contentPadding = PaddingValues(horizontal = 0.dp)) {
+                    Icon(Icons.Outlined.Email, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.write_to_guests))
                 }
             }
         }

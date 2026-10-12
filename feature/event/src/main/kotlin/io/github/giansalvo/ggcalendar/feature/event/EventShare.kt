@@ -94,6 +94,31 @@ internal object EventShare {
         return parts.joinToString("\n")
     }
 
+    /**
+     * Who to write to: the guests except the user (the account of the calendar) and rooms or other resources, which
+     * are not people. Each address once, in the order of the guest list.
+     */
+    fun mailRecipients(detail: EventDetail): List<String> {
+        val me = setOfNotNull(detail.calendar.accountEmail, detail.calendar.remoteId).map { it.lowercase() }
+        return detail.event.attendees.map { it.email.trim() }
+            .filter { it.contains('@') && !it.endsWith("resource.calendar.google.com", ignoreCase = true) && it.lowercase() !in me }
+            .distinctBy { it.lowercase() }
+    }
+
+    /** Body of the mail: the same as the text share, without the title, which is the subject. */
+    fun mailBody(detail: EventDetail, instance: EventInstance, res: Resources): String =
+        text(detail, instance, res).substringAfter('\n', "")
+
+    /** Opens the mail app on a new message to the guests. Nothing is sent from here, and no permission is needed. */
+    fun writeToGuests(context: Context, recipients: List<String>, subject: String, body: String) {
+        val mail = Intent(Intent.ACTION_SENDTO, android.net.Uri.parse("mailto:"))
+            .putExtra(Intent.EXTRA_EMAIL, recipients.toTypedArray())
+            .putExtra(Intent.EXTRA_SUBJECT, subject)
+            .putExtra(Intent.EXTRA_TEXT, body)
+        runCatching { context.startActivity(mail.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+            .onFailure { android.widget.Toast.makeText(context, R.string.write_no_mail_app, android.widget.Toast.LENGTH_LONG).show() }
+    }
+
     fun shareText(context: Context, subject: String, text: String) {
         val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_SUBJECT, subject).putExtra(Intent.EXTRA_TEXT, text)
         context.startActivity(Intent.createChooser(send, context.getString(R.string.share_chooser)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
