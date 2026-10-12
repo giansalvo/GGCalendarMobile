@@ -198,20 +198,36 @@ I test xUnit (`tests/GGCalendar.Core.Tests`) vengono tradotti in JUnit con gli s
   - Stato all'11/10/2026 (in corso): passi 1-5 e 7 fatti, CI verde fino al commit 98db86f. Provati sul Samsung: popup all'ora giusta; sveglia con suoneria in loop come allarme di sistema (`setAlarmClock` + servizio in primo piano di tipo `systemExempted`); schermata a tutto schermo che si apre anche a telefono in uso e a schermo spento (titolo, ora, luogo, descrizione, scelta del posticipo 5/10/15/30/60 minuti, "Ferma la sveglia", testi grandi e centrati, "si ferma da sola dopo N minuti"); posticipo che torna a suonare all'ora giusta; due sveglie insieme in coda; schermata "Notifiche e sveglie" dal menu laterale (stato dei permessi, durata da 1 a 10 minuti); avviso nel dettaglio dell'evento se le notifiche sono bloccate; tocco sulla notifica che apre il dettaglio, anche di un calendario nascosto. 13 test automatici (calcolo dei promemoria, recupero dei persi, posticipo, riprogrammazione con AlarmManager).
   - Provati il 11/10/2026 sul Samsung: sveglia con app chiusa (processo ucciso, come dalle recenti) che suona comunque; dopo 2 minuti senza risposta la suoneria si ferma e resta la notifica "Sveglia persa" (sulla schermata di blocco di questo telefono compare solo l'icona, perché è impostato "solo icone" per le notifiche: è una scelta di Android/Samsung, non dell'app).
   - **Provati il 12/10/2026 sul Samsung** con l'evento "Prova_due_account" (organizzatore profgusinu, invitato itiangioy, Meet, promemoria email 15, notifica 10, sveglia 5): due copie in due calendari, ognuna visibile nel suo (rossa e azzurra nella settimana); un solo popup (identico a quello predefinito di itiangioy) e una sola sveglia, entrambi dalla copia dell'organizzatore; i promemoria dell'organizzatore non finiscono sul calendario dell'invitato (la sveglia vive in una proprietà privata della sua copia); email di promemoria arrivata a profgusinu alle 00:30; tocco sulla notifica che apre il dettaglio dell'evento; "Partecipa con Meet" che apre il link (con più account Google Meet chiede l'account: scelta interattiva voluta, nessun `authuser` aggiunto); una sola sveglia suonata e fermata. Eliminando l'evento sull'organizzatore sparisce anche la copia dell'invitato.
-  - **Spostati dopo M4 (decisione del 12/10/2026)**: (1) prova del Doze profondo vero (telefono fermo e non in carica, circa un'ora), in M5; (2) soluzione 7, cioè i consensi per l'uso della batteria, in M6 insieme alle Impostazioni (richiesta di esclusione dall'ottimizzazione, "App mai in sospensione" di Samsung, avviso con `isBackgroundRestricted()`).
+  - **Spostati dopo M4 (decisione del 12/10/2026)**: (1) prova del Doze profondo vero (telefono fermo e non in carica, circa un'ora), alla Versione 2 (era M5); (2) soluzione 7, cioè i consensi per l'uso della batteria, in M6 insieme alle Impostazioni (richiesta di esclusione dall'ottimizzazione, "App mai in sospensione" di Samsung, avviso con `isBackgroundRestricted()`).
   - **M4 completata (12/10/2026)**: notifiche, sveglia, promemoria email, direct boot, ripristino dopo il riavvio, cambio di fuso, due account. CI verde (run 38179955704, commit 613b544; i commit successivi toccano solo plan.md).
 - **M4bis** Vista "Mese + Programma" e APK di prova da condividere (anche via WhatsApp) prima della pubblicazione ufficiale, più la scheda informativa dell'app (autore, sito, versione 0.4.0 e data di build). Dettaglio nella sezione "M4bis: piano dettagliato".
-- **M5** Condivisione, esportazione `.ics`/CSV; più un punto rimasto da M4: la **prova del Doze profondo**.
-- **M6** Impostazioni e **consensi per l'uso della batteria** (soluzione 7 di M4: richiesta di esclusione dall'ottimizzazione batteria, guida "App mai in sospensione" di Samsung, avviso nel dettaglio dell'evento e in "Notifiche e sveglie" quando l'app è limitata; spostati da M5 il 12/10/2026) (schermata unica a sezioni, vedi 5b; include la **scelta del tema: chiaro, scuro o come il sistema**, applicata subito e ricordata, con i colori dinamici di Android 12+ attivabili a parte), calendari locali, calendario "Compleanni" dalla rubrica del telefono (`READ_CONTACTS`, vedi M2), importazione `.ics`, suoni personalizzati, secondo fuso orario, rifinitura i18n, aggiornamenti in-app; aggiornamento del desktop C# per `ggAlarm`. Assegnati il 12/10/2026: **onboarding del primo avvio** (benvenuto, login Google con possibilità di saltare, permessi guidati, prima sincronizzazione con avanzamento: schermata 1 della sezione 5b), **pull-to-refresh nel Programma**, pulsante **"Invia log"** per i crash (deciso: si fa).
+- **M5** (completata il 12/10/2026) Condivisione dell'evento (testo e `.ics`), scrivere agli invitati, esportazione `.ics` e CSV; avviso agli invitati su modifica, trascinamento ed eliminazione. Eliminati dal progetto: ACL dei calendari e stampa PDF. La **prova del Doze profondo** (rimasta da M4) è stata spostata alla Versione 2 il 12/10/2026. Dettaglio nella sezione "M5: piano dettagliato".
+- **M6** Impostazioni (schermata unica a sezioni, vedi 5b; include la **scelta del tema: chiaro, scuro o come il sistema**, applicata subito e ricordata, con i colori dinamici di Android 12+ attivabili a parte), calendario "Compleanni" dalla rubrica del telefono (`READ_CONTACTS`, vedi M2; è un calendario virtuale e non dipende dai calendari locali), importazione `.ics`, suoni personalizzati, rifinitura i18n, aggiornamenti in-app; aggiornamento del desktop C# per `ggAlarm`. Assegnato il 12/10/2026: **pull-to-refresh nel Programma**. **Spostati alla Versione 2 il 12/10/2026** (decisione dell'utente): calendari locali, secondo fuso orario, onboarding del primo avvio, pulsante "Invia log", controllo e consensi per l'uso della batteria.
 - **M7** Landing page completa e release v1.0. La privacy policy estesa ad Android si pubblica già in M0; la verifica dello scope `calendar` si invia in parallelo, prima possibile. Assegnati il 12/10/2026: **infrastruttura GitHub** (`release.yml` con APK firmato su tag `v*`, `site.yml` con deploy FTP su Altervista, Dependabot, template per issue e PR, detekt e ktlint nella CI), **test strumentali e UI Compose** sugli emulatori API 26 e 36 (prima va ripristinato l'emulatore locale, oggi non risponde), **invio e verifica dello scope `calendar` su Google** (azione in Google Cloud, con il video già pronto; da avviare presto perché toglie l'avviso "app non verificata" e il limite di 100 utenti).
+- **Versione 2** (dopo la v1.0; decisione dell'utente del 12/10/2026, spostati da M5 e M6): (1) **prova del Doze profondo** (telefono fermo e non in carica, circa un'ora); (2) pulsante **"Invia log"** per i crash; (3) **controllo e consensi per l'uso della batteria** (soluzione 7 di M4); (4) **calendari locali** (con spostamento di un evento tra calendario locale e Google); (5) **secondo fuso orario** (seconda colonna oraria nelle viste Giorno, N giorni e Settimana); (6) **onboarding del primo avvio**. Dettaglio nella sezione "Versione 2: punti definiti in anticipo".
 
-## M6: punti definiti in anticipo
-**Consensi per l'uso della batteria (spostati da M5 a M6, 12/10/2026)**
+## Versione 2: punti definiti in anticipo
+**Consensi per l'uso della batteria (spostati da M5 a M6 e poi alla Versione 2, 12/10/2026)**
 - Cosa serve: in "Notifiche e sveglie" mostrare lo stato con `PowerManager.isIgnoringBatteryOptimizations()`, `ActivityManager.isBackgroundRestricted()` e il gruppo di standby (`UsageStatsManager`, bucket "Restricted"); un pulsante che chiede l'esclusione con `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` (il permesso è già nel manifest) e, dove la schermata manca, apre le impostazioni dell'app.
 - Samsung: istruzioni a parole per "App mai in sospensione" (Batteria → Limiti uso in background), perché l'elenco non ha un'API. Avviso anche nel dettaglio dell'evento quando l'app è limitata.
 - Chiedere il consenso una sola volta, al primo avvio o alla prima sveglia, non a ogni apertura.
 - Nota dalle prove: sul Samsung il ripristino funziona anche senza esclusioni (prove B e C di M4): è una guida per gli altri telefoni, non un requisito.
 - Verifica: attivare e togliere l'esclusione e controllare che lo stato cambi; provare su un telefono non Samsung se disponibile.
+
+**Prova del Doze profondo (spostata da M5, 12/10/2026)**
+- Cosa serve: nessun codice. Telefono fermo, non in carica, schermo spento, con una sveglia e una notifica programmate a circa un'ora; controllare che suonino all'ora giusta. Con adb non si riesce a forzare il Doze profondo perché il sensore di movimento lo impedisce. Se la sveglia ritarda, indagare con `dumpsys deviceidle` e `dumpsys alarm`; registrare il risultato qui.
+
+**Pulsante "Invia log" (spostato da M6, 12/10/2026)**
+- Per i crash e i problemi: l'app prepara un file di log e lo condivide (foglio di condivisione, come per l'`.ics`), così i tester lo mandano a chi sviluppa. Da definire: cosa contiene (versione, modello, errori recenti del sync, nessun dato personale come titoli o email) e se registrare i crash in un file locale.
+
+**Calendari locali (spostati da M6, 12/10/2026)**
+- Calendari che esistono solo sul telefono, senza operazioni in coda verso Google (nessuna `pending_op`). Voce "Nuovo calendario locale" nel menu laterale, sezione "Locali". Un evento si può spostare tra un calendario locale e uno Google. Il calendario "Compleanni" dalla rubrica resta in M6, perché è virtuale.
+
+**Secondo fuso orario (spostato da M6, 12/10/2026)**
+- Una seconda colonna oraria nelle viste Giorno, N giorni e Settimana, con fuso a scelta.
+
+**Onboarding del primo avvio (spostato da M6, 12/10/2026)**
+- Schermata 1 della sezione 5b: benvenuto, accesso con Google (si può saltare), permessi guidati (notifiche, schermo intero per la sveglia, esclusione dalla sospensione) e prima sincronizzazione con avanzamento. Va fatto insieme ai consensi per la batteria.
 
 ## M0: passi operativi
 Stato del PC (verificato l'11/10/2026): Git c'è; mancano Android Studio, Android SDK, JDK, adb e `gh`.
@@ -477,7 +493,7 @@ Stato del PC (verificato l'11/10/2026): Git c'è; mancano Android Studio, Androi
   - **Correzione**: suoneria di riserva inclusa nell'app (`res/raw/alarm_fallback.wav`, 4 beep in loop), usata se quella di sistema non si apre.
   - **Prova 2**: riavvio senza PIN, la sveglia delle 23:46 ha suonato con la suoneria di riserva e la schermata a tutto schermo, prima del PIN. Dopo "Ferma" e il PIN: sveglia in `reminder_fired` una sola volta, nessun posticipo pendente, giornale svuotato.
   - **Cambio di fuso provato (11/10/2026, con adb `cmd alarm set-timezone`)**: Roma → Tokyo → Roma, a telefono sbloccato. Il ricevitore riceve `TIMEZONE_CHANGED`, ricalcola le istanze e riscrive l'istantanea. Il promemoria di un evento di tutto il giorno (compleanno) si sposta con la mezzanotte locale: da 1791788400000 a 1791763200000 (7 ore prima) a Tokyo, e torna al valore di prima a Roma; quelli degli eventi con orario restano agli stessi istanti. La prima serie di prove non era affidabile (una volta su due l'istantanea restava con i valori vecchi): causa trovata, due corse. (1) `SyncEngine.updateWindow` pubblicava la nuova finestra prima di aver ricostruito le istanze, e il secondo dei due ricevitori del cambio di fuso (quello dell'app e quello dei promemoria) vedeva "niente da fare" e riprogrammava sulle istanze vecchie: ora la finestra si pubblica a ricostruzione finita. (2) Il cambio di fuso arriva anche come `TIME_SET`, che riprogrammava senza ricostruire: ora anche quello aspetta `refreshInstances`. Dopo la correzione, 6 cambi di fuso su 6 (Tokyo, Roma, New York) con il valore giusto già dopo 4 secondi.
-  - **Spostati dopo M4**: (1) prova del **Doze profondo vero**, in M5, con telefono fermo e non in carica per circa un'ora; (2) **soluzione 7**, guida e avviso per le restrizioni del produttore (richiesta di esclusione dalla batteria, "App mai in sospensione" di Samsung, `isBackgroundRestricted()`), in M6 con le Impostazioni.
+  - **Spostati dopo M4**: (1) prova del **Doze profondo vero**, (prima M5, poi Versione 2), con telefono fermo e non in carica per circa un'ora; (2) **soluzione 7**, guida e avviso per le restrizioni del produttore (richiesta di esclusione dalla batteria, "App mai in sospensione" di Samsung, `isBackgroundRestricted()`), in M6 con le Impostazioni.
   - Non provato: altri telefoni, Posticipa dalla notifica (non dalla schermata) a telefono bloccato, due riavvii di seguito senza sblocco.
 
 **6. Email**
@@ -593,7 +609,7 @@ Per installarla:
 
 **5. Stampa PDF: eliminata dal progetto (12/10/2026, decisione dell'utente).** Nessun codice scritto; non si fa in nessuna milestone.
 
-**6. Prova del Doze profondo**
+**6. Prova del Doze profondo (spostata alla Versione 2 il 12/10/2026, su richiesta dell'utente)**
 - Cosa serve: nessun codice. Telefono fermo, non in carica, schermo spento, con una sveglia e una notifica programmate a circa un'ora; controllare che suonino all'ora giusta. Con adb non si riesce a forzare il Doze profondo perché il sensore di movimento lo impedisce.
 - Registrare il risultato nel piano; se la sveglia ritarda, indagare con `dumpsys deviceidle` e `dumpsys alarm`.
 
@@ -601,14 +617,14 @@ Per installarla:
 1. `IcsWriter` con test (serve a 1 e 3), poi condivisione dell'evento (1) e posta agli invitati (2).
 2. Esportazione `.ics` e CSV con il selettore di file (3 e 4).
 3. ~~Stampa PDF~~ (eliminata).
-4. La prova del Doze lasciata girare un'ora (6).
-5. Verifica, plan.md, CI verde e chiusura di M5.
+4. ~~La prova del Doze~~ (spostata alla Versione 2).
+5. Verifica, plan.md, CI verde e chiusura di M5 (fatto il 12/10/2026).
 
 (Il punto "ACL dei calendari" era qui: eliminato il 12/10/2026 su richiesta dell'utente.)
 
 **Verifica di M5**
 - Unit test: scrittore iCalendar (escape, righe piegate, fusi, ricorrenze, tutto il giorno), CSV (citazioni).
-- Sul Samsung: i file aperti in un altro calendario e in Excel; Doze.
+- Sul Samsung: i file aperti in un altro calendario e in Excel; Doze (spostata alla Versione 2).
 - CI verde.
 
 ## Verifica
