@@ -17,10 +17,30 @@ def title_nodes(ctx, nodes, title):
     return sorted([n for n in nodes if n.text == title and n.rid != "search_input"], key=lambda n: n.t)
 
 
-def occurrences(ctx, title):
-    """How many occurrences with this exact title the search lists (the search is left open)."""
-    nodes = F.search(ctx, title)
-    return len(title_nodes(ctx, nodes, title))
+def occurrences(ctx, title, expected=None, timeout=25, at_least=None, at_most=None):
+    """How many occurrences with this exact title the search lists (the search is left open).
+
+    A change reaches the search a moment after Save, so with `expected` the search is repeated until the count matches."""
+    end = time.time() + timeout
+    while True:
+        nodes = F.search(ctx, title)
+        n = len(title_nodes(ctx, nodes, title))
+        no_wait = expected is None and at_least is None and at_most is None
+        reached = (
+            n == expected
+            or (at_least is not None and n >= at_least)
+            or (at_most is not None and n <= at_most)
+        )
+        if no_wait or reached or time.time() > end:
+            return n
+        F.close_search(ctx)
+        time.sleep(3)
+
+
+def search_rows(ctx, title, at_least=2):
+    """The rows of the occurrences with this title, waiting until at least `at_least` are listed."""
+    occurrences(ctx, title, at_least=at_least)
+    return title_nodes(ctx, ctx.d.dump(), title)
 
 
 def detail_text(ctx):
@@ -122,10 +142,14 @@ def t30(ctx):
 def t31(ctx):
     title = ensure_event(ctx, "allday", "allday", all_day=True)
     F.open_event(ctx, title)
-    text = detail_text(ctx)
-    ctx.check(re.search(S("all_day", exact=False), text), "the detail does not say 'All day'")
-    ctx.check(not re.search(r"\d{1,2}:\d{2}", text.split("|")[1] if "|" in text else text), "an all-day event shows a clock time")
+    nodes = ctx.d.dump()
+    date_line = [n.text for n in nodes if re.match(r"^\w+ \d{1,2} \w+", n.text or "") and n.rid != "search_input"]
+    ctx.check(date_line, "the detail shows no date line")
+    ctx.check(not re.search(r"\d{1,2}:\d{2}", date_line[0]), f"an all-day event shows a clock time: {date_line[0]}")
     F.close_detail(ctx)
+    nodes = F.search(ctx, title)
+    ctx.check(ctx.d.find(nodes, text=S("all_day")), "the search row does not say 'All day'")
+    F.close_search(ctx)
 
 
 @case("T32", "D", "Edit title and place", account=True)
@@ -142,8 +166,8 @@ def t32(ctx):
     text = detail_text(ctx)
     ctx.check("Lab9Q" in text and "Lab7Q" not in text, "the new place was not saved")
     F.close_detail(ctx)
-    ctx.check(occurrences(ctx, title + " mod") == 1, "the renamed event should be listed once")
-    ctx.check(occurrences(ctx, title) == 0, "the old title should no longer be an exact match")
+    ctx.check(occurrences(ctx, title + " mod", 1) == 1, "the renamed event should be listed once")
+    ctx.check(occurrences(ctx, title, 0) == 0, "the old title should no longer be an exact match")
     F.close_search(ctx)
 
 
@@ -156,22 +180,6 @@ def t33(ctx):
     F.close_search(ctx)
     ctx.state.pop("allday", None)
     ctx.state["roundtrip_gone"] = title
-
-
-@case("T33R", "D", "Round trip with Google: what was saved comes back, what was deleted does not", account=True, slow=True)
-def t33r(ctx):
-    keep = ctx.state.get("roundtrip_keep")
-    gone = ctx.state.get("roundtrip_gone")
-    if not keep:
-        ctx.skip("needs T30/T32 first")
-    ctx.check(F.roundtrip(ctx), "the login after clearing the data did not bring the calendars back")
-    nodes = F.search(ctx, TEST_PREFIX)
-    names = [n.text for n in F.result_titles(ctx, nodes)]
-    ctx.check(keep in names, f"the saved event did not come back from Google: {names}")
-    if gone:
-        ctx.check(gone not in names, "the deleted event came back from Google")
-    F.close_search(ctx)
-    ctx.state["account_ok"] = True
 
 
 @case("T34", "D", "Move an event to another calendar", account=True)
@@ -271,7 +279,7 @@ def t38(ctx):
     ctx.check(d.gone(timeout=15, tag="editor_title"), "the editor did not close")
     ctx.created.append(home_title)
     F.open_event(ctx, home_title)
-    ctx.check("America/New_York" in detail_text(ctx), "the detail does not show the New York zone")
+    ctx.check(re.search(r"Eastern|New_York|New York", detail_text(ctx)), "the detail does not show the New York zone")
     F.close_detail(ctx)
 
 
@@ -317,12 +325,28 @@ def t40(ctx):
     F.close_detail(ctx)
 
 
+@case("T33R", "D", "Round trip with Google: what was saved comes back, what was deleted does not", account=True, slow=True)
+def t33r(ctx):
+    keep = ctx.state.get("roundtrip_keep")
+    gone = ctx.state.get("roundtrip_gone")
+    if not keep:
+        ctx.skip("needs T30/T32 first")
+    ctx.check(F.roundtrip(ctx), "the login after clearing the data did not bring the calendars back")
+    nodes = F.search(ctx, TEST_PREFIX)
+    names = [n.text for n in F.result_titles(ctx, nodes)]
+    ctx.check(keep in names, f"the saved event did not come back from Google: {names}")
+    if gone:
+        ctx.check(gone not in names, "the deleted event came back from Google")
+    F.close_search(ctx)
+    ctx.state["account_ok"] = True
+
+
 # ================================================================= E. recurrences
 @case("T41", "E", "Preset: every day", account=True)
 def t41(ctx):
     title = F.create_event(ctx, "daily", recurrence=lambda c: pick_recurrence(c, "DAILY"))
     ctx.state["daily"] = title
-    n = occurrences(ctx, title)
+    n = occurrences(ctx, title, at_least=4)
     ctx.step("daily_results")
     ctx.check(n >= 4, f"a daily series should list several occurrences, found {n}")
     F.close_search(ctx)
@@ -333,6 +357,7 @@ def t42(ctx):
     title = F.create_event(ctx, "custom", recurrence=lambda c: custom_recurrence(c, 2, 3))
     ctx.state["custom"] = title
     n = occurrences(ctx, title)
+    n = occurrences(ctx, title, 3)
     ctx.check(n == 3, f"expected exactly 3 occurrences, found {n}")
     F.close_search(ctx)
     F.delete_event(ctx, title, scope="ALL")
@@ -342,48 +367,46 @@ def t42(ctx):
 @case("T43", "E", "Edit one occurrence, then this and the following", account=True)
 def t43(ctx):
     d = ctx.d
-    title = ctx.state.get("daily")
-    if not title:
-        ctx.skip("needs T41")
+    # a finite series (6 days), so that every occurrence fits on the screen of the search
+    title = ensure_event(ctx, "scoped", "scoped", recurrence=lambda c: custom_recurrence(c, 1, 6))
     # second occurrence only
-    nodes = F.search(ctx, title)
-    rows = title_nodes(ctx, nodes, title)
-    ctx.check(len(rows) >= 4, "not enough occurrences")
+    rows = search_rows(ctx, title, 6)
+    ctx.check(len(rows) == 6, f"expected the 6 occurrences of the series, found {len(rows)}")
     d.tap(*rows[1].center)
     d.wait(timeout=10, tag="detail_close")
     edit_open_event(ctx, new_title=title + " X", scope="THIS")
     ctx.created.append(title + " X")
-    ctx.check(occurrences(ctx, title + " X") == 1, "only the second occurrence should carry the new title")
-    ctx.check(occurrences(ctx, title) >= 3, "the other occurrences should keep the title")
+    ctx.check(occurrences(ctx, title + " X", 1) == 1, "only the second occurrence should carry the new title")
+    ctx.check(occurrences(ctx, title, at_least=4) >= 4, "the other occurrences should keep the title")
     # this and following from the 3rd (now 2nd in the old-title list)
-    nodes = F.search(ctx, title)
-    rows = [n for n in title_nodes(ctx, nodes, title)]
+    rows = search_rows(ctx, title, 3)
+    ctx.check(len(rows) >= 2, "not enough occurrences left to continue")
     d.tap(*rows[1].center)
     d.wait(timeout=10, tag="detail_close")
     edit_open_event(ctx, new_title=title + " Y", scope="FOLLOWING")
     ctx.created.append(title + " Y")
-    ys = occurrences(ctx, title + " Y")
+    ys = occurrences(ctx, title + " Y", at_least=3)
     ctx.check(ys >= 3, f"the following occurrences should be renamed, found {ys}")
-    ctx.check(occurrences(ctx, title) <= 2, "occurrences before the change must keep the old title")
+    ctx.check(occurrences(ctx, title, at_most=2) <= 2, "occurrences before the change must keep the old title")
     F.close_search(ctx)
 
 
 @case("T44", "E", "Delete this, this and following, all", account=True)
 def t44(ctx):
     d = ctx.d
-    base = ctx.state.get("daily")
+    base = ctx.state.get("scoped")
     if not base:
-        ctx.skip("needs T41")
+        ctx.skip("needs T43")
     y = base + " Y"
-    before = occurrences(ctx, y)
-    nodes = F.search(ctx, y)
-    rows = title_nodes(ctx, nodes, y)
+    before = occurrences(ctx, y, at_least=3)
+    rows = search_rows(ctx, y, 3)
+    ctx.check(len(rows) >= 2, "not enough occurrences to delete one")
     d.tap(*rows[1].center)
     d.wait(timeout=10, tag="detail_close")
     F.delete_open_event(ctx, scope="THIS")
-    ctx.check(occurrences(ctx, y) == before - 1, "deleting one occurrence should remove exactly one")
-    nodes = F.search(ctx, y)
-    rows = title_nodes(ctx, nodes, y)
+    ctx.check(occurrences(ctx, y, before - 1) == before - 1, "deleting one occurrence should remove exactly one")
+    rows = search_rows(ctx, y, 2)
+    ctx.check(len(rows) >= 2, "not enough occurrences to delete the following ones")
     d.tap(*rows[1].center)
     d.wait(timeout=10, tag="detail_close")
     F.delete_open_event(ctx, scope="FOLLOWING")

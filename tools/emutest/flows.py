@@ -13,7 +13,9 @@ from strings import CANCEL, OK, S, has
 # Controls that exist only while something covers the calendar screen (a sheet, a dialog, the drawer, a full screen).
 COVERS = {"editor_title", "detail_close", "settings_back", "search_back", "drawer_view_SCHEDULE", "alarm_stop", "scope_confirm",
           "notify_send", "delete_confirm", "sheet_about", "sheet_alarms", "sheet_notifications", "export_confirm",
-          "export_summary_ok", "share_text", "reminder_ok", "discard_keep", "alarm_close_confirm"}
+          "export_summary_ok", "share_text", "reminder_ok", "discard_keep", "alarm_close_confirm",
+          "drawer_refresh", "drawer_alarms", "drawer_add_account", "drawer_settings", "drawer_export", "drawer_about", "calendar_row"}
+DRAWER_ANY = ["drawer_view_SCHEDULE", "drawer_refresh", "drawer_alarms", "drawer_add_account", "drawer_settings", "drawer_export", "drawer_about", "calendar_row"]
 VIEWS = ["SCHEDULE", "DAY", "SIX_DAYS", "WEEK", "MONTH", "MONTH_LIST"]
 
 
@@ -71,8 +73,15 @@ def home(ctx, tries=6):
 def open_drawer(ctx):
     d = ctx.d
     d.click(tag="btn_menu")
-    if d.wait(timeout=8, tag="drawer_view_SCHEDULE") is None:
+    end = time.time() + 8
+    while time.time() < end and not any(n.rid in DRAWER_ANY for n in d.dump()):
+        time.sleep(0.6)
+    if not any(n.rid in DRAWER_ANY for n in d.dump()):
         ctx.fail("the drawer did not open")
+    # the drawer remembers its scroll position: bring it back to the top
+    for _ in range(2):
+        d.swipe(400, 600, 400, 1900, 300)
+        time.sleep(0.4)
 
 
 def drawer_item(ctx, tag, click=True):
@@ -144,18 +153,12 @@ def login(ctx):
     d.tap(*n.center)
     time.sleep(0.8)
     d.click(timeout=6, text=OK)
-    if d.wait(timeout=60, tag="btn_menu") is None:
-        ctx.fail("no home after the login")
-    # the first sync fills the calendars
-    for _ in range(40):
-        open_drawer(ctx)
-        found = bool(d.find(tag="calendar_row"))
-        d.back()
-        time.sleep(0.5)
-        if found:
-            return True
-        time.sleep(3)
-    return False
+    # the drawer stays open behind the account question; the first sync fills its calendar list
+    found = d.wait(timeout=120, interval=2.0, tag="calendar_row") is not None
+    d.back()
+    time.sleep(0.8)
+    home(ctx)
+    return found
 
 
 # ---------------------------------------------------------------- editor
@@ -239,7 +242,15 @@ def create_event(ctx, title, *, all_day=False, location=None, description=None, 
     home(ctx)
     open_editor_new(ctx)
     ctx.check(calendar_in_editor_is_test_account(ctx), f"the editor does not show {ctx.account_email}: refusing to write elsewhere")
-    type_into(ctx, "editor_title", full)
+    # the emulator keyboard sometimes garbles what is typed: the prefix is what lets the cleanup find the event
+    for attempt in range(4):
+        type_into(ctx, "editor_title", full)
+        typed = d.find(tag="editor_title")
+        if typed and typed[0].text == full:
+            break
+        time.sleep(1.0)
+    else:
+        ctx.fail(f"the title was typed wrongly: {typed[0].text if typed else None!r}")
     hide_keyboard(ctx)
     if all_day:
         tap_tag(ctx, "editor_all_day")
@@ -261,12 +272,10 @@ def create_event(ctx, title, *, all_day=False, location=None, description=None, 
         d.text(location)
         hide_keyboard(ctx)
     if reminders is not None:
-        tap_tag(ctx, "editor_add_reminder")  # turns the defaults into an editable list and opens the dialog
-        d.wait(timeout=6, tag="reminder_custom_minutes")
-        d.back()
-        time.sleep(0.6)
-        remove_default_reminders(ctx)
-        for method, minutes in reminders:
+        reveal(ctx, "editor_add_reminder")
+        remove_default_reminders(ctx)  # the X of a default row turns the defaults into an explicit list
+        items = reminders() if callable(reminders) else reminders  # computed now: the lead time counts from here
+        for method, minutes in items:
             add_reminder(ctx, method, minutes)
     if visibility:
         tap_tag(ctx, "editor_visibility")

@@ -81,7 +81,7 @@ def run_case(ctx, entry):
         return "FAIL", str(e), time.time() - t0
     except LookupError as e:
         d.shot("lookup_" + cid)
-        return "FAIL", f"control not found: {e}", time.time() - t0
+        return "FAIL", f"control not found: {e} " + traceback.format_exc(limit=3).replace(chr(10), " | "), time.time() - t0
     except Exception as e:  # noqa: BLE001
         try:
             d.shot("error_" + cid)

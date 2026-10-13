@@ -160,14 +160,35 @@ Totale previsto: circa 45-60 minuti per ogni immagine.
 - Per ciascuna: stesso APK, stessa sequenza, cartella dei risultati separata; il confronto tra `report.md` delle varie API dice dove una funzione si rompe solo su certe versioni (per esempio il sync accelerato prima di Android 12, trovato il 13/10/2026).
 - Differenze attese da registrare nel report: permesso notifiche da API 33, sveglie esatte da API 31, schermo intero da API 34, istanze di Doze diverse.
 
-## 7. Cosa serve fare per renderlo eseguibile
-1. Scrivere lo script pilota (`tools/emutest/`: `adbx.py` per adb e uiautomator, `cases/*.py` un modulo per gruppo, `run.py` con l'elenco dei casi e il report). Priorità: gruppi A, D, G.
-2. Scegliere le etichette stabili dell'interfaccia: dove mancano, aggiungere `testTag`/`contentDescription` nell'app (utile anche ai test Compose futuri).
-3. Aggiungere i test strumentali Compose (`connectedAndroidTest`) per le schermate che l'adb pilota con difficoltà (editor, impostazioni): secondo livello di verifica, dentro la CI su emulatore.
-4. Prima esecuzione completa su API 26 e registrazione degli esiti in `plan.md`.
+## 7. Gli script (scritti il 13/10/2026)
+Cartella `tools/emutest/` (Python 3 con Pillow, adb dell'SDK, nessuna altra dipendenza):
+- `adbx.py`: adb e UI Automator (dump dell'interfaccia, ricerca per tag, testo o descrizione, tocchi, scorrimenti, log).
+- `strings.py`: legge i `strings.xml` dell'app (inglese e italiano) e trasforma il nome di una stringa in un'espressione regolare, così gli stessi test girano in entrambe le lingue senza copiare i testi.
+- `flows.py`: i passi riutilizzabili (aprire il menu, scegliere una vista, creare un evento con promemoria e ricorrenza, cercare, eliminare, ripulire, giro completo con Google).
+- `harness.py`: registro dei casi, esiti PASS/FAIL/SKIP, controllo dei crash nel log dopo ogni caso.
+- `cases_ab.py` (gruppi A e B), `cases_c.py` (C), `cases_d.py` (D, E, F), `cases_g.py` (G), `cases_h.py` (H e I).
+- `run.py`: `python run.py --serial emulator-5556 --apk <apk> [--only T03,T04] [--group G] [--skip-slow] [--list]`.
+- I risultati vanno in `tools/emutest/runs/<data>_api<N>_<versione>/` (screenshot, `report.md`, `results.json`), cartella ignorata da git e controllata dalla CI e dal hook locale, perché contiene immagini del calendario vero.
+
+**Etichette stabili nell'app**: `testTag` sui controlli principali (barra, menu, editor, dettaglio, impostazioni, ricerca, sveglia, finestre di conferma), esposti come resource id con `Modifier.exposeTestTags()` (`core/notifications/UiTags.kt`), da applicare una volta alla radice di ogni finestra. Chi aggiunge una schermata o un dialogo nuovo deve dargli i tag e la radice.
+
+**Regole di sicurezza nello script**: i permessi di sistema non si concedono mai da script (se compare una richiesta il caso si ferma con SKIP); il caso `monkey` gira solo senza rete e cancella i dati dell'app prima che la rete torni, così nulla può raggiungere Google; l'editor rifiuta di salvare se il calendario mostrato non è quello dell'account di prova.
+
+**Limiti noti**: sull'API 26 il trascinamento (gruppo F) richiede `input motionevent` (Android 10+) e viene saltato; la tastiera dell'emulatore corregge le parole (si usano gettoni inventati come `Lab7Q`); dopo `pm clear` il permesso dei contatti va concesso di nuovo a mano.
 
 ## 8. Registro delle esecuzioni
 | Data | Immagine | Versione app | Esito | Note |
 |---|---|---|---|---|
 | 13/10/2026 | API 26 (google_apis, senza account) | 0.4.0/0.4.1 | parziale, manuale | Trovati e corretti: sync accelerato prima di Android 12 (`getForegroundInfo` non implementato), crash di `+` senza account |
-| 13/10/2026 | API 26 (google_apis_playstore x86, con account) | 0.4.1 | in corso | Login nell'app riuscito (Norton Web/Mail Shield spento) |
+| 13/10/2026 | API 26 (google_apis_playstore x86, con account) | 0.4.1 | script a blocchi, tutti i gruppi provati almeno una volta | Passano: A (T01-T08, T10, T12), B (T13-T17, T19), C (T20-T27), D (T30-T33R, T37-T40), E (T41-T44), G (T50-T61, T64, T65), H (T71), I (T80-T82), T70 con la build di debug. Saltati: F (richiede Android 10+), T34 (scriverebbe fuori dal calendario principale), T35-T36 (servono il permesso dei contatti, scelta dell'utente). **Aperto**: T70 fallisce con la build di release (vedi sotto). |
+
+**Difetti dell'app trovati dai test (13/10/2026)**
+1. Prima di Android 12 il sync su richiesta falliva (corretto in 0.4.1).
+2. Con nessun account, "+" chiudeva l'app (corretto in 0.4.1).
+3. L'editor non ripartiva da zero dopo un annullamento: aprendo un nuovo evento ricompariva il testo scartato (corretto in 0.4.2, `EventEditorViewModel.forget()`).
+4. **Da verificare**: con la build di **release**, un evento creato in modalità aereo non mostra il numero delle modifiche in attesa sull'icona Aggiorna, mentre con la build di debug sì (il lavoro di sync risulta comunque in attesa della rete). Va provato sul Samsung (modalità aereo, crea un evento, guarda l'icona Aggiorna).
+
+**Note di taratura**
+- La tastiera dell'emulatore a volte storpia il titolo digitato (`[TEST-EMU] x` diventava `[To] x`): lo script ora rilegge il titolo e rifà la digitazione, e rifiuta di salvare se resta sbagliato.
+- Offline = modalità aereo dal pannello delle impostazioni rapide (`svc wifi disable` e un proxy non isolano l'app sull'emulatore).
+- `pm clear` (giro completo con Google) azzera anche il permesso dei contatti.

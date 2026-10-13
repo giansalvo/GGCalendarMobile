@@ -92,6 +92,9 @@ def main():
     print(f"API {d.api}, app {version}, {len(chosen)} cases -> {outdir}")
 
     results = []
+    ctx.results = results
+    d.shell("svc power stayon true")
+    d.shell("settings put system screen_off_timeout 1800000")
     try:
         for entry in chosen:
             cid, group, title, opts, _ = entry
@@ -110,7 +113,7 @@ def main():
         except Exception as e:  # noqa: BLE001
             print("cleanup failed:", e)
         # leave the device as found
-        for cmd in ("settings put system font_scale 1.0", "wm density reset", "settings put system user_rotation 0",
+        for cmd in ("svc power stayon false", "settings put system screen_off_timeout 60000", "settings put system font_scale 1.0", "wm density reset", "settings put system user_rotation 0",
                     "cmd uimode night no"):
             try:
                 d.shell(cmd)

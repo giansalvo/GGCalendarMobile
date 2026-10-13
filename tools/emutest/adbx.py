@@ -243,15 +243,38 @@ class Device:
                 bad.append(line)
         return bad
 
+    # Offline = airplane mode, switched from the quick-settings tile like a person would: `svc wifi disable` has no
+    # effect on the emulator's virtual Wi-Fi, a proxy does not stop the app, and the airplane broadcast needs root.
+    def airplane_on(self):
+        return self.shell("settings get global airplane_mode_on").strip() == "1"
+
     def network(self, on):
-        v = "enable" if on else "disable"
-        self.shell(f"svc wifi {v}")
-        self.shell(f"svc data {v}")
-        time.sleep(3)
+        want_airplane = not on
+        if self.airplane_on() == want_airplane:
+            return
+        self.shell("cmd statusbar expand-settings")
+        time.sleep(2.0)
+        tile = None
+        end = time.time() + 10
+        while time.time() < end and tile is None:
+            # the panel header also reads "Airplane mode": the tile is the match lower on the screen
+            hits = [n for n in self.find(either=re.compile(r"Airplane|aereo|Flight", re.I)) if 300 < n.center[1] < 1400]
+            tile = min(hits, key=lambda n: n.center[1]) if hits else None
+            if tile is None:
+                time.sleep(0.8)
+        if tile is None:
+            self.shell("cmd statusbar collapse")
+            raise RuntimeError("no airplane mode tile in the quick settings")
+        self.tap(*tile.center)
+        time.sleep(3.0)
+        self.shell("cmd statusbar collapse")
+        time.sleep(1.0)
+        if on:  # wait for the connection to come back
+            end = time.time() + 60
+            while time.time() < end:
+                if self.shell("dumpsys connectivity | grep -c VALIDATED").strip() not in ("", "0"):
+                    break
+                time.sleep(3)
 
     def has_network(self):
-        out = self.shell("dumpsys connectivity | grep -c 'VALIDATED'")
-        try:
-            return int(out.strip() or 0) > 0
-        except ValueError:
-            return True
+        return not self.airplane_on()

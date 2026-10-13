@@ -22,8 +22,8 @@ android {
         applicationId = "io.github.giansalvo.ggcalendar"
         minSdk = 26
         targetSdk = 36
-        versionCode = 5
-        versionName = "0.4.1"
+        versionCode = 6
+        versionName = "0.4.2"
         // Shown in the About card. Fixed when Gradle configures the build: a release is built with --no-configuration-cache.
         manifestPlaceholders["buildDate"] = LocalDate.now().toString()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
