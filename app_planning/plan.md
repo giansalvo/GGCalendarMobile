@@ -243,6 +243,16 @@ I test xUnit (`tests/GGCalendar.Core.Tests`) vengono tradotti in JUnit con gli s
 **Aggiornamenti in-app (spostati da M6, 12/10/2026)**
 - L'app controlla le release di `giansalvo/GGCalendarMobile` su GitHub; se ce n'è una più recente di quella installata lo dice, con le novità. Su consenso dell'utente scarica l'APK, ne verifica l'impronta SHA-256 e lo installa con `PackageInstaller` (permesso `REQUEST_INSTALL_PACKAGES`; Android chiede comunque di consentire l'installazione da questa app). Serve perché l'app non esce dal Play Store. Dipende dalle release pubbliche di M7: fino ad allora gli aggiornamenti restano manuali (APK installato sopra il precedente, stessa firma). Alternativa più leggera da valutare: solo un avviso con il link al download, senza installare da dentro l'app.
 
+## Distribuzione su Google Play (informazioni, NON pianificata)
+Decisione del 13/10/2026: la pubblicazione sul Play Store **non è in nessuna milestone** e non fa parte della v1.0; questa sezione raccoglie solo ciò che servirebbe, per decidere in futuro. Il canale ufficiale resta l'APK su GitHub Releases.
+- **Account**: Google Play Console, 25 $ una tantum, verifica dell'identità (l'indirizzo può comparire pubblicamente). Un account personale nuovo deve fare un test chiuso con almeno 12 tester per 14 giorni consecutivi prima della pubblicazione (regola da ricontrollare, cambia spesso); un account da organizzazione richiede il numero D-U-N-S.
+- **Formato e firma**: si carica un AAB (`bundleRelease`). Con Play App Signing la chiave finale è di Google e il nostro keystore diventa la chiave di caricamento. L'app installata dallo store ha uno **SHA-1 diverso**: serve un terzo client OAuth Android con lo SHA-1 "firma app" preso dalla console, altrimenti il login non funziona.
+- **Scheda**: titolo, descrizioni, icona 512x512, immagine 1024x500, almeno 2 screenshot, privacy policy (già pubblica), classificazione dei contenuti, dichiarazione "Sicurezza dei dati" (eventi e contatti restano sul telefono, token gestiti da Google), account di prova per i revisori.
+- **Permessi da giustificare**: `USE_EXACT_ALARM` (ammesso per calendario e sveglia), `USE_FULL_SCREEN_INTENT` (da Android 14 limitato a sveglie e telefonate: giustificazione da curare), `READ_CONTACTS` (facoltativo).
+- **Incompatibilità**: `REQUEST_INSTALL_PACKAGES` e gli aggiornamenti in-app (Versione 2, punto 10) non sono ammessi sul Play Store: in una versione per lo store andrebbero tolti.
+- **Prerequisito**: verifica OAuth dello scope `calendar` completata (i revisori provano il login con un account esterno).
+- La licenza GPL-3.0 non è un ostacolo, ma il codice resta pubblico.
+
 ## M0: passi operativi
 Stato del PC (verificato l'11/10/2026): Git c'è; mancano Android Studio, Android SDK, JDK, adb e `gh`.
 
