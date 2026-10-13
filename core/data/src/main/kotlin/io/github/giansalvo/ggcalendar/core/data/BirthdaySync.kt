@@ -6,6 +6,8 @@ import io.github.giansalvo.ggcalendar.core.database.CalendarEntity
 import io.github.giansalvo.ggcalendar.core.database.EventEntity
 import io.github.giansalvo.ggcalendar.core.database.GGCalendarDatabase
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.LocalDate
 import java.time.MonthDay
 import javax.inject.Inject
@@ -55,10 +57,13 @@ class BirthdaySync @Inject constructor(
     private val prefs: AppPreferences,
     private val engine: SyncEngine,
 ) {
-    suspend fun sync() {
+    /** One rebuild at a time: a slow one (many contacts) must not bring the calendar back after it was turned off. */
+    private val lock = Mutex()
+
+    suspend fun sync() = lock.withLock {
         if (!prefs.birthdaysEnabled.first() || !contacts.granted) {
             db.calendarDao().delete(CALENDAR_ID)
-            return
+            return@withLock
         }
         val existingCalendar = db.calendarDao().get(CALENDAR_ID)
         db.calendarDao().upsert(
