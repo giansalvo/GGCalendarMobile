@@ -1,5 +1,7 @@
 package io.github.giansalvo.ggcalendar.feature.event
 
+import io.github.giansalvo.ggcalendar.core.notifications.exposeTestTags
+import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,12 +34,13 @@ import androidx.compose.ui.unit.dp
 fun ShareDialog(recurring: Boolean, onDismiss: () -> Unit, onText: () -> Unit, onIcs: (wholeSeries: Boolean) -> Unit) {
     var wholeSeries by remember { mutableStateOf(true) }
     AlertDialog(
+        modifier = Modifier.exposeTestTags(),
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.share_title)) },
         text = {
             Column {
-                TextButton(onClick = onText, Modifier.fillMaxWidth()) { Text(stringResource(R.string.share_as_text), style = MaterialTheme.typography.titleMedium) }
-                TextButton(onClick = { onIcs(wholeSeries) }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.share_as_ics), style = MaterialTheme.typography.titleMedium) }
+                TextButton(onClick = onText, Modifier.testTag("share_text").fillMaxWidth()) { Text(stringResource(R.string.share_as_text), style = MaterialTheme.typography.titleMedium) }
+                TextButton(onClick = { onIcs(wholeSeries) }, Modifier.testTag("share_ics").fillMaxWidth()) { Text(stringResource(R.string.share_as_ics), style = MaterialTheme.typography.titleMedium) }
                 if (recurring) {
                     Spacer(Modifier.height(8.dp))
                     ScopeOption(stringResource(R.string.share_scope_all), selected = wholeSeries) { wholeSeries = true }

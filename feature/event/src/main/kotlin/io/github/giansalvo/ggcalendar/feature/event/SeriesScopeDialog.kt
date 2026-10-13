@@ -1,5 +1,7 @@
 package io.github.giansalvo.ggcalendar.feature.event
 
+import io.github.giansalvo.ggcalendar.core.notifications.exposeTestTags
+import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,6 +27,7 @@ import io.github.giansalvo.ggcalendar.core.model.EventInstance
 fun SeriesScopeDialog(deleting: Boolean, onDismiss: () -> Unit, onConfirm: (SeriesScope) -> Unit) {
     var scope by remember { mutableStateOf(SeriesScope.THIS) }
     AlertDialog(
+        modifier = Modifier.exposeTestTags(),
         onDismissRequest = onDismiss,
         title = { Text(stringResource(if (deleting) R.string.scope_delete_title else R.string.scope_edit_title)) },
         text = {
@@ -34,15 +37,15 @@ fun SeriesScopeDialog(deleting: Boolean, onDismiss: () -> Unit, onConfirm: (Seri
                     SeriesScope.FOLLOWING to R.string.scope_following,
                     SeriesScope.ALL to R.string.scope_all,
                 ).forEach { (value, label) ->
-                    Row(Modifier.fillMaxWidth().clickable { scope = value }, verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.testTag("scope_" + value.name).fillMaxWidth().clickable { scope = value }, verticalAlignment = Alignment.CenterVertically) {
                         RadioButton(selected = scope == value, onClick = { scope = value })
                         Text(stringResource(label))
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { onConfirm(scope) }) { Text(stringResource(android.R.string.ok)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+        confirmButton = { TextButton(modifier = Modifier.testTag("scope_confirm"), onClick = { onConfirm(scope) }) { Text(stringResource(android.R.string.ok)) } },
+        dismissButton = { TextButton(modifier = Modifier.testTag("scope_cancel"), onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 

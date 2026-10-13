@@ -1,5 +1,7 @@
 package io.github.giansalvo.ggcalendar.feature.calendar
 
+import io.github.giansalvo.ggcalendar.core.notifications.exposeTestTags
+import androidx.compose.ui.platform.testTag
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.compose.foundation.clickable
@@ -48,7 +50,7 @@ fun AboutSheet(onDismiss: () -> Unit) {
     val uri = LocalUriHandler.current
     val date = info.builtOn?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)) ?: "-"
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
+        Column(Modifier.exposeTestTags().testTag("sheet_about").fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
             Text(stringResource(R.string.app_title), style = MaterialTheme.typography.headlineMedium)
             Text(stringResource(R.string.about_tagline), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(24.dp))

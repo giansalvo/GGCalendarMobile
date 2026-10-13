@@ -1,5 +1,6 @@
 package io.github.giansalvo.ggcalendar.core.notifications
 
+import androidx.compose.ui.platform.testTag
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -118,7 +119,7 @@ private fun AlarmScreen(alert: ReminderAlert, durationMinutes: Int, onStop: () -
     val context = LocalContext.current
     var snooze by remember { mutableIntStateOf(AppPreferences.DEFAULT_SNOOZE_MINUTES) }
     Column(
-        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).systemBarsPadding().padding(horizontal = 24.dp, vertical = 16.dp),
+        Modifier.exposeTestTags().fillMaxSize().background(MaterialTheme.colorScheme.background).systemBarsPadding().padding(horizontal = 24.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -168,6 +169,7 @@ private fun AlarmScreen(alert: ReminderAlert, durationMinutes: Int, onStop: () -
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
             Reminders.SNOOZE_CHOICES.forEach { m ->
                 FilterChip(
+                    modifier = Modifier.testTag("alarm_snooze_choice_" + m),
                     selected = m == snooze,
                     onClick = { snooze = m },
                     label = { Text(stringResource(R.string.snooze_choice, m), fontSize = 18.sp, modifier = Modifier.padding(vertical = 8.dp)) },
@@ -175,11 +177,11 @@ private fun AlarmScreen(alert: ReminderAlert, durationMinutes: Int, onStop: () -
             }
         }
         Spacer(Modifier.height(12.dp))
-        OutlinedButton(onClick = { onSnooze(snooze) }, Modifier.fillMaxWidth().height(64.dp)) {
+        OutlinedButton(onClick = { onSnooze(snooze) }, Modifier.testTag("alarm_snooze").fillMaxWidth().height(64.dp)) {
             Text(stringResource(R.string.snooze_minutes, snooze), fontSize = 22.sp)
         }
         Spacer(Modifier.height(12.dp))
-        Button(onClick = onStop, Modifier.fillMaxWidth().height(72.dp)) { Text(stringResource(R.string.stop_alarm), fontSize = 24.sp) }
+        Button(onClick = onStop, Modifier.testTag("alarm_stop").fillMaxWidth().height(72.dp)) { Text(stringResource(R.string.stop_alarm), fontSize = 24.sp) }
         Spacer(Modifier.height(16.dp))
         Text(stringResource(R.string.alarm_help), fontSize = 15.sp, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(4.dp))

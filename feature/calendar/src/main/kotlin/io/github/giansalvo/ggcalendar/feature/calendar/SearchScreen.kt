@@ -1,5 +1,7 @@
 package io.github.giansalvo.ggcalendar.feature.calendar
 
+import io.github.giansalvo.ggcalendar.core.notifications.exposeTestTags
+import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,7 +55,7 @@ import java.time.format.FormatStyle
 /** [refreshKey] changes when something may have changed behind the results (the detail was closed, an event deleted): the search runs again. */
 fun SearchScreen(search: suspend (String) -> List<EventInstance>, refreshKey: Any?, onOpen: (EventInstance) -> Unit, onClose: () -> Unit) {
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Surface(Modifier.exposeTestTags().fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             var query by rememberSaveable { mutableStateOf("") }
             var results by remember { mutableStateOf<List<EventInstance>?>(null) }
             val focus = remember { FocusRequester() }
@@ -70,7 +72,7 @@ fun SearchScreen(search: suspend (String) -> List<EventInstance>, refreshKey: An
             Box(Modifier.systemBarsPadding().imePadding()) {
                 Column(Modifier.fillMaxSize()) {
                     Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = onClose) {
+                        IconButton(onClick = onClose, modifier = Modifier.testTag("search_back")) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                         }
                         TextField(
@@ -85,7 +87,7 @@ fun SearchScreen(search: suspend (String) -> List<EventInstance>, refreshKey: An
                                 focusedIndicatorColor = MaterialTheme.colorScheme.background,
                                 unfocusedIndicatorColor = MaterialTheme.colorScheme.background,
                             ),
-                            modifier = Modifier.weight(1f).focusRequester(focus),
+                            modifier = Modifier.testTag("search_input").weight(1f).focusRequester(focus),
                         )
                         if (query.isNotEmpty()) {
                             IconButton(onClick = { query = "" }) {

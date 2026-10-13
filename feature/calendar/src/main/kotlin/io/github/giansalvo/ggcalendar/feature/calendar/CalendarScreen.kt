@@ -1,5 +1,7 @@
 package io.github.giansalvo.ggcalendar.feature.calendar
 
+import io.github.giansalvo.ggcalendar.core.notifications.exposeTestTags
+import androidx.compose.ui.platform.testTag
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -168,6 +170,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
 
     ModalNavigationDrawer(
         drawerState = drawerState,
+        modifier = Modifier.exposeTestTags(),
         drawerContent = {
             CalendarDrawer(
                 state = state,
@@ -222,11 +225,11 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                 )
             },
             floatingActionButton = {
-                FloatingActionButton(onClick = { viewModel.openEditor(newEventRequest(state)) }, shape = RoundedCornerShape(16.dp)) {
+                FloatingActionButton(onClick = { viewModel.openEditor(newEventRequest(state)) }, modifier = Modifier.testTag("fab_new_event"), shape = RoundedCornerShape(16.dp)) {
                     Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.new_event))
                 }
             },
-            snackbarHost = { SnackbarHost(snackbar) },
+            snackbarHost = { SnackbarHost(snackbar, Modifier.testTag("snackbar")) },
         ) { padding ->
             Column(Modifier.padding(padding).fillMaxSize()) {
                 if (state.busy || state.syncing) {
@@ -357,10 +360,10 @@ private fun CalendarTopBar(state: CalendarUiState, miniOpen: Boolean, onMenu: ()
     val title = if (state.date.year == LocalDate.now().year) month else "$month ${state.date.year}"
     TopAppBar(
         navigationIcon = {
-            IconButton(onClick = onMenu) { Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.open_menu)) }
+            IconButton(onClick = onMenu, modifier = Modifier.testTag("btn_menu")) { Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.open_menu)) }
         },
         title = {
-            Row(Modifier.clickable(onClick = onTitle).padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.testTag("btn_title").clickable(onClick = onTitle).padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(title)
                 Icon(
                     if (miniOpen) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
@@ -369,11 +372,11 @@ private fun CalendarTopBar(state: CalendarUiState, miniOpen: Boolean, onMenu: ()
             }
         },
         actions = {
-            IconButton(onClick = onSearch) {
+            IconButton(onClick = onSearch, modifier = Modifier.testTag("btn_search")) {
                 Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.search))
             }
             // Sync now. A badge counts the changes not yet on Google (they wait for a connection when offline).
-            IconButton(onClick = onSync) {
+            IconButton(onClick = onSync, modifier = Modifier.testTag("btn_refresh")) {
                 BadgedBox(badge = { if (state.pending > 0) Badge { Text(state.pending.toString()) } }) {
                     if (state.syncing) {
                         CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
@@ -382,10 +385,10 @@ private fun CalendarTopBar(state: CalendarUiState, miniOpen: Boolean, onMenu: ()
                     }
                 }
             }
-            IconButton(onClick = onSettings) {
+            IconButton(onClick = onSettings, modifier = Modifier.testTag("btn_settings")) {
                 Icon(Icons.Outlined.Settings, contentDescription = stringResource(R.string.settings))
             }
-            IconButton(onClick = onToday) { TodayIcon(LocalDate.now().dayOfMonth) }
+            IconButton(onClick = onToday, modifier = Modifier.testTag("btn_today")) { TodayIcon(LocalDate.now().dayOfMonth) }
             Avatar(state.accounts.firstOrNull()?.email)
             Spacer(Modifier.width(8.dp))
         },
@@ -442,6 +445,7 @@ private fun CalendarDrawer(
                     label = { Text(stringResource(view.label)) },
                     selected = view == state.view,
                     onClick = { onSelectView(view) },
+                    modifier = Modifier.testTag("drawer_view_" + view.name),
                 )
             }
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
@@ -450,12 +454,14 @@ private fun CalendarDrawer(
                 label = { Text(stringResource(R.string.refresh)) },
                 selected = false,
                 onClick = onRefresh,
+                modifier = Modifier.testTag("drawer_refresh"),
             )
             NavigationDrawerItem(
                 icon = { Icon(Icons.Outlined.Alarm, contentDescription = null) },
                 label = { Text(stringResource(R.string.active_alarms)) },
                 selected = false,
                 onClick = onActiveAlarms,
+                modifier = Modifier.testTag("drawer_alarms"),
             )
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             state.accounts.forEach { account ->
@@ -480,6 +486,7 @@ private fun CalendarDrawer(
                 label = { Text(stringResource(R.string.add_google_account)) },
                 selected = false,
                 onClick = onAddAccount,
+                modifier = Modifier.testTag("drawer_add_account"),
             )
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             NavigationDrawerItem(
@@ -487,18 +494,21 @@ private fun CalendarDrawer(
                 label = { Text(stringResource(R.string.settings)) },
                 selected = false,
                 onClick = onSettings,
+                modifier = Modifier.testTag("drawer_settings"),
             )
             NavigationDrawerItem(
                 icon = { Icon(Icons.Outlined.FileUpload, contentDescription = null) },
                 label = { Text(stringResource(R.string.export_ics)) },
                 selected = false,
                 onClick = onExport,
+                modifier = Modifier.testTag("drawer_export"),
             )
             NavigationDrawerItem(
                 icon = { Icon(Icons.Outlined.Info, contentDescription = null) },
                 label = { Text(stringResource(R.string.about)) },
                 selected = false,
                 onClick = onAbout,
+                modifier = Modifier.testTag("drawer_about"),
             )
             Spacer(Modifier.padding(bottom = 16.dp))
         }
@@ -509,7 +519,7 @@ private fun CalendarDrawer(
 private fun CalendarRow(calendar: CalendarInfo, onToggle: (String, Boolean) -> Unit) {
     val color = parseColor(calendar.colorHex)
     Row(
-        Modifier.fillMaxWidth().clickable { onToggle(calendar.id, !calendar.isVisible) }.padding(start = 4.dp, end = 16.dp),
+        Modifier.testTag("calendar_row").fillMaxWidth().clickable { onToggle(calendar.id, !calendar.isVisible) }.padding(start = 4.dp, end = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Checkbox(

@@ -1,5 +1,7 @@
 package io.github.giansalvo.ggcalendar.feature.event
 
+import io.github.giansalvo.ggcalendar.core.notifications.exposeTestTags
+import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -157,15 +159,15 @@ private fun DetailContent(instance: EventInstance, detail: EventDetail, onClose:
     var confirmDelete by remember { mutableStateOf(false) }
     val color = parseColor(instance.colorHex)
 
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(bottom = 16.dp)) {
+    Column(Modifier.exposeTestTags().fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(bottom = 16.dp)) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onClose) { Icon(Icons.Filled.Close, stringResource(R.string.close)) }
+            IconButton(onClick = onClose, modifier = Modifier.testTag("detail_close")) { Icon(Icons.Filled.Close, stringResource(R.string.close)) }
             Spacer(Modifier.weight(1f))
-            IconButton(onClick = onShare) { Icon(Icons.Outlined.Share, stringResource(R.string.share)) }
+            IconButton(onClick = onShare, modifier = Modifier.testTag("detail_share")) { Icon(Icons.Outlined.Share, stringResource(R.string.share)) }
             if (detail.canWrite) {
-                IconButton(onClick = onEdit) { Icon(Icons.Outlined.Edit, stringResource(R.string.edit)) }
+                IconButton(onClick = onEdit, modifier = Modifier.testTag("detail_edit")) { Icon(Icons.Outlined.Edit, stringResource(R.string.edit)) }
                 Box {
-                    IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, stringResource(R.string.more_options)) }
+                    IconButton(onClick = { menu = true }, modifier = Modifier.testTag("detail_more")) { Icon(Icons.Outlined.MoreVert, stringResource(R.string.more_options)) }
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                         DropdownMenuItem(text = { Text(stringResource(R.string.delete)) }, onClick = {
                             menu = false
@@ -201,7 +203,7 @@ private fun DetailContent(instance: EventInstance, detail: EventDetail, onClose:
 
         val meet = event.meetLink
         if (meet != null) {
-            Button(onClick = { uri.openUri(meet) }, modifier = Modifier.padding(start = 56.dp, top = 12.dp, end = 20.dp)) {
+            Button(onClick = { uri.openUri(meet) }, modifier = Modifier.testTag("detail_meet").padding(start = 56.dp, top = 12.dp, end = 20.dp)) {
                 Icon(Icons.Outlined.Videocam, null)
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.join_meet))
@@ -269,10 +271,11 @@ private fun DetailContent(instance: EventInstance, detail: EventDetail, onClose:
         }
     } else if (confirmDelete) {
         AlertDialog(
+            modifier = Modifier.exposeTestTags(),
             onDismissRequest = { confirmDelete = false },
             text = { Text(stringResource(R.string.delete_event_question)) },
             confirmButton = {
-                TextButton(onClick = {
+                TextButton(modifier = Modifier.testTag("delete_confirm"), onClick = {
                     confirmDelete = false
                     onDelete(null)
                 }) { Text(stringResource(R.string.delete)) }

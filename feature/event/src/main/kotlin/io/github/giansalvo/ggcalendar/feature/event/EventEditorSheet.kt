@@ -1,5 +1,7 @@
 package io.github.giansalvo.ggcalendar.feature.event
 
+import io.github.giansalvo.ggcalendar.core.notifications.exposeTestTags
+import androidx.compose.ui.platform.testTag
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -144,6 +146,10 @@ fun EventEditorSheet(
     viewModel: EventEditorViewModel = hiltViewModel(key = "editor"),
 ) {
     LaunchedEffect(request) { viewModel.load(request) }
+    val dismiss: () -> Unit = {
+        viewModel.forget()
+        onDismiss()
+    }
     var confirmDiscard by remember { mutableStateOf(false) }
     val sheet = rememberModalBottomSheetState(
         skipPartiallyExpanded = true,
@@ -157,7 +163,7 @@ fun EventEditorSheet(
         },
     )
     val scope = rememberCoroutineScope()
-    val close: () -> Unit = { scope.launch { sheet.hide() }.invokeOnCompletion { onDismiss() } }
+    val close: () -> Unit = { scope.launch { sheet.hide() }.invokeOnCompletion { dismiss() } }
     // Scrolling the form past its top must not drag the sheet down: it closes only with X, Back or Save.
     val keepSheetOpen = remember {
         object : NestedScrollConnection {
@@ -167,7 +173,7 @@ fun EventEditorSheet(
     }
 
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = dismiss,
         sheetState = sheet,
         dragHandle = null,
         // Keep the content above Android's navigation buttons.
@@ -175,13 +181,13 @@ fun EventEditorSheet(
     ) {
         val draft = viewModel.draft
         val calendars by viewModel.calendars.collectAsStateWithLifecycle()
-        Column(Modifier.fillMaxWidth().fillMaxHeight(0.96f).imePadding().nestedScroll(keepSheetOpen)) {
+        Column(Modifier.exposeTestTags().fillMaxWidth().fillMaxHeight(0.96f).imePadding().nestedScroll(keepSheetOpen)) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { if (viewModel.dirty) confirmDiscard = true else close() }) {
+                IconButton(onClick = { if (viewModel.dirty) confirmDiscard = true else close() }, modifier = Modifier.testTag("editor_close")) {
                     Icon(Icons.Filled.Close, stringResource(R.string.close))
                 }
                 Spacer(Modifier.weight(1f))
-                Button(onClick = { viewModel.save(close) }, enabled = draft != null, contentPadding = PaddingValues(horizontal = 24.dp)) {
+                Button(onClick = { viewModel.save(close) }, modifier = Modifier.testTag("editor_save"), enabled = draft != null, contentPadding = PaddingValues(horizontal = 24.dp)) {
                     Text(stringResource(R.string.save))
                 }
             }
@@ -213,16 +219,17 @@ fun EventEditorSheet(
 
     if (confirmDiscard) {
         AlertDialog(
+            modifier = Modifier.exposeTestTags(),
             onDismissRequest = { confirmDiscard = false },
             text = { Text(stringResource(R.string.discard_question)) },
             confirmButton = {
-                TextButton(onClick = {
+                TextButton(modifier = Modifier.testTag("discard_confirm"), onClick = {
                     confirmDiscard = false
                     viewModel.update { it } // keep the draft object; the sheet closes anyway
-                    onDismiss()
+                    dismiss()
                 }) { Text(stringResource(R.string.discard)) }
             },
-            dismissButton = { TextButton(onClick = { confirmDiscard = false }) { Text(stringResource(R.string.keep_editing)) } },
+            dismissButton = { TextButton(modifier = Modifier.testTag("discard_keep"), onClick = { confirmDiscard = false }) { Text(stringResource(R.string.keep_editing)) } },
         )
     }
 }
@@ -251,24 +258,24 @@ private fun EditorFields(
                 focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent,
                 focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent,
             ),
-            modifier = Modifier.fillMaxWidth().padding(start = 40.dp, end = 8.dp),
+            modifier = Modifier.testTag("editor_title").fillMaxWidth().padding(start = 40.dp, end = 8.dp),
         )
 
         CalendarChooser(calendars, draft.calendarId) { id -> update { it.copy(calendarId = id) } }
         Divider()
 
-        Row(Modifier.fillMaxWidth().clickable { update { it.copy(allDay = !it.allDay) } }.padding(horizontal = 20.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.testTag("editor_all_day").fillMaxWidth().clickable { update { it.copy(allDay = !it.allDay) } }.padding(horizontal = 20.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Outlined.Schedule, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.width(16.dp))
             Text(stringResource(R.string.all_day), Modifier.weight(1f))
             Switch(checked = draft.allDay, onCheckedChange = { v -> update { it.copy(allDay = v) } })
         }
-        DateTimeRow(draft.startDate, draft.startTime, draft.allDay, onDate = { picking = Picker.StartDate }, onTime = { picking = Picker.StartTime })
-        DateTimeRow(draft.endDate, draft.endTime, draft.allDay, onDate = { picking = Picker.EndDate }, onTime = { picking = Picker.EndTime })
+        DateTimeRow(draft.startDate, draft.startTime, draft.allDay, onDate = { picking = Picker.StartDate }, onTime = { picking = Picker.StartTime }, tag = "editor_start")
+        DateTimeRow(draft.endDate, draft.endTime, draft.allDay, onDate = { picking = Picker.EndDate }, onTime = { picking = Picker.EndTime }, tag = "editor_end")
         if (!draft.allDay) {
-            FieldRow(Icons.Outlined.Public, onClick = { picking = Picker.Zone }) { Text(zoneLabel(draft.zone, locale)) }
+            FieldRow(Icons.Outlined.Public, tag = "editor_zone", onClick = { picking = Picker.Zone }) { Text(zoneLabel(draft.zone, locale)) }
         }
-        FieldRow(Icons.Outlined.Repeat, onClick = { picking = Picker.Recurrence }) {
+        FieldRow(Icons.Outlined.Repeat, tag = "editor_recurrence", onClick = { picking = Picker.Recurrence }) {
             Text(draft.rrule?.let { describe(it, res) ?: stringResource(R.string.custom_recurrence) } ?: stringResource(R.string.does_not_repeat))
         }
         Divider()
@@ -276,7 +283,7 @@ private fun EditorFields(
         Guests(draft, suggestions, update, onGuestsFocused)
         Divider()
 
-        FieldRow(Icons.Outlined.Videocam, onClick = { update { it.copy(addMeet = !it.addMeet) } }) {
+        FieldRow(Icons.Outlined.Videocam, tag = "editor_meet", onClick = { update { it.copy(addMeet = !it.addMeet) } }) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.add_meet), Modifier.weight(1f))
                 Switch(checked = draft.addMeet, onCheckedChange = { v -> update { it.copy(addMeet = v) } })
@@ -291,13 +298,13 @@ private fun EditorFields(
         }
         Divider()
 
-        PlainField(Icons.Outlined.LocationOn, draft.location, R.string.add_location) { v -> update { it.copy(location = v) } }
+        PlainField(Icons.Outlined.LocationOn, draft.location, R.string.add_location, tag = "editor_location") { v -> update { it.copy(location = v) } }
         Divider()
 
         Reminders(draft, calendars.firstOrNull { it.id == draft.calendarId }, onAdd = { picking = Picker.Reminder }, update = update)
         Divider()
 
-        FieldRow(Icons.Outlined.Circle, onClick = { picking = Picker.Color }) {
+        FieldRow(Icons.Outlined.Circle, tag = "editor_color", onClick = { picking = Picker.Color }) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 val cal = calendars.firstOrNull { it.id == draft.calendarId }
                 Box(Modifier.size(16.dp).background(parseColor(draft.color ?: cal?.color), CircleShape))
@@ -305,10 +312,10 @@ private fun EditorFields(
                 Text(EVENT_COLORS.firstOrNull { it.first.equals(draft.color, ignoreCase = true) }?.let { stringResource(it.second) } ?: stringResource(R.string.default_color))
             }
         }
-        FieldRow(Icons.Outlined.WorkOutline, onClick = { update { it.copy(availability = if (it.availability == "FREE") "BUSY" else "FREE") } }) {
+        FieldRow(Icons.Outlined.WorkOutline, tag = "editor_availability", onClick = { update { it.copy(availability = if (it.availability == "FREE") "BUSY" else "FREE") } }) {
             Text(stringResource(if (draft.availability == "FREE") R.string.free else R.string.busy))
         }
-        FieldRow(Icons.Outlined.Lock, onClick = { picking = Picker.Visibility }) {
+        FieldRow(Icons.Outlined.Lock, tag = "editor_visibility", onClick = { picking = Picker.Visibility }) {
             Text(
                 stringResource(
                     when (draft.visibility) {
@@ -320,7 +327,7 @@ private fun EditorFields(
             )
         }
         Divider()
-        PlainField(Icons.Outlined.Notes, draft.description, R.string.add_description, singleLine = false) { v -> update { it.copy(description = v) } }
+        PlainField(Icons.Outlined.Notes, draft.description, R.string.add_description, singleLine = false, tag = "editor_description") { v -> update { it.copy(description = v) } }
     }
 
     when (picking) {
@@ -400,9 +407,9 @@ private enum class Picker { StartDate, EndDate, StartTime, EndTime, Zone, Recurr
 private fun Divider() = HorizontalDivider(Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
 
 @Composable
-private fun FieldRow(icon: ImageVector, onClick: (() -> Unit)? = null, content: @Composable () -> Unit) {
+private fun FieldRow(icon: ImageVector, tag: String? = null, onClick: (() -> Unit)? = null, content: @Composable () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier).padding(horizontal = 20.dp, vertical = 12.dp),
+        (if (tag != null) Modifier.testTag(tag) else Modifier).fillMaxWidth().then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier).padding(horizontal = 20.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -412,7 +419,7 @@ private fun FieldRow(icon: ImageVector, onClick: (() -> Unit)? = null, content: 
 }
 
 @Composable
-private fun PlainField(icon: ImageVector, value: String, placeholder: Int, singleLine: Boolean = true, onChange: (String) -> Unit) {
+private fun PlainField(icon: ImageVector, value: String, placeholder: Int, singleLine: Boolean = true, tag: String? = null, onChange: (String) -> Unit) {
     Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         TextField(
@@ -424,7 +431,7 @@ private fun PlainField(icon: ImageVector, value: String, placeholder: Int, singl
                 focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent,
                 focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent,
             ),
-            modifier = Modifier.weight(1f),
+            modifier = (if (tag != null) Modifier.testTag(tag) else Modifier).weight(1f),
         )
     }
 }
@@ -432,13 +439,13 @@ private fun PlainField(icon: ImageVector, value: String, placeholder: Int, singl
 private val editorDate = java.time.format.DateTimeFormatter.ofPattern("EEE d MMM yyyy")
 
 @Composable
-private fun DateTimeRow(date: LocalDate, time: LocalTime, allDay: Boolean, onDate: () -> Unit, onTime: () -> Unit) {
+private fun DateTimeRow(date: LocalDate, time: LocalTime, allDay: Boolean, onDate: () -> Unit, onTime: () -> Unit, tag: String) {
     Row(Modifier.fillMaxWidth().padding(start = 56.dp, end = 20.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(
             date.format(editorDate).replaceFirstChar { it.titlecase(Locale.getDefault()) },
-            Modifier.weight(1f).clickable(onClick = onDate).padding(vertical = 12.dp),
+            Modifier.testTag(tag + "_date").weight(1f).clickable(onClick = onDate).padding(vertical = 12.dp),
         )
-        if (!allDay) Text(time.format(timeFormat), Modifier.clickable(onClick = onTime).padding(12.dp))
+        if (!allDay) Text(time.format(timeFormat), Modifier.testTag(tag + "_time").clickable(onClick = onTime).padding(12.dp))
     }
 }
 
@@ -498,7 +505,7 @@ private fun Guests(draft: Draft, suggestions: List<Attendee>, update: ((Draft) -
                         focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent,
                     ),
-                    modifier = Modifier.fillMaxWidth().onFocusChanged { if (it.isFocused) onFocused() },
+                    modifier = Modifier.testTag("editor_guest_input").fillMaxWidth().onFocusChanged { if (it.isFocused) onFocused() },
                 )
             }
         }
@@ -614,7 +621,7 @@ private fun Reminders(draft: Draft, calendar: CalendarEntity?, onAdd: () -> Unit
         Text(
             stringResource(R.string.add_reminder),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.fillMaxWidth().clickable {
+            modifier = Modifier.testTag("editor_add_reminder").fillMaxWidth().clickable {
                 if (list == null) update { d -> d.copy(reminders = calendar?.defaultReminders.orEmpty()) }
                 onAdd()
             }.padding(start = 56.dp, top = 12.dp, bottom = 12.dp),
@@ -748,13 +755,14 @@ private const val CUSTOM = "custom"
 @Composable
 private fun <T> ChoiceDialog(options: List<Pair<T, Any>>, selected: T, onDismiss: () -> Unit, onPick: (T) -> Unit, labels: Boolean = false) {
     AlertDialog(
+        modifier = Modifier.exposeTestTags(),
         onDismissRequest = onDismiss,
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 options.forEach { (value, label) ->
                     Row(
-                        Modifier.fillMaxWidth().clickable {
+                        Modifier.testTag("choice_" + value.toString()).fillMaxWidth().clickable {
                             onPick(value)
                             onDismiss() // after onPick, which may keep the dialog open ("Custom…")
                         }.padding(vertical = 4.dp),
@@ -778,9 +786,10 @@ private fun ReminderDialog(onDismiss: () -> Unit, onPick: (Reminder) -> Unit) {
     var method by remember { mutableStateOf(ReminderMethod.POPUP) }
     var custom by remember { mutableStateOf("") }
     AlertDialog(
+        modifier = Modifier.exposeTestTags(),
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(enabled = custom.toIntOrNull() != null, onClick = {
+            TextButton(modifier = Modifier.testTag("reminder_ok"), enabled = custom.toIntOrNull() != null, onClick = {
                 onPick(Reminder(method, custom.toInt()))
                 onDismiss()
             }) { Text(stringResource(android.R.string.ok)) }
@@ -790,7 +799,7 @@ private fun ReminderDialog(onDismiss: () -> Unit, onPick: (Reminder) -> Unit) {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     listOf(ReminderMethod.POPUP, ReminderMethod.ALARM, ReminderMethod.EMAIL).forEach { m ->
-                        FilterChip(selected = m == method, onClick = { method = m }, label = { Text(methodText(Reminder(m, 0), res)) })
+                        FilterChip(selected = m == method, onClick = { method = m }, modifier = Modifier.testTag("reminder_method_" + m.name), label = { Text(methodText(Reminder(m, 0), res)) })
                     }
                 }
                 REMINDER_MINUTES.forEach { minutes ->
@@ -803,6 +812,7 @@ private fun ReminderDialog(onDismiss: () -> Unit, onPick: (Reminder) -> Unit) {
                     )
                 }
                 OutlinedTextField(
+                    modifier = Modifier.testTag("reminder_custom_minutes"),
                     value = custom,
                     onValueChange = { v -> custom = v.filter { it.isDigit() }.take(5) },
                     label = { Text(stringResource(R.string.custom_minutes)) },
@@ -844,14 +854,15 @@ private fun ColorDialog(current: String?, onDismiss: () -> Unit, onPick: (String
 @Composable
 fun NotifyGuestsDialog(onCancel: () -> Unit, onChoose: (Boolean?) -> Unit) {
     AlertDialog(
+        modifier = Modifier.exposeTestTags(),
         onDismissRequest = onCancel,
         title = { Text(stringResource(R.string.notify_guests_title)) },
         text = { Text(stringResource(R.string.notify_guests_text)) },
-        confirmButton = { TextButton(onClick = { onChoose(true) }) { Text(stringResource(R.string.notify_guests_send)) } },
+        confirmButton = { TextButton(modifier = Modifier.testTag("notify_send"), onClick = { onChoose(true) }) { Text(stringResource(R.string.notify_guests_send)) } },
         dismissButton = {
             Row {
-                TextButton(onClick = onCancel) { Text(stringResource(android.R.string.cancel)) }
-                TextButton(onClick = { onChoose(false) }) { Text(stringResource(R.string.notify_guests_dont)) }
+                TextButton(modifier = Modifier.testTag("notify_cancel"), onClick = onCancel) { Text(stringResource(android.R.string.cancel)) }
+                TextButton(modifier = Modifier.testTag("notify_dont"), onClick = { onChoose(false) }) { Text(stringResource(R.string.notify_guests_dont)) }
             }
         },
     )

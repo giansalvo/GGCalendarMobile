@@ -1,5 +1,7 @@
 package io.github.giansalvo.ggcalendar.feature.event
 
+import io.github.giansalvo.ggcalendar.core.notifications.exposeTestTags
+import androidx.compose.ui.platform.testTag
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -103,22 +105,24 @@ fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, vi
 
     summary?.let { text ->
         AlertDialog(
+            modifier = Modifier.exposeTestTags(),
             onDismissRequest = { summary = null; onDismiss() },
             title = { Text(stringResource(R.string.export_title)) },
             text = { Text(text) },
-            confirmButton = { TextButton(onClick = { summary = null; onDismiss() }) { Text(stringResource(android.R.string.ok)) } },
+            confirmButton = { TextButton(modifier = Modifier.testTag("export_summary_ok"), onClick = { summary = null; onDismiss() }) { Text(stringResource(android.R.string.ok)) } },
         )
     }
 
     AlertDialog(
+        modifier = Modifier.exposeTestTags(),
         onDismissRequest = { if (!busy) onDismiss() },
         title = { Text(stringResource(R.string.export_title)) },
         text = {
             // The days stay in view at the top; only the list of calendars scrolls when there are many.
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(selected = !csv, onClick = { csv = false }, modifier = Modifier.weight(1f).fillMaxHeight(), label = { Text(stringResource(R.string.export_format_ics), Modifier.fillMaxWidth(), textAlign = TextAlign.Center, maxLines = 2) })
-                    FilterChip(selected = csv, onClick = { csv = true }, modifier = Modifier.weight(1f).fillMaxHeight(), label = { Text(stringResource(R.string.export_format_csv), Modifier.fillMaxWidth(), textAlign = TextAlign.Center, maxLines = 2) })
+                    FilterChip(selected = !csv, onClick = { csv = false }, modifier = Modifier.testTag("export_ics").weight(1f).fillMaxHeight(), label = { Text(stringResource(R.string.export_format_ics), Modifier.fillMaxWidth(), textAlign = TextAlign.Center, maxLines = 2) })
+                    FilterChip(selected = csv, onClick = { csv = true }, modifier = Modifier.testTag("export_csv").weight(1f).fillMaxHeight(), label = { Text(stringResource(R.string.export_format_csv), Modifier.fillMaxWidth(), textAlign = TextAlign.Center, maxLines = 2) })
                 }
                 Text(stringResource(R.string.export_range), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(bottom = 2.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -164,7 +168,7 @@ fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, vi
             }
         },
         confirmButton = {
-            TextButton(enabled = valid && !busy, onClick = {
+            TextButton(modifier = Modifier.testTag("export_confirm"), enabled = valid && !busy, onClick = {
                 busy = true
                 scope.launch {
                     val result = if (csv) viewModel.csv(selected, fromDay, toDay, context.resources) else viewModel.ics(selected, fromDay, toDay)

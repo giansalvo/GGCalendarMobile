@@ -123,6 +123,11 @@ class EventEditorViewModel @Inject constructor(private val repository: EventRepo
     val dirty: Boolean get() = draft != initial
     val isNew: Boolean get() = original == null
 
+    /** The editor was closed without saving: the next one must start from scratch, not from this draft. */
+    fun forget() {
+        loadedFor = null
+    }
+
     fun load(request: EditorRequest) {
         if (loadedFor == request) return
         loadedFor = request

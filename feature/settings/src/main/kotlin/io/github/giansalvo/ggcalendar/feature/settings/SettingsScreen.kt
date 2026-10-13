@@ -1,5 +1,7 @@
 package io.github.giansalvo.ggcalendar.feature.settings
 
+import io.github.giansalvo.ggcalendar.core.notifications.exposeTestTags
+import androidx.compose.ui.platform.testTag
 import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -82,18 +84,18 @@ fun SettingsScreen(onClose: () -> Unit, onOpenNotifications: () -> Unit, viewMod
         BackHandler(onBack = leave)
 
         Dialog(onDismissRequest = leave, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-            Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            Surface(Modifier.exposeTestTags().fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                 Scaffold(
                     contentWindowInsets = WindowInsets.safeDrawing,
                     topBar = {
                         TopAppBar(
                             title = { Text(stringResource(R.string.settings_title)) },
-                            navigationIcon = { IconButton(onClick = leave) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.settings_back)) } },
+                            navigationIcon = { IconButton(onClick = leave, modifier = Modifier.testTag("settings_back")) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.settings_back)) } },
                             actions = {
                                 Button(
                                     enabled = dirty,
                                     onClick = { scope.launch { viewModel.save(draft); onClose() } },
-                                    modifier = Modifier.padding(end = 12.dp),
+                                    modifier = Modifier.testTag("settings_save").padding(end = 12.dp),
                                 ) { Text(stringResource(R.string.settings_save)) }
                             },
                         )
@@ -103,7 +105,7 @@ fun SettingsScreen(onClose: () -> Unit, onOpenNotifications: () -> Unit, viewMod
                         Section(stringResource(R.string.settings_appearance))
                         ThemeMode.entries.forEach { mode ->
                             Row(
-                                Modifier.fillMaxWidth().selectable(selected = draft.theme == mode, role = Role.RadioButton) { draft = draft.copy(theme = mode) }.padding(horizontal = 16.dp, vertical = 8.dp),
+                                Modifier.testTag("settings_theme_" + mode.name).fillMaxWidth().selectable(selected = draft.theme == mode, role = Role.RadioButton) { draft = draft.copy(theme = mode) }.padding(horizontal = 16.dp, vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 RadioButton(selected = draft.theme == mode, onClick = null)
@@ -111,21 +113,21 @@ fun SettingsScreen(onClose: () -> Unit, onOpenNotifications: () -> Unit, viewMod
                             }
                         }
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                            SwitchRow(stringResource(R.string.settings_dynamic), stringResource(R.string.settings_dynamic_hint), draft.dynamicColor) { draft = draft.copy(dynamicColor = it) }
+                            SwitchRow(stringResource(R.string.settings_dynamic), stringResource(R.string.settings_dynamic_hint), draft.dynamicColor, tag = "settings_dynamic") { draft = draft.copy(dynamicColor = it) }
                         }
 
                         Section(stringResource(R.string.settings_calendar))
                         WeekStartRow(draft.weekStart) { draft = draft.copy(weekStart = it) }
                         DayStartRow(draft.dayStartHour) { draft = draft.copy(dayStartHour = it) }
-                        SwitchRow(stringResource(R.string.settings_dim_past), stringResource(R.string.settings_dim_past_hint), draft.dimPast) { draft = draft.copy(dimPast = it) }
-                        SwitchRow(stringResource(R.string.settings_birthdays), stringResource(R.string.settings_birthdays_hint), draft.birthdays) { on ->
+                        SwitchRow(stringResource(R.string.settings_dim_past), stringResource(R.string.settings_dim_past_hint), draft.dimPast, tag = "settings_dim_past") { draft = draft.copy(dimPast = it) }
+                        SwitchRow(stringResource(R.string.settings_birthdays), stringResource(R.string.settings_birthdays_hint), draft.birthdays, tag = "settings_birthdays") { on ->
                             // The contacts are read only with the permission, asked when the user turns this on.
                             if (on && !viewModel.contactsGranted) askContacts.launch(Manifest.permission.READ_CONTACTS) else draft = draft.copy(birthdays = on)
                         }
 
                         Section(stringResource(R.string.settings_notifications))
                         Row(
-                            Modifier.fillMaxWidth().clickable(onClick = onOpenNotifications).padding(horizontal = 16.dp, vertical = 12.dp),
+                            Modifier.testTag("settings_notifications").fillMaxWidth().clickable(onClick = onOpenNotifications).padding(horizontal = 16.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Icon(Icons.Outlined.Notifications, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -142,10 +144,11 @@ fun SettingsScreen(onClose: () -> Unit, onOpenNotifications: () -> Unit, viewMod
 
         if (confirmDiscard) {
             AlertDialog(
+                modifier = Modifier.exposeTestTags(),
                 onDismissRequest = { confirmDiscard = false },
                 text = { Text(stringResource(R.string.settings_discard_question)) },
-                confirmButton = { TextButton(onClick = { confirmDiscard = false; onClose() }) { Text(stringResource(R.string.settings_discard)) } },
-                dismissButton = { TextButton(onClick = { confirmDiscard = false }) { Text(stringResource(R.string.settings_keep_editing)) } },
+                confirmButton = { TextButton(modifier = Modifier.testTag("discard_confirm"), onClick = { confirmDiscard = false; onClose() }) { Text(stringResource(R.string.settings_discard)) } },
+                dismissButton = { TextButton(modifier = Modifier.testTag("discard_keep"), onClick = { confirmDiscard = false }) { Text(stringResource(R.string.settings_keep_editing)) } },
             )
         }
     }
@@ -163,8 +166,8 @@ private fun Section(title: String) {
 }
 
 @Composable
-private fun SwitchRow(title: String, hint: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().clickable { onChange(!checked) }.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+private fun SwitchRow(title: String, hint: String, checked: Boolean, tag: String = "", onChange: (Boolean) -> Unit) {
+    Row(Modifier.testTag(tag).fillMaxWidth().clickable { onChange(!checked) }.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyLarge)
             Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -179,7 +182,7 @@ private fun DayStartRow(hour: Int, onChange: (Int) -> Unit) {
     var open by remember { mutableStateOf(false) }
     val format = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
     Column {
-        Row(Modifier.fillMaxWidth().clickable { open = true }.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.testTag("settings_day_start").fillMaxWidth().clickable { open = true }.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(stringResource(R.string.settings_day_start), style = MaterialTheme.typography.bodyLarge)
                 Text(stringResource(R.string.settings_day_start_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -209,7 +212,7 @@ private fun WeekStartRow(selected: DayOfWeek, onChange: (DayOfWeek) -> Unit) {
         Text(stringResource(R.string.settings_week_start_hint), Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         WEEK_STARTS.forEach { day ->
             Row(
-                Modifier.fillMaxWidth().selectable(selected = selected == day, role = Role.RadioButton) { onChange(day) }.padding(horizontal = 16.dp, vertical = 8.dp),
+                Modifier.testTag("settings_week_" + day.name).fillMaxWidth().selectable(selected = selected == day, role = Role.RadioButton) { onChange(day) }.padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 RadioButton(selected = selected == day, onClick = null)

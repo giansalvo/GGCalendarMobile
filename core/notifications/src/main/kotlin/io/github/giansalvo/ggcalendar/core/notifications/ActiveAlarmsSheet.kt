@@ -1,5 +1,6 @@
 package io.github.giansalvo.ggcalendar.core.notifications
 
+import androidx.compose.ui.platform.testTag
 import android.text.format.DateFormat
 import android.text.format.DateUtils
 import androidx.compose.foundation.clickable
@@ -78,11 +79,12 @@ fun ActiveAlarmsSheet(onDismiss: () -> Unit, onOpenEvent: (eventId: String, begi
     }
     closing?.let { alarm ->
         AlertDialog(
+            modifier = Modifier.exposeTestTags(),
             onDismissRequest = { closing = null },
             title = { Text(stringResource(R.string.close_alarm_title)) },
             text = { Text(stringResource(R.string.close_alarm_text, alarm.title.ifBlank { stringResource(R.string.alarm_title) })) },
             confirmButton = {
-                TextButton(onClick = {
+                TextButton(modifier = Modifier.testTag("alarm_close_confirm"), onClick = {
                     closing = null
                     scope.launch {
                         viewModel.skip(alarm)
@@ -94,7 +96,7 @@ fun ActiveAlarmsSheet(onDismiss: () -> Unit, onOpenEvent: (eventId: String, begi
         )
     }
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp)) {
+        Column(Modifier.exposeTestTags().testTag("sheet_alarms").fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp)) {
             Text(stringResource(R.string.active_alarms_title), style = MaterialTheme.typography.titleLarge)
             val list = alarms
             if (list != null && list.isEmpty()) {
@@ -135,7 +137,7 @@ private fun AlarmRow(alarm: ActiveAlarm, now: Long, onClick: () -> Unit, onClose
         else append(DateFormat.getTimeFormat(context).format(Date(alarm.beginUtc)))
         if (alarm.minutesBefore > 0 && !alarm.snoozed) append(" · ").append(pluralStringResource(R.plurals.minutes_before, alarm.minutesBefore, alarm.minutesBefore))
     }
-    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.testTag("alarm_row").fillMaxWidth().clickable(onClick = onClick).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(Icons.Outlined.Alarm, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 16.dp))
         Column(Modifier.weight(1f)) {
             Text(whenText, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
@@ -149,7 +151,7 @@ private fun AlarmRow(alarm: ActiveAlarm, now: Long, onClick: () -> Unit, onClose
             Text(details, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Text(remaining(alarm.fireAt - now), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(start = 12.dp))
-        IconButton(onClick = onClose) { Icon(Icons.Outlined.AlarmOff, contentDescription = stringResource(R.string.close_alarm)) }
+        IconButton(onClick = onClose, modifier = Modifier.testTag("alarm_close")) { Icon(Icons.Outlined.AlarmOff, contentDescription = stringResource(R.string.close_alarm)) }
     }
 }
 

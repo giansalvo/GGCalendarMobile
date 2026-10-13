@@ -1,5 +1,6 @@
 package io.github.giansalvo.ggcalendar.core.notifications
 
+import androidx.compose.ui.platform.testTag
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -84,7 +85,7 @@ fun NotificationsSheet(onDismiss: () -> Unit, viewModel: NotificationsViewModel 
     var slider by remember(saved) { mutableFloatStateOf(saved.toFloat()) }
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(horizontal = 20.dp).padding(bottom = 16.dp)) {
+        Column(Modifier.exposeTestTags().testTag("sheet_notifications").fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(horizontal = 20.dp).padding(bottom = 16.dp)) {
             Text(stringResource(R.string.notifications_title), style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(12.dp))
             PermissionRow(stringResource(R.string.perm_notifications), stringResource(R.string.perm_notifications_help), status.notifications) {
@@ -110,6 +111,7 @@ fun NotificationsSheet(onDismiss: () -> Unit, viewModel: NotificationsViewModel 
                 color = MaterialTheme.colorScheme.primary,
             )
             Slider(
+                modifier = Modifier.testTag("notif_alarm_slider"),
                 value = slider,
                 onValueChange = { slider = it },
                 onValueChangeFinished = { viewModel.setAlarmMinutes(slider.toInt()) },

@@ -1,0 +1,257 @@
+"""Thin adb + UI Automator layer used by the emulator tests (see app_planning/test_API_emulator.md).
+
+Everything goes through adb without root, so it also works on images with the Play Store.
+Controls are found by their `testTag` (exposed as resource id), or by text / content description, where text can be
+a regular expression built from the app's own strings (see strings.py), so the same test runs in English and Italian.
+"""
+import os
+import re
+import subprocess
+import time
+import xml.etree.ElementTree as ET
+
+SDK = os.environ.get("ANDROID_SDK_ROOT") or os.path.join(os.environ.get("LOCALAPPDATA", ""), "Android", "Sdk")
+ADB = os.path.join(SDK, "platform-tools", "adb.exe" if os.name == "nt" else "adb")
+PKG = "io.github.giansalvo.ggcalendar"
+
+
+class Node:
+    def __init__(self, el):
+        a = el.attrib
+        self.text = a.get("text", "")
+        self.desc = a.get("content-desc", "")
+        self.rid = a.get("resource-id", "")
+        self.cls = a.get("class", "")
+        self.pkg = a.get("package", "")
+        self.clickable = a.get("clickable") == "true"
+        self.enabled = a.get("enabled") == "true"
+        self.checked = a.get("checked") == "true"
+        self.selected = a.get("selected") == "true"
+        self.focused = a.get("focused") == "true"
+        m = re.findall(r"-?\d+", a.get("bounds", "[0,0][0,0]"))
+        self.l, self.t, self.r, self.b = (int(x) for x in m[:4])
+
+    @property
+    def center(self):
+        return (self.l + self.r) // 2, (self.t + self.b) // 2
+
+    @property
+    def width(self):
+        return self.r - self.l
+
+    @property
+    def height(self):
+        return self.b - self.t
+
+    def __repr__(self):
+        return f"<{self.rid or self.cls} text={self.text!r} desc={self.desc!r} [{self.l},{self.t},{self.r},{self.b}]>"
+
+
+def _match(value, pattern):
+    if pattern is None:
+        return True
+    if hasattr(pattern, "search"):
+        return bool(pattern.search(value))
+    return value.strip().lower() == str(pattern).strip().lower()
+
+
+class Device:
+    def __init__(self, serial, outdir):
+        self.serial = serial
+        self.out = outdir
+        os.makedirs(outdir, exist_ok=True)
+        self._api = None
+        self._shots = 0
+
+    # ---- adb
+    def adb(self, *args, timeout=90, binary=False):
+        cmd = [ADB, "-s", self.serial, *args]
+        r = subprocess.run(cmd, capture_output=True, timeout=timeout)
+        return r.stdout if binary else r.stdout.decode("utf-8", errors="replace")
+
+    def shell(self, command, timeout=90):
+        return self.adb("shell", command, timeout=timeout)
+
+    @property
+    def api(self):
+        if self._api is None:
+            self._api = int(self.shell("getprop ro.build.version.sdk").strip())
+        return self._api
+
+    def prop(self, name):
+        return self.shell(f"getprop {name}").strip()
+
+    def booted(self):
+        return self.shell("getprop sys.boot_completed").strip() == "1"
+
+    def wait_boot(self, timeout=240):
+        end = time.time() + timeout
+        while time.time() < end:
+            try:
+                if self.booted():
+                    time.sleep(3)
+                    return True
+            except Exception:
+                pass
+            time.sleep(3)
+        return False
+
+    # ---- screen and input
+    def wake(self):
+        self.shell("input keyevent 224")
+        self.shell("wm dismiss-keyguard")
+
+    def sleep_screen(self):
+        self.shell("input keyevent 223")
+
+    def screen_on(self):
+        return "mWakefulness=Awake" in self.shell("dumpsys power | grep mWakefulness")
+
+    def tap(self, x, y):
+        self.shell(f"input tap {x} {y}")
+
+    def swipe(self, x1, y1, x2, y2, ms=300):
+        self.shell(f"input swipe {x1} {y1} {x2} {y2} {ms}")
+
+    def key(self, *codes):
+        self.shell("input keyevent " + " ".join(str(c) for c in codes))
+
+    def back(self):
+        self.key(4)
+
+    def text(self, s):
+        """Types plain text (spaces as %s); the characters % and & are not supported by `input text`."""
+        safe = s.replace("\\", "\\\\").replace("'", "'\\''").replace(" ", "%s")
+        self.shell(f"input text '{safe}'")
+
+    def clear_field(self):
+        self.key(123)  # MOVE_END
+        self.shell("input keyevent " + " ".join(["67"] * 70))
+
+    def shot(self, name):
+        self._shots += 1
+        path = os.path.join(self.out, f"{self._shots:03d}_{re.sub(r'[^A-Za-z0-9_-]+', '_', name)}.png")
+        with open(path, "wb") as f:
+            f.write(self.adb("exec-out", "screencap", "-p", binary=True))
+        return path
+
+    # ---- UI tree
+    def dump(self, retries=4):
+        last = None
+        for _ in range(retries):
+            raw = self.adb("exec-out", "uiautomator dump /dev/tty", timeout=60)
+            i = raw.find("<?xml")
+            j = raw.rfind("</hierarchy>")
+            if i >= 0 and j > i:
+                try:
+                    root = ET.fromstring(raw[i:j + len("</hierarchy>")])
+                    return [Node(e) for e in root.iter("node")]
+                except ET.ParseError as e:
+                    last = e
+            time.sleep(0.7)
+        raise RuntimeError(f"cannot dump the UI: {last}")
+
+    def find(self, nodes=None, tag=None, text=None, desc=None, either=None, pkg=None, clickable=None):
+        """Nodes matching all the given criteria. `either` matches the text or the content description."""
+        nodes = self.dump() if nodes is None else nodes
+        out = []
+        for n in nodes:
+            if tag is not None and n.rid != tag:
+                continue
+            if text is not None and not _match(n.text, text):
+                continue
+            if desc is not None and not _match(n.desc, desc):
+                continue
+            if either is not None and not (_match(n.text, either) or _match(n.desc, either)):
+                continue
+            if pkg is not None and n.pkg != pkg:
+                continue
+            if clickable is not None and n.clickable != clickable:
+                continue
+            out.append(n)
+        return out
+
+    def wait(self, timeout=15, interval=0.8, **crit):
+        """The first node matching the criteria, polling the UI; None on timeout."""
+        end = time.time() + timeout
+        while True:
+            try:
+                found = self.find(**crit)
+            except Exception:
+                found = []
+            if found:
+                return found[0]
+            if time.time() >= end:
+                return None
+            time.sleep(interval)
+
+    def gone(self, timeout=10, interval=0.8, **crit):
+        end = time.time() + timeout
+        while True:
+            try:
+                found = self.find(**crit)
+            except Exception:
+                found = [1]
+            if not found:
+                return True
+            if time.time() >= end:
+                return False
+            time.sleep(interval)
+
+    def click(self, timeout=12, **crit):
+        n = self.wait(timeout=timeout, **crit)
+        if n is None:
+            raise LookupError(f"not found: {crit}")
+        self.tap(*n.center)
+        return n
+
+    # ---- app and system state
+    def pm_has(self, pkg=PKG):
+        return pkg in self.shell(f"pm list packages {pkg}")
+
+    def version_name(self):
+        m = re.search(r"versionName=(\S+)", self.shell(f"dumpsys package {PKG} | grep -m1 versionName"))
+        return m.group(1) if m else None
+
+    def top_activity(self):
+        out = self.shell("dumpsys activity activities | grep -E 'mResumedActivity|ResumedActivity' | head -3")
+        return out.strip()
+
+    def pid(self):
+        return self.shell(f"pidof {PKG}").strip()
+
+    def logcat_clear(self):
+        self.adb("logcat", "-c")
+
+    def logcat(self, lines=None):
+        out = self.adb("logcat", "-d", "-v", "time", timeout=120)
+        return out if lines is None else "\n".join(out.splitlines()[-lines:])
+
+    def problems(self, text=None):
+        """Crashes and ANRs of the app in the log: the lines that must never appear."""
+        text = self.logcat() if text is None else text
+        bad = []
+        lines = text.splitlines()
+        for i, line in enumerate(lines):
+            if "FATAL EXCEPTION" in line and "SYSTEM PROCESS" not in line:
+                blob = "\n".join(lines[i:i + 6])
+                if PKG in blob:
+                    bad.append(blob)
+            elif f"ANR in {PKG}" in line:
+                bad.append(line)
+            elif "WM-WorkerWrapper" in line and "failed because it threw an exception" in line and PKG in line:
+                bad.append(line)
+        return bad
+
+    def network(self, on):
+        v = "enable" if on else "disable"
+        self.shell(f"svc wifi {v}")
+        self.shell(f"svc data {v}")
+        time.sleep(3)
+
+    def has_network(self):
+        out = self.shell("dumpsys connectivity | grep -c 'VALIDATED'")
+        try:
+            return int(out.strip() or 0) > 0
+        except ValueError:
+            return True
