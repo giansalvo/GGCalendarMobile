@@ -142,6 +142,13 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
             viewModel.dismissError()
         }
     }
+    val noCalendarText = stringResource(R.string.message_no_calendar)
+    LaunchedEffect(state.noCalendar) {
+        if (state.noCalendar) {
+            snackbar.showSnackbar(noCalendarText, withDismissAction = true)
+            viewModel.dismissNoCalendar()
+        }
+    }
     val authText = stringResource(R.string.message_auth)
     val authAction = stringResource(R.string.authorize)
     LaunchedEffect(state.message?.id) {

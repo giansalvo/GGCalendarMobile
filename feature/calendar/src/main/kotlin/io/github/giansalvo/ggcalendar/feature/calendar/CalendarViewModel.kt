@@ -65,6 +65,7 @@ data class CalendarUiState(
     /** Set when Google needs the user's consent; the screen launches it and calls [CalendarViewModel.onConsentResult]. */
     val consent: AuthorizationOutcome.NeedsConsent? = null,
     val error: String? = null,
+    val noCalendar: Boolean = false,
     val message: SyncMessageEntity? = null,
 )
 
@@ -100,6 +101,7 @@ private data class Transient(
     val busy: Boolean = false,
     val consent: AuthorizationOutcome.NeedsConsent? = null,
     val error: String? = null,
+    val noCalendar: Boolean = false,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -142,7 +144,7 @@ class CalendarViewModel @Inject constructor(
         CalendarUiState(
             view = nav.view, date = nav.date, scheduleFrom = nav.scheduleFrom, scheduleTo = nav.scheduleTo, accounts = accounts, birthdays = birthdays, instances = list, syncing = syncing,
             hourHeight = g.hourHeight, dayStartHour = g.dayStartHour, dimPast = g.dimPast, firstDay = WeekSettings.firstDay, eventDays = days, pending = pending,
-            selected = t.selected, editing = t.editing, pendingMove = t.pendingMove, busy = t.busy, consent = t.consent, error = t.error, message = message,
+            selected = t.selected, editing = t.editing, pendingMove = t.pendingMove, busy = t.busy, consent = t.consent, error = t.error, noCalendar = t.noCalendar, message = message,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CalendarUiState())
 
@@ -251,7 +253,19 @@ class CalendarViewModel @Inject constructor(
     }
 
     /** Opens the editor (closing the details) or closes it with null. */
-    fun openEditor(request: EditorRequest?) = transient.update { it.copy(editing = request, selected = if (request != null) null else it.selected) }
+    fun openEditor(request: EditorRequest?) {
+        if (request is EditorRequest.New) {
+            // With no writable calendar (no account yet) there is nowhere to put the event.
+            viewModelScope.launch {
+                if (events.defaultCalendarId() == null) transient.update { it.copy(noCalendar = true) }
+                else transient.update { it.copy(editing = request, selected = null) }
+            }
+        } else {
+            transient.update { it.copy(editing = request, selected = if (request != null) null else it.selected) }
+        }
+    }
+
+    fun dismissNoCalendar() = transient.update { it.copy(noCalendar = false) }
 
     fun chooseAccountIntent(): Intent = authorizer.chooseAccountIntent()
 

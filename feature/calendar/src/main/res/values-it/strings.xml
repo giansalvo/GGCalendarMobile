@@ -15,6 +15,7 @@
     <string name="alarm">Sveglia</string>
     <string name="no_events_today">Nessun evento oggi</string>
     <string name="go_to_date">Vai a una data</string>
+    <string name="message_no_calendar">Aggiungi prima un account Google: non c\'è un calendario dove mettere l\'evento</string>
     <string name="message_auth">Bisogna autorizzare di nuovo l\'accesso a Google Calendar per %1$s</string>
     <string name="authorize">Autorizza</string>
     <string name="my_calendar">Il mio calendario</string>

@@ -1,6 +1,7 @@
 package io.github.giansalvo.ggcalendar.core.data
 
 import android.content.Context
+import android.os.Build
 import androidx.hilt.work.HiltWorker
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
@@ -47,10 +48,10 @@ class SyncScheduler @Inject constructor(@ApplicationContext context: Context) {
     }
 
     fun syncNow() {
-        val request = OneTimeWorkRequestBuilder<SyncWorker>()
-            .setConstraints(network)
-            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
-            .build()
+        val builder = OneTimeWorkRequestBuilder<SyncWorker>().setConstraints(network)
+        // Before Android 12 expedited work runs as a foreground service and the worker would have to provide a notification.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) builder.setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+        val request = builder.build()
         // A change saved while a sync runs must still be pushed: queue another sync after the current one.
         work.enqueueUniqueWork(NOW, ExistingWorkPolicy.APPEND_OR_REPLACE, request)
     }

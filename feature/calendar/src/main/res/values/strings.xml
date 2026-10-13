@@ -16,6 +16,7 @@
     <string name="alarm">Alarm</string>
     <string name="no_events_today">No events today</string>
     <string name="go_to_date">Go to date</string>
+    <string name="message_no_calendar">Add a Google account first: there is no calendar to put the event in</string>
     <string name="message_auth">Access to Google Calendar for %1$s must be granted again</string>
     <string name="authorize">Authorize</string>
     <string name="my_calendar">My calendar</string>
