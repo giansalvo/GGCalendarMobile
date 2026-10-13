@@ -1,4 +1,4 @@
-"""Groups D (events), E (recurrences) and F (dragging). Only events titled [TEST-EMU] ..., in the primary calendar."""
+"""Groups D (events), E (recurrences) and F (dragging). Only events titled [TEST GGCAL] ..., in the primary calendar."""
 import re
 import time
 
@@ -283,7 +283,7 @@ def t38(ctx):
     ctx.check(d.gone(timeout=15, tag="editor_title"), "the editor did not close")
     ctx.created.append(home_title)
     F.open_event(ctx, home_title)
-    ctx.check(re.search(r"Eastern|New_York|New York", detail_text(ctx)), "the detail does not show the New York zone")
+    ctx.check(re.search(r"Eastern|orientale|New_York|New York", detail_text(ctx)), "the detail does not show the New York zone")
     F.close_detail(ctx)
 
 
@@ -446,7 +446,10 @@ def t45(ctx):
     block = d.wait(timeout=10, text=re.compile(re.escape(title)))
     ctx.check(block, "the event block is not visible in the day view")
     x, y = block.center
-    long_press_drag(ctx, x, y, 0, 180)
+    if y > d.usable_h - 500:  # late in the evening the block is at the bottom of the screen: move it up
+        long_press_drag(ctx, x, y, 0, -180)
+    else:
+        long_press_drag(ctx, x, y, 0, 180)
     time.sleep(1.5)
     F.handle_notify(ctx)
     after = event_times(ctx, title)
@@ -481,13 +484,36 @@ def t47(ctx):
     if not title:
         ctx.skip("needs T45")
     before = event_times(ctx, title)
-    F.select_view(ctx, "DAY")
+    F.select_view(ctx, "WEEK")
+    d.click(tag="btn_today")
+    time.sleep(1)
     block = d.wait(timeout=10, text=re.compile(re.escape(title[:18])))
-    ctx.check(block, "the event block is not visible in the day view")
-    nodes = d.dump()
-    holder = [n for n in nodes if n.l <= block.l and n.r >= block.r and n.t <= block.t and n.b >= block.b and n.width < 1100 and n.height < 900]
-    holder = sorted(holder, key=lambda n: n.width * n.height)
-    box = holder[0] if holder else block
+    ctx.check(block, "the event block is not visible in the week view (T46 moved it to tomorrow)")
+    box = block
+    for _ in range(4):  # the lower edge must be on screen, clear of the navigation bar (an event late in the evening is not)
+        block = d.wait(timeout=6, text=re.compile(re.escape(title[:18]))) or block
+        nodes = d.dump()
+        holder = [n for n in nodes if n.l <= block.l and n.r >= block.r and n.t <= block.t and n.b >= block.b and n.width < 1100 and n.height < 900]
+        holder = sorted(holder, key=lambda n: n.width * n.height)
+        box = holder[0] if holder else block
+        if box.b < d.usable_h - 250 and box.t > 450:
+            break
+        d.swipe(540, 1500, 540, 900, 400)
+        time.sleep(0.8)
+    if box.b >= d.usable_h - 250:  # an event late in the evening: move it up first, then resize it (the move is T45 again)
+        long_press_drag(ctx, box.center[0], box.t + 25, 0, -700)
+        time.sleep(1.5)
+        F.handle_notify(ctx)
+        before = event_times(ctx, title)
+        F.select_view(ctx, "WEEK")
+        d.click(tag="btn_today")
+        time.sleep(1)
+        block = d.wait(timeout=10, text=re.compile(re.escape(title[:18])))
+        ctx.check(block, "the event is not visible after moving it up")
+        nodes = d.dump()
+        holder = [n for n in nodes if n.l <= block.l and n.r >= block.r and n.t <= block.t and n.b >= block.b and n.width < 1100 and n.height < 900]
+        holder = sorted(holder, key=lambda n: n.width * n.height)
+        box = holder[0] if holder else block
     long_press_drag(ctx, box.center[0], box.b - 6, 0, 150)
     time.sleep(1.5)
     F.handle_notify(ctx)
@@ -501,6 +527,8 @@ def t48(ctx):
     d = ctx.d
     title = ensure_event(ctx, "daily2", "daily2", recurrence=lambda c: pick_recurrence(c, "DAILY"))
     F.select_view(ctx, "DAY")
+    d.click(tag="btn_today")  # the day view may open on a date picked by an earlier case
+    time.sleep(1)
     block = d.wait(timeout=10, text=re.compile(re.escape(title[:18])))
     ctx.check(block, "the series is not visible today in the day view")
     x, y = block.center

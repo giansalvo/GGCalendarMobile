@@ -64,7 +64,7 @@ class OutboxPusher @Inject constructor(
                     }
                 }
             } catch (e: GoogleApiException) {
-                if (e.status == 400 || e.status == 403 || e.status == 404) {
+                if (!e.isRateLimit && (e.status == 400 || e.status == 403 || e.status == 404)) {
                     // A permanent rejection must not block the rest of the queue.
                     outbox.complete(item.seq)
                     // The local change will never reach Google: the next pull of this calendar is a full one, so that
@@ -73,7 +73,7 @@ class OutboxPusher @Inject constructor(
                     messages.insert(SyncMessageEntity(accountEmail = email, kind = "error", text = context.getString(R.string.message_rejected, e.status, e.message)))
                 } else {
                     outbox.failed(item.seq, e.message)
-                    return conflicts // 401, 5xx: try again at the next sync, keeping the order
+                    return conflicts // 401, 5xx, 429 and 403 "rate limit": try again at the next sync, keeping the order
                 }
             } catch (e: IOException) {
                 outbox.failed(item.seq, e.message)

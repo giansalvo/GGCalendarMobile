@@ -5,7 +5,7 @@ import traceback
 from adbx import PKG, Device  # noqa: F401
 
 CASES = []  # (id, group, title, options, function)
-TEST_PREFIX = "[TEST-EMU]"
+TEST_PREFIX = "[TEST GGCAL]"
 
 
 class Skip(Exception):
@@ -62,6 +62,10 @@ def run_case(ctx, entry):
     cid, group, title, opts, fn = entry
     d = ctx.d
     ctx.notes = []
+    try:
+        d.shell("cmd statusbar collapse")  # an open notification shade made uiautomator hang (13/10/2026)
+    except Exception:
+        pass
     d.logcat_clear()
     t0 = time.time()
     try:

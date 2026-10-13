@@ -87,6 +87,19 @@ class Device:
             self._screen_h = int(m[-1][1]) if m else 2200
         return self._screen_h
 
+    @property
+    def usable_h(self):
+        """Bottom edge of the app area: a navigation bar (3 buttons) takes its height off the screen."""
+        if getattr(self, "_usable_h", None) is None:
+            bar = 0
+            try:
+                m = re.search(r"type=navigationBars.*?insetsSize=Insets\{[^}]*bottom=(\d+)", self.shell("dumpsys window", timeout=60))
+                bar = int(m.group(1)) if m else 0
+            except Exception:
+                pass
+            self._usable_h = self.screen_h - bar
+        return self._usable_h
+
     def animations(self, on):
         """Android's window, transition and animator animations: off makes every UI step faster and steadier."""
         v = "1.0" if on else "0.0"

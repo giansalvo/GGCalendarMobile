@@ -53,8 +53,19 @@ def t21(ctx):
 def t22(ctx):
     d = ctx.d
     F.select_view(ctx, "WEEK")
-    d.tap(660, 1500)
-    ctx.check(d.wait(timeout=10, tag="editor_title"), "the editor did not open from an empty slot")
+    # a real calendar has events in some slots: a tap that lands on one opens its detail, so try other slots
+    opened = False
+    for y in (1500, 1000, 1250, 1750, 700):
+        for x in (660, 880, 330, 550, 990, 200):
+            d.tap(x, y)
+            if d.wait(timeout=3, tag="editor_title"):
+                opened = True
+                break
+            if d.find(tag="detail_close"):
+                F.close_detail(ctx)
+        if opened:
+            break
+    ctx.check(opened, "the editor did not open from an empty slot")
     ctx.step("editor_from_grid")
     F.home(ctx)
     F.select_view(ctx, "SCHEDULE")

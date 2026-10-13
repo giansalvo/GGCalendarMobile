@@ -29,7 +29,18 @@ data class GoogleCalendarEntry(
 
 data class GoogleSyncPage(val items: List<GoogleEvent>, val nextSyncToken: String?)
 
-class GoogleApiException(val status: Int, message: String) : Exception(message)
+class GoogleApiException(val status: Int, message: String) : Exception(message) {
+    /**
+     * Google answers "too many requests" with 429, or with 403 and a reason such as rateLimitExceeded: the same request
+     * goes through later, so it is not a rejection (found on 13/10/2026: a burst of new events made the phone drop them).
+     */
+    val isRateLimit: Boolean
+        get() = status == 429 || (status == 403 && RATE_LIMIT.containsMatchIn(message.orEmpty()))
+
+    private companion object {
+        val RATE_LIMIT = Regex("rateLimitExceeded|userRateLimitExceeded|quotaExceeded|dailyLimitExceeded|usage limits exceeded", RegexOption.IGNORE_CASE)
+    }
+}
 
 /**
  * Thin Calendar v3 client, ported from the desktop app's GoogleCalendarClient. The caller supplies a fresh access

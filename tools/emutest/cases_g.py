@@ -3,7 +3,7 @@
 All the events are created in one go (`g_setup`), each with reminders due at a chosen number of seconds after the
 start of the setup, and the cases then check them in the order they fall due, so the waiting overlaps instead of adding up.
 The events start at the next full hour and the reminders use a custom "N minutes before", so this works at any time of
-day. Only events titled [TEST-EMU] ..., in the primary calendar.
+day. Only events titled [TEST GGCAL] ..., in the primary calendar.
 """
 import math
 import re
@@ -55,17 +55,36 @@ def create_with_reminders(ctx, key, title, specs, t0=None):
     return ctx.state[key]
 
 
+def clear_shade(ctx):
+    """Clears the notifications left by earlier runs: stale ones group together and a tap on a group does not open an event."""
+    d = ctx.d
+    if not d.serial.startswith("emulator-"):
+        return  # a real phone: its notifications are not ours to clear
+    show_shade(ctx)
+    btn = d.find(text=re.compile(r"^(Clear all|Cancella tutto|Cancella)$", re.I))
+    if btn:
+        d.tap(*btn[0].center)
+        time.sleep(1.0)
+    d.shell("cmd statusbar collapse")
+    time.sleep(0.8)
+
+
 def g_setup(ctx):
     """Creates every event of the group once; the clock of the reminders starts here."""
     if ctx.state.get("g_ready"):
         return
+    clear_shade(ctx)
     set_alarm_duration(ctx, 1)
+    on_phone = not ctx.d.serial.startswith("emulator-")
+    skip = ("g_alarm", "g_boot") if on_phone else ()  # no screen-off alarm and no reboot on a phone
     t0 = now(ctx)
     names = {"g_popup": "gpopup", "g_alarm": "galarm", "g_kill": "gkill", "g_pair": "gpair", "g_boot": "gboot", "g_early": "gearly"}
     for key, specs in DUE.items():
+        if key in skip:
+            continue
         create_with_reminders(ctx, key, names[key], specs, t0)
     ctx.state["g_ready"] = True
-    ctx.note("due: " + ", ".join(f"{k[2:]} {ctx.state[k]['fires'][0].time()}" for k in DUE))
+    ctx.note("due: " + ", ".join(f"{k[2:]} {ctx.state[k]['fires'][0].time()}" for k in DUE if k not in skip))
 
 
 def wait_until(ctx, moment, margin=0):
@@ -96,7 +115,20 @@ def open_alarms(ctx):
     F.drawer_item(ctx, "drawer_alarms")
     ctx.check(d.wait(timeout=10, tag="sheet_alarms"), "the active alarms sheet did not open")
     time.sleep(1.0)
-    return d.dump()
+    # the rows arrive after the sheet opens; on a tall screen the sheet may stay low: pull it up if the rows are cut off
+    end = time.time() + 10
+    nodes = d.dump()
+    while time.time() < end and not d.find(nodes, tag="alarm_row") and not d.find(nodes, text=re.compile("No alarms|Nessuna sveglia", re.I)):
+        time.sleep(1.0)
+        nodes = d.dump()
+    sheet = d.find(nodes, tag="sheet_alarms")
+    if sheet and not d.find(nodes, tag="alarm_row") and sheet[0].t > d.screen_h * 0.5:
+        ctx.note(f"alarms sheet low: top {sheet[0].t} of {d.screen_h}")
+        x = sheet[0].center[0]
+        d.swipe(x, sheet[0].t + 20, x, int(d.screen_h * 0.2), 500)
+        time.sleep(1.5)
+        nodes = d.dump()
+    return nodes
 
 
 def alarm_rows(ctx, title=None):
@@ -117,6 +149,10 @@ def set_alarm_duration(ctx, minutes):
     d.tap(*F.scroll_to(ctx, "settings_notifications").center)
     sl = d.wait(timeout=8, tag="notif_alarm_slider")
     ctx.check(sl, "the notifications sheet did not open")
+    if "orig_duration" not in ctx.state:
+        cur = [m.group(1) for n in d.dump() for m in [re.match(r"^(\d+)\s*(?:minut|min)", n.text or "", re.I)] if m]
+        ctx.state["orig_duration"] = int(cur[0]) if cur else None
+        ctx.state.setdefault("finalizers", []).append(restore_alarm_duration)
     # 10 values along the track: drag to the exact spot
     x = sl.l + int(sl.width * (minutes - 1) / 9.0)
     d.swipe(sl.center[0], sl.center[1], x if minutes > 1 else max(sl.l - 120, 2), sl.center[1], 500)
@@ -125,6 +161,15 @@ def set_alarm_duration(ctx, minutes):
     d.back()
     time.sleep(0.6)
     F.home(ctx)
+
+
+def restore_alarm_duration(ctx):
+    """Puts the alarm duration back to what the device had before the run."""
+    orig = ctx.state.get("orig_duration")
+    if orig and orig != 1:
+        set_alarm_duration(ctx, orig)
+    elif orig is None:
+        ctx.note("the original alarm duration could not be read: check it in Notifications and alarms")
 
 
 def show_shade(ctx):
@@ -158,13 +203,37 @@ def t51(ctx):
     ctx.step("shade")
     ctx.check(n, "the notification is not in the shade")
     d.tap(*n.center)
-    ctx.check(d.wait(timeout=12, tag="detail_close"), "the notification did not open the event")
+    if d.wait(timeout=15, tag="detail_close") is None:
+        ctx.note("first tap on the notification did not open the event; tapping again")
+        show_shade(ctx)
+        n = d.wait(timeout=8, text=re.compile(re.escape(e["title"])))
+        ctx.check(n, "the notification is gone after the first tap")
+        d.tap(*n.center)
+    ctx.check(d.wait(timeout=15, tag="detail_close"), "the notification did not open the event")
+    F.close_detail(ctx)
+
+
+@case("T51D", "G", "Device: a popup comes up and a tap on it opens the event (one event, no alarms)", account=True, slow=True)
+def t51d(ctx):
+    d = ctx.d
+    t0 = now(ctx)
+    e = create_with_reminders(ctx, "d_popup", "dpopup", [("POPUP", 300)], t0)
+    ctx.note(f"popup due {e['fires'][0].time()}")
+    F.home(ctx)
+    wait_until(ctx, e["fires"][0], 25)
+    ctx.check(notified(ctx, e["title"]), "the popup did not appear")
+    show_shade(ctx)
+    n = d.wait(timeout=8, text=re.compile(re.escape(e["title"])))
+    ctx.step("shade")
+    ctx.check(n, "the notification is not in the shade")
+    d.tap(*n.center)
+    ctx.check(d.wait(timeout=15, tag="detail_close"), "the notification did not open the event")
     F.close_detail(ctx)
 
 
 @case("T57", "G", "Active alarms list: ordered, with the time left", account=True, slow=True)
 def t57(ctx):
-    e = ctx.state.get("g_alarm")
+    e = ctx.state.get("g_alarm") or ctx.state.get("g_early")
     if not e:
         ctx.skip("needs T50")
     rows, nodes = alarm_rows(ctx, e["title"])

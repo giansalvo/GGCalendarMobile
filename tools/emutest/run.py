@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import flows as F  # noqa: E402
 import harness  # noqa: E402
+import settings_state  # noqa: E402
 from adbx import Device  # noqa: E402
 
 MODULES = ["cases_ab", "cases_c", "cases_d", "cases_g", "cases_h"]
@@ -42,6 +43,11 @@ def setup_account(ctx):
             ctx.state["account_ok"] = True
         else:
             ctx.state["account_ok"] = bool(F.login(ctx))
+        if ctx.state["account_ok"]:
+            try:
+                settings_state.snapshot(ctx)  # put back at the end of the run
+            except Exception as e:  # noqa: BLE001
+                print("  (could not read the settings:", e, ")")
     except Exception as e:  # noqa: BLE001
         print("  (login failed:", e, ")")
         ctx.state["account_ok"] = False
@@ -54,9 +60,11 @@ def main():
     ap.add_argument("--account", default="profgusinu@gmail.com")
     ap.add_argument("--only", default="")
     ap.add_argument("--group", default="")
-    ap.add_argument("--mode", choices=["quick", "full"], default="",
+    ap.add_argument("--mode", choices=["quick", "full", "slow"], default="",
                     help="quick: everything except the cases that wait for real clock time (about 25 minutes); "
-                         "full: everything, reminders and alarms included (about 45 minutes). Needed unless --only or --group is given.")
+                         "full: everything, reminders and alarms included (about 45 minutes); "
+                         "slow: only what quick leaves out (reminders, alarms, reboot, round trips, offline, monkey, dragging). "
+                         "Needed unless --only or --group is given.")
     ap.add_argument("--skip-slow", action="store_true", help="same as --mode quick")
     ap.add_argument("--no-speedup", action="store_true", help="keep the animations and the full pauses")
     ap.add_argument("--out", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "runs"),
@@ -81,6 +89,9 @@ def main():
     groups = {x.strip().upper() for x in a.group.split(",") if x.strip()}
     chosen = [c for c in harness.CASES
               if (not only or c[0].upper() in only) and (not groups or c[1].upper() in groups) and not (a.skip_slow and c[3]["slow"])]
+    if a.mode == "slow":
+        # the slow cases and the dragging, plus the three events T33R builds on
+        chosen = [c for c in chosen if c[3]["slow"] or c[1] == "F" or c[0] in ("T30", "T32", "T33")]
     if not chosen:
         print("no case selected")
         return 2
@@ -104,13 +115,17 @@ def main():
 
     results = []
     ctx.results = results
+    is_emu = a.serial.startswith("emulator-")
+    if not is_emu:
+        a.no_speedup = True  # a real phone: its animation and screen settings are not touched
     if not a.no_speedup:
         d.animations(False)
         # UI settling pauses (up to 3 s) are halved once the animations are off; long waits (alarms) are not touched
         _sleep = time.sleep
         time.sleep = lambda secs: _sleep(secs * 0.5 if secs <= 3 else secs)
     d.shell("svc power stayon true")
-    d.shell("settings put system screen_off_timeout 1800000")
+    if is_emu:
+        d.shell("settings put system screen_off_timeout 1800000")
     try:
         for entry in chosen:
             cid, group, title, opts, _ = entry
@@ -128,16 +143,23 @@ def main():
                 print(f"cleanup: {n} test event(s) removed")
         except Exception as e:  # noqa: BLE001
             print("cleanup failed:", e)
+        for fn in ctx.state.get("finalizers", []):
+            try:
+                fn(ctx)
+            except Exception as e:  # noqa: BLE001
+                print("finalizer failed:", e)
         # leave the device as found
-        d.animations(True)
-        for cmd in ("svc power stayon false", "settings put system screen_off_timeout 60000", "settings put system font_scale 1.0", "wm density reset", "settings put system user_rotation 0",
+        if is_emu:
+            d.animations(True)
+        for cmd in ("svc power stayon false",) if not is_emu else ("svc power stayon false", "settings put system screen_off_timeout 60000", "settings put system font_scale 1.0", "wm density reset", "settings put system user_rotation 0",
                     "cmd uimode night no"):
             try:
                 d.shell(cmd)
             except Exception:
                 pass
         try:
-            d.network(True)
+            if is_emu:
+                d.network(True)
         except Exception:
             pass
 

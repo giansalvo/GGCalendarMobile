@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -96,7 +97,9 @@ fun ActiveAlarmsSheet(onDismiss: () -> Unit, onOpenEvent: (eventId: String, begi
         )
     }
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        Column(Modifier.exposeTestTags().testTag("sheet_alarms").fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp)) {
+        // A fixed height: the list arrives after the sheet is shown, and a sheet that grows once open stays anchored to its first
+        // (small) height, so the rows ended below the screen on a slow device (emulator API 36, 13/10/2026).
+        Column(Modifier.exposeTestTags().testTag("sheet_alarms").fillMaxWidth().fillMaxHeight(0.6f).navigationBarsPadding().padding(horizontal = 20.dp)) {
             Text(stringResource(R.string.active_alarms_title), style = MaterialTheme.typography.titleLarge)
             val list = alarms
             if (list != null && list.isEmpty()) {
@@ -107,7 +110,7 @@ fun ActiveAlarmsSheet(onDismiss: () -> Unit, onOpenEvent: (eventId: String, begi
                     modifier = Modifier.padding(vertical = 24.dp),
                 )
             }
-            LazyColumn(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(0.dp)) {
+            LazyColumn(Modifier.weight(1f).padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(0.dp)) {
                 items(list.orEmpty(), key = { it.fireAt.toString() + it.eventId + it.minutesBefore + it.snoozed }) { alarm ->
                     AlarmRow(
                         alarm, now,

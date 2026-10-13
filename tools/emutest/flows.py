@@ -39,6 +39,11 @@ def start_app(ctx, fresh=False):
         d.shell(f"am force-stop {PKG}")
     d.shell(f"am start -n {PKG}/.MainActivity")
     if d.wait(timeout=25, tag="btn_menu") is None:
+        try:
+            home(ctx)  # a sheet left open (e.g. the event opened from a notification) hides the bar
+        except Exception:
+            pass
+    if d.wait(timeout=10, tag="btn_menu") is None:
         ctx.fail("the app did not reach the home screen")
     hide_keyboard(ctx)
 
@@ -105,7 +110,7 @@ def drawer_item(ctx, tag, click=True):
     d = ctx.d
     for _ in range(6):
         found = d.find(tag=tag)
-        if found and 100 < found[0].center[1] < d.screen_h - 40:
+        if found and 100 < found[0].center[1] < d.usable_h - 40:
             if click:
                 d.tap(*found[0].center)
             return found[0]
@@ -193,10 +198,14 @@ def reveal(ctx, tag, tries=7):
     """Scrolls the editor until the control with this tag is on screen; returns its node."""
     d = ctx.d
     hide_keyboard(ctx)  # swipes over the keyboard would be typed as glide letters
+    last = None
     for i in range(tries):
         found = d.find(tag=tag)
-        if found and 260 < found[0].center[1] < d.screen_h - 110:
+        if found and 260 < found[0].center[1] < d.screen_h - 110:  # as before the navigation-bar work: the editor was tuned with this limit
             return found[0]
+        if found and found[0].center[1] == last and 260 < last < d.usable_h - 40:  # the form cannot scroll further
+            return found[0]
+        last = found[0].center[1] if found else None
         # a control above the fold needs the opposite direction
         if found and found[0].center[1] <= 260:
             d.swipe(540, 700, 540, 1500, 350)
@@ -209,11 +218,17 @@ def reveal(ctx, tag, tries=7):
 def scroll_to(ctx, tag, tries=6):
     """Scrolls a long screen (the settings) until the control is well inside it, clear of the system gesture area."""
     d = ctx.d
+    last = None
     for _ in range(tries):
         found = d.find(tag=tag)
-        if found and 150 < found[0].center[1] < d.screen_h - 110:  # the last row of a list rests near the bottom edge
-            return found[0]
-        d.swipe(540, d.screen_h - 500, 540, 700, 350)
+        if found:
+            y = found[0].center[1]
+            if 150 < y < d.usable_h - 150:  # the last row of a list rests near the bottom edge
+                return found[0]
+            if y == last and 150 < y < d.usable_h - 40:  # the list cannot scroll any further: this is as high as it gets
+                return found[0]
+            last = y
+        d.swipe(540, d.usable_h - 500, 540, 700, 350)
         time.sleep(0.5)
     ctx.fail(f"control not reachable by scrolling: {tag}")
 
@@ -244,7 +259,14 @@ def pick_start_day(ctx, offset):
         ctx.check(nxt, "no next-month button in the date picker")
         d.tap(*nxt[0].center)
         time.sleep(0.8)
-    cells = [n for n in d.dump() if n.text == str(target.day) and n.t > 500]
+    day_re = re.compile(rf"(^|\D){target.day}(\D|$)")
+    nodes = [n for n in d.dump() if n.t > 500 and n.height < 300]
+    cells = [n for n in nodes if n.text == str(target.day)]
+    if not cells:  # Android 16 exposes the day only as "Wednesday, October 14, 2026"
+        full = re.compile(rf"(?<!\d){target.day}(?!\d)\D*{target.year}")  # "Wednesday, October 14, 2026" / "mercoledì 14 ottobre 2026"
+        cells = [n for n in nodes if full.search(n.text or "") or full.search(n.desc or "")]
+    if not cells:
+        ctx.note("date picker nodes: " + "; ".join(f"{n.text!r}/{n.desc!r}" for n in nodes[:12]))
     ctx.check(cells, f"the day {target.day} is not in the date picker")
     d.tap(*cells[0].center)
     time.sleep(0.5)

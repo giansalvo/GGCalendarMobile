@@ -148,6 +148,24 @@ class OutboxPusherTest {
     }
 
     @Test
+    fun rateLimitKeepsTheQueueAndTheLocalEvent() = runTest {
+        val first = event("A")
+        val second = first.copy(id = "e2", title = "B")
+        db.eventDao().upsert(listOf(first, second))
+        queue(first, OutboxEntity.CREATE)
+        queue(second, OutboxEntity.CREATE)
+        server.enqueue(MockResponse.Builder().code(403).body("""{"error":{"errors":[{"reason":"rateLimitExceeded"}],"message":"Calendar usage limits exceeded."}}""").build())
+
+        push()
+
+        // nothing was discarded, the order is kept and no error message was raised: the next sync tries again
+        assertEquals(2, db.outboxDao().getAll().size)
+        assertEquals(1, db.outboxDao().getAll().first().attempts)
+        assertTrue(db.syncMessageDao().observeUnread().first().isEmpty())
+        assertNotNull(db.eventDao().get("e1"))
+    }
+
+    @Test
     fun networkFailureKeepsTheQueue() = runTest {
         val e = event("A")
         db.eventDao().upsert(listOf(e))
