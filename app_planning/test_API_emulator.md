@@ -205,7 +205,7 @@ Per ogni caso, l'ultimo esito su ciascuna piattaforma: **A** = emulatore API 26 
 
 Totali (casi eseguiti): A {'PASS': 54, 'SKIP': 3}; B {'PASS': 49, 'SKIP': 1, 'FAIL': 4}; C {'PASS': 44}.
 
-| ID | Caso | A: API 26 | B: API 36 emul. | C: Samsung A56 |
+| ID | Caso | A: API 26 | B: API 36 emul. | C: Samsung A56 (API 36) |
 |---|---|---|---|---|
 | T01 | Installazione pulita e primo avvio | — | — | — |
 | T02 | Aggiornamento sopra la versione precedente (install -r) | — | — | — |
