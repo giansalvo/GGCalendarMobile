@@ -36,6 +36,7 @@ def setup_account(ctx):
     if ctx.state.get("account_checked"):
         return
     ctx.state["account_checked"] = True
+    F.grant_permissions(ctx)
     try:
         if F.has_account(ctx):
             ctx.state["account_ok"] = True
@@ -53,7 +54,11 @@ def main():
     ap.add_argument("--account", default="profgusinu@gmail.com")
     ap.add_argument("--only", default="")
     ap.add_argument("--group", default="")
-    ap.add_argument("--skip-slow", action="store_true", help="skip the cases that wait minutes (reminders)")
+    ap.add_argument("--mode", choices=["quick", "full"], default="",
+                    help="quick: everything except the cases that wait for real clock time (about 25 minutes); "
+                         "full: everything, reminders and alarms included (about 45 minutes). Needed unless --only or --group is given.")
+    ap.add_argument("--skip-slow", action="store_true", help="same as --mode quick")
+    ap.add_argument("--no-speedup", action="store_true", help="keep the animations and the full pauses")
     ap.add_argument("--out", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "runs"),
                     help="results folder; inside the project but git-ignored (it holds screenshots of the real calendar)")
     ap.add_argument("--list", action="store_true")
@@ -66,6 +71,12 @@ def main():
             print(f"{cid:6} {group}  {title}  {'[' + ','.join(tags) + ']' if tags else ''}")
         return 0
 
+    if not (a.mode or a.skip_slow or a.only or a.group):
+        print("choose how to run: --mode quick (no waits for reminders, about 25 minutes) or --mode full (everything, about 45 minutes),")
+        print("or select cases with --only T03,T04 / --group G")
+        return 2
+    if a.mode == "quick":
+        a.skip_slow = True
     only = {x.strip().upper() for x in a.only.split(",") if x.strip()}
     groups = {x.strip().upper() for x in a.group.split(",") if x.strip()}
     chosen = [c for c in harness.CASES
@@ -93,6 +104,11 @@ def main():
 
     results = []
     ctx.results = results
+    if not a.no_speedup:
+        d.animations(False)
+        # UI settling pauses (up to 3 s) are halved once the animations are off; long waits (alarms) are not touched
+        _sleep = time.sleep
+        time.sleep = lambda secs: _sleep(secs * 0.5 if secs <= 3 else secs)
     d.shell("svc power stayon true")
     d.shell("settings put system screen_off_timeout 1800000")
     try:
@@ -113,6 +129,7 @@ def main():
         except Exception as e:  # noqa: BLE001
             print("cleanup failed:", e)
         # leave the device as found
+        d.animations(True)
         for cmd in ("svc power stayon false", "settings put system screen_off_timeout 60000", "settings put system font_scale 1.0", "wm density reset", "settings put system user_rotation 0",
                     "cmd uimode night no"):
             try:

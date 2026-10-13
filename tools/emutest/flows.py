@@ -19,6 +19,18 @@ DRAWER_ANY = ["drawer_view_SCHEDULE", "drawer_refresh", "drawer_alarms", "drawer
 VIEWS = ["SCHEDULE", "DAY", "SIX_DAYS", "WEEK", "MONTH", "MONTH_LIST"]
 
 
+# ---------------------------------------------------------------- permissions
+def grant_permissions(ctx):
+    """Grants the app's runtime permissions on an EMULATOR (the user authorized it on 13/10/2026); never on a phone."""
+    d = ctx.d
+    if not d.serial.startswith("emulator-"):
+        return
+    for perm in ("android.permission.READ_CONTACTS", "android.permission.POST_NOTIFICATIONS"):
+        d.shell(f"pm grant {PKG} {perm}")  # a permission the Android version does not know is simply refused
+    d.shell(f"appops set {PKG} SCHEDULE_EXACT_ALARM allow")
+    d.shell(f"appops set {PKG} USE_FULL_SCREEN_INTENT allow")
+
+
 # ---------------------------------------------------------------- app lifecycle
 def start_app(ctx, fresh=False):
     d = ctx.d
@@ -74,9 +86,13 @@ def open_drawer(ctx):
     d = ctx.d
     d.click(tag="btn_menu")
     end = time.time() + 8
-    while time.time() < end and not any(n.rid in DRAWER_ANY for n in d.dump()):
-        time.sleep(0.6)
-    if not any(n.rid in DRAWER_ANY for n in d.dump()):
+    opened = False
+    while not opened:
+        opened = any(n.rid in DRAWER_ANY for n in d.dump())
+        if opened or time.time() > end:
+            break
+        time.sleep(0.4)
+    if not opened:
         ctx.fail("the drawer did not open")
     # the drawer remembers its scroll position: bring it back to the top
     for _ in range(2):
@@ -89,7 +105,7 @@ def drawer_item(ctx, tag, click=True):
     d = ctx.d
     for _ in range(6):
         found = d.find(tag=tag)
-        if found and 100 < found[0].center[1] < 2150:
+        if found and 100 < found[0].center[1] < d.screen_h - 40:
             if click:
                 d.tap(*found[0].center)
             return found[0]
@@ -179,7 +195,7 @@ def reveal(ctx, tag, tries=7):
     hide_keyboard(ctx)  # swipes over the keyboard would be typed as glide letters
     for i in range(tries):
         found = d.find(tag=tag)
-        if found and 260 < found[0].center[1] < 2130:
+        if found and 260 < found[0].center[1] < d.screen_h - 110:
             return found[0]
         # a control above the fold needs the opposite direction
         if found and found[0].center[1] <= 260:
@@ -190,6 +206,18 @@ def reveal(ctx, tag, tries=7):
     ctx.fail(f"control not reachable in the editor: {tag}")
 
 
+def scroll_to(ctx, tag, tries=6):
+    """Scrolls a long screen (the settings) until the control is well inside it, clear of the system gesture area."""
+    d = ctx.d
+    for _ in range(tries):
+        found = d.find(tag=tag)
+        if found and 150 < found[0].center[1] < d.screen_h - 110:  # the last row of a list rests near the bottom edge
+            return found[0]
+        d.swipe(540, d.screen_h - 500, 540, 700, 350)
+        time.sleep(0.5)
+    ctx.fail(f"control not reachable by scrolling: {tag}")
+
+
 def tap_tag(ctx, tag):
     n = reveal(ctx, tag)
     ctx.d.tap(*n.center)
@@ -198,9 +226,30 @@ def tap_tag(ctx, tag):
 
 def open_editor_new(ctx):
     d = ctx.d
+    ctx.state["editor_opened_at"] = device_now(ctx)  # the editor proposes the next full hour from this moment
     d.click(tag="fab_new_event")
     if d.wait(timeout=12, tag="editor_title") is None:
         ctx.fail("the editor did not open")
+
+
+def pick_start_day(ctx, offset):
+    """Moves the start of the event `offset` days ahead with the date picker (the end follows)."""
+    d = ctx.d
+    target = ctx.state["editor_opened_at"].date() + timedelta(days=offset)
+    tap_tag(ctx, "editor_start_date")
+    if d.wait(timeout=8, text=OK) is None:
+        ctx.fail("the date picker did not open")
+    if target.month != ctx.state["editor_opened_at"].month:
+        nxt = d.find(desc=re.compile(r"next|success|prossim", re.I))
+        ctx.check(nxt, "no next-month button in the date picker")
+        d.tap(*nxt[0].center)
+        time.sleep(0.8)
+    cells = [n for n in d.dump() if n.text == str(target.day) and n.t > 500]
+    ctx.check(cells, f"the day {target.day} is not in the date picker")
+    d.tap(*cells[0].center)
+    time.sleep(0.5)
+    d.click(text=OK)
+    ctx.check(d.gone(timeout=6, text=S("cancel")), "the date picker stayed open")
 
 
 def calendar_in_editor_is_test_account(ctx):
@@ -235,7 +284,7 @@ def remove_default_reminders(ctx, keep_matching=None):
 
 
 def create_event(ctx, title, *, all_day=False, location=None, description=None, reminders=None, guests=None, meet=False,
-                 recurrence=None, visibility=None, save=True, notify=None):
+                 recurrence=None, visibility=None, save=True, notify=None, day_offset=0):
     """Creates an event from the + button. Returns the full title. `reminders`: [(METHOD, minutes)]."""
     d = ctx.d
     full = title if title.startswith(TEST_PREFIX) else f"{TEST_PREFIX} {title}"
@@ -252,6 +301,8 @@ def create_event(ctx, title, *, all_day=False, location=None, description=None, 
     else:
         ctx.fail(f"the title was typed wrongly: {typed[0].text if typed else None!r}")
     hide_keyboard(ctx)
+    if day_offset:
+        pick_start_day(ctx, day_offset)
     if all_day:
         tap_tag(ctx, "editor_all_day")
     if guests:
@@ -307,9 +358,12 @@ def handle_notify(ctx, notify=None):
 # ---------------------------------------------------------------- finding and opening events
 def open_search(ctx):
     home(ctx)
-    ctx.d.click(tag="btn_search")
-    if ctx.d.wait(timeout=8, tag="search_input") is None:
-        ctx.fail("search did not open")
+    for attempt in range(3):  # on a slow emulator the first tap can land while the screen is still settling
+        ctx.d.click(tag="btn_search")
+        if ctx.d.wait(timeout=8, tag="search_input") is not None:
+            return
+        home(ctx)
+    ctx.fail("search did not open")
 
 
 def search(ctx, query):
@@ -419,6 +473,7 @@ def roundtrip(ctx):
     d = ctx.d
     d.shell(f"pm clear {PKG}")
     time.sleep(1.5)
+    grant_permissions(ctx)
     start_app(ctx)
     return login(ctx)
 

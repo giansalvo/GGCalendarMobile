@@ -48,6 +48,7 @@ def t01(ctx):
     d.shell(f"pm uninstall {PKG}")
     out = d.adb("install", "-r", ctx.apk, timeout=240)
     ctx.check("Success" in out, f"install failed: {out.strip()[:120]}")
+    F.grant_permissions(ctx)
     F.start_app(ctx, fresh=True)
     ctx.step("first_start")
     ctx.check(d.find(tag="fab_new_event"), "the + button is missing at first start")
@@ -217,6 +218,11 @@ def open_settings(ctx):
 
 def save_settings(ctx):
     d = ctx.d
+    btn = d.wait(timeout=6, tag="settings_save")
+    if btn is not None and not btn.enabled:  # nothing changed (the choice was already the current one): just leave
+        d.click(tag="settings_back")
+        ctx.check(d.gone(timeout=8, tag="settings_save"), "the settings stayed open after Back")
+        return
     d.click(tag="settings_save")
     ctx.check(d.gone(timeout=8, tag="settings_save"), "the settings stayed open after Save")
     time.sleep(1.0)
@@ -331,7 +337,7 @@ def t17(ctx):
 def t19(ctx):
     d = ctx.d
     open_settings(ctx)
-    d.click(tag="settings_notifications")
+    d.tap(*F.scroll_to(ctx, "settings_notifications").center)
     sl = d.wait(timeout=8, tag="notif_alarm_slider")
     ctx.check(sl, "the notifications sheet did not open")
     ctx.step("notifications_sheet")
@@ -340,10 +346,10 @@ def t19(ctx):
     ctx.check(d.find(text=re.compile(r"^1 (minut)", re.I)), "the slider did not reach 1 minute")
     d.back()
     time.sleep(0.6)
-    d.click(tag="settings_notifications")
+    d.tap(*F.scroll_to(ctx, "settings_notifications").center)
     sl = d.wait(timeout=8, tag="notif_alarm_slider")
     ctx.check(d.find(text=re.compile(r"^1 (minut)", re.I)), "1 minute was not kept")
     d.swipe(sl.l + 20, sl.center[1], sl.l + int(sl.width * 0.13), sl.center[1], 500)  # about 2 minutes again
     d.back()
-    d.click(tag="settings_back")
+    F.home(ctx)
     ctx.note("the duration is left as set by the last swipe; T55 sets it again")

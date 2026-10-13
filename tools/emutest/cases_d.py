@@ -208,6 +208,10 @@ def t35(ctx):
     ctx.created.append(home_title)
     ctx.state["guest_event"] = home_title
     F.open_event(ctx, home_title)
+    for _ in range(6):  # the guest list can take a moment to show in the detail
+        if "emu.test@example.com" in detail_text(ctx):
+            break
+        time.sleep(1.5)
     ctx.check("emu.test@example.com" in detail_text(ctx), "the guest is not in the detail")
     ctx.check(d.find(text=S("write_to_guests")) or d.find(text=has("write_to_guests")), "no 'write to guests' button")
     F.close_detail(ctx)

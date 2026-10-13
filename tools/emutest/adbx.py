@@ -78,6 +78,21 @@ class Device:
             self._api = int(self.shell("getprop ro.build.version.sdk").strip())
         return self._api
 
+    @property
+    def screen_h(self):
+        """Height in pixels of the screen (the size override of `wm size` wins over the physical one)."""
+        if getattr(self, "_screen_h", None) is None:
+            out = self.shell("wm size")
+            m = re.findall(r"(\d+)x(\d+)", out)
+            self._screen_h = int(m[-1][1]) if m else 2200
+        return self._screen_h
+
+    def animations(self, on):
+        """Android's window, transition and animator animations: off makes every UI step faster and steadier."""
+        v = "1.0" if on else "0.0"
+        for key in ("window_animation_scale", "transition_animation_scale", "animator_duration_scale"):
+            self.shell(f"settings put global {key} {v}")
+
     def prop(self, name):
         return self.shell(f"getprop {name}").strip()
 
@@ -251,6 +266,16 @@ class Device:
     def network(self, on):
         want_airplane = not on
         if self.airplane_on() == want_airplane:
+            return
+        if self.api >= 29:  # Android 10 and later have a command for it
+            self.shell(f"cmd connectivity airplane-mode {'disable' if on else 'enable'}")
+            time.sleep(3.0)
+            if on:
+                end = time.time() + 60
+                while time.time() < end:
+                    if self.shell("dumpsys connectivity | grep -c VALIDATED").strip() not in ("", "0"):
+                        break
+                    time.sleep(3)
             return
         self.shell("cmd statusbar expand-settings")
         time.sleep(2.0)

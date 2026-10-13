@@ -6,7 +6,7 @@ Scritto il 13/10/2026. Serve a rifare lo stesso giro di prove su qualunque immag
 - Si lavora **solo su eventi creati dal test**, nel calendario principale di profgusinu@gmail.com. Titolo sempre con il prefisso `[TEST-EMU]` seguito da sigla e data (es. `[TEST-EMU] T21 2026-10-13`), così la pulizia finale cancella solo quelli.
 - Mai toccare l'evento "doze" né altri eventi dell'utente. Mai eliminare in blocco: si cancella solo ciò che il test ha creato, riconosciuto dal prefisso.
 - **Nessun invitato reale e nessuna email**: i test con invitati (T35) usano solo indirizzi del dominio `example.com` e scelgono sempre "Non inviare" agli avvisi. Se un test richiedesse di scrivere a persone vere, si salta.
-- I permessi e le schermate di consenso (notifiche, contatti, accesso Google, schermo intero) sono **scelta dell'utente**: il test non li concede con `pm grant` né li aggira; li segna "SEMI" e si ferma ad aspettare.
+- Permessi e consensi: l'accesso Google e le schermate di consenso restano **scelta dell'utente**. Per i permessi di sistema dell'app (contatti, notifiche, sveglie esatte, schermo intero) **l'utente ha autorizzato `pm grant` / `appops` solo sugli emulatori (13/10/2026)**: lo script lo fa da sé (`flows.grant_permissions`, che rifiuta di agire su un dispositivo vero) dopo ogni installazione o `pm clear`. Sul telefono vero non si concede mai nulla.
 - Non toccare il blocco schermo (PIN) dell'utente. Le prove con PIN sull'emulatore usano un PIN solo se l'utente lo imposta lui.
 - Norton Web/Mail Shield deve essere spento durante le prove con rete (altrimenti l'emulatore non si fida del certificato e il sync fallisce); lo riaccende l'utente alla fine.
 - Il token GitHub e i segreti non compaiono mai nei log del test.
@@ -181,6 +181,7 @@ Cartella `tools/emutest/` (Python 3 con Pillow, adb dell'SDK, nessuna altra dipe
 |---|---|---|---|---|
 | 13/10/2026 | API 26 (google_apis, senza account) | 0.4.0/0.4.1 | parziale, manuale | Trovati e corretti: sync accelerato prima di Android 12 (`getForegroundInfo` non implementato), crash di `+` senza account |
 | 13/10/2026 | API 26 (google_apis_playstore x86, con account) | 0.4.1 | script a blocchi, tutti i gruppi provati almeno una volta | Passano: A (T01-T08, T10, T12), B (T13-T17, T19), C (T20-T27), D (T30-T33R, T37-T40), E (T41-T44), G (T50-T61, T64, T65), H (T71), I (T80-T82), T70 con la build di debug. Saltati: F (richiede Android 10+), T34 (scriverebbe fuori dal calendario principale), T35-T36 (servono il permesso dei contatti, scelta dell'utente). T70 passa con la build di debug; con la release sull'emulatore il badge non compare (non è un difetto, vedi sotto). |
+| 13/10/2026 | API 36 (Android 16, google_apis_playstore x86_64), modalità rapida | 0.4.2 | tutti i casi della modalità rapida passano (47 casi: A-E, T35-T36 con permessi concessi da `pm grant`, T71, T81, T82) | Fallimenti trovati e risolti (tutti negli script, nessuno nell'app): menu laterale e ultimo campo dell'editor oltre il limite dell'altezza (schermo più alto), scheda impostazioni più lunga (ultima riga sotto la barra dei gesti), selettore di file `com.google.android.documentsui`, modalità aereo da `cmd connectivity airplane-mode`, Salva spento quando non cambia nulla. **Non eseguiti su API 36**: i casi lenti (G, T33R, T37, T65, T70, T80), cioè la modalità completa. |
 
 **Difetti dell'app trovati dai test (13/10/2026)**
 1. Prima di Android 12 il sync su richiesta falliva (corretto in 0.4.1).
@@ -189,6 +190,8 @@ Cartella `tools/emutest/` (Python 3 con Pillow, adb dell'SDK, nessuna altra dipe
 4. **Non è un difetto dell'app**: sull'emulatore con la build di release il numero delle modifiche in attesa non compare sull'icona Aggiorna, mentre con la build di debug sì; **sul Samsung con la release il numero compare correttamente (provato dall'utente il 13/10/2026)**. Il test T70 accetta come prova anche il lavoro di sync in attesa della rete (`dumpsys jobscheduler`) e lo annota.
 
 **Note di taratura**
+- Con `-gpu host` (scheda grafica del PC) l'app ha avuto una volta "non risponde" mentre l'emulatore saturava i suoi servizi grafici: ora l'avvio predefinito è il disegno software (`emu.py start <avd> --gpu host` resta come opzione).
+- Android 16: la tastiera, il selettore di file e il pannello delle impostazioni rapide sono diversi da Android 8; gli script ne tengono conto (`screen_h`, `scroll_to`, ricerca del pulsante Salva in qualunque pacchetto `documentsui`).
 - La tastiera dell'emulatore a volte storpia il titolo digitato (`[TEST-EMU] x` diventava `[To] x`): lo script ora rilegge il titolo e rifà la digitazione, e rifiuta di salvare se resta sbagliato.
 - Offline = modalità aereo dal pannello delle impostazioni rapide (`svc wifi disable` e un proxy non isolano l'app sull'emulatore).
 - `pm clear` (giro completo con Google) azzera anche il permesso dei contatti.

@@ -109,7 +109,13 @@ def export(ctx, fmt):
     d.click(tag="export_ics" if fmt == "ics" else "export_csv")
     ctx.step("export_dialog_" + fmt)
     d.click(tag="export_confirm")
-    save = d.wait(timeout=20, tag="android:id/button1", pkg="com.android.documentsui")
+    save = None
+    end = time.time() + 20
+    while save is None and time.time() < end:  # the picker is com.android.documentsui or com.google.android.documentsui
+        hits = [n for n in d.dump() if n.rid == "android:id/button1" and "documentsui" in n.pkg]
+        save = hits[0] if hits else None
+        if save is None:
+            time.sleep(0.8)
     ctx.check(save, "the file picker did not open")
     d.tap(*save.center)
     ok = d.wait(timeout=30, tag="export_summary_ok")

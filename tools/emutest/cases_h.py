@@ -96,6 +96,7 @@ def t80(ctx):
         d.shell(f"pm clear {PKG}")
         d.network(True)
     time.sleep(3)
+    F.grant_permissions(ctx)
     F.start_app(ctx)
     ctx.check(F.login(ctx), "login failed after the monkey")
 

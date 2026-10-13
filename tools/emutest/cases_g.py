@@ -1,7 +1,9 @@
 """Group G: reminders, notifications and alarms. The core of the app; slow because it waits for real clock time.
 
-The events are created for the next full hour and the reminders use a custom "N minutes before", so each one fires a
-few minutes after it was saved, whatever the time of day. Only events titled [TEST-EMU] ..., in the primary calendar.
+All the events are created in one go (`g_setup`), each with reminders due at a chosen number of seconds after the
+start of the setup, and the cases then check them in the order they fall due, so the waiting overlaps instead of adding up.
+The events start at the next full hour and the reminders use a custom "N minutes before", so this works at any time of
+day. Only events titled [TEST-EMU] ..., in the primary calendar.
 """
 import math
 import re
@@ -13,7 +15,15 @@ from adbx import PKG
 from harness import case
 from strings import S, has
 
-SERVICE = f"{PKG}"
+# seconds after the start of the setup at which each reminder falls due (the setup itself takes about 4-5 minutes)
+DUE = {
+    "g_popup": [("POPUP", 330)],
+    "g_alarm": [("ALARM", 620)],            # rings with the screen off
+    "g_kill": [("POPUP", 780)],             # the process of the app is killed before it
+    "g_pair": [("ALARM", 940), ("ALARM", 1000)],  # snooze, then the second alarm, then no answer
+    "g_boot": [("POPUP", 1400)],            # the emulator is rebooted before it
+    "g_early": [("ALARM", 3000)],           # closed early from the list
+}
 
 
 # ---------------------------------------------------------------- helpers
@@ -21,36 +31,41 @@ def now(ctx):
     return F.device_now(ctx)
 
 
-def wait_for_hour_margin(ctx, minutes=9):
-    """Events start at the next full hour: with less than `minutes` to it, wait for the hour to pass."""
-    n = now(ctx)
-    nxt = n.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
-    left = (nxt - n).total_seconds() / 60
-    if left < minutes:
-        ctx.note(f"waited {int(left * 60) + 30} s for the hour to pass")
-        time.sleep(left * 60 + 30)
+def create_with_reminders(ctx, key, title, specs, t0=None):
+    """Creates an event whose reminders fall due at absolute moments.
 
-
-def create_with_reminders(ctx, key, title, specs):
-    """Creates an event whose reminders fire `lead` seconds after they are added.
-
-    specs: [(METHOD, lead_seconds)]. Records ctx.state[key] = {title, fires: [datetime]} and returns it."""
-    wait_for_hour_margin(ctx)
+    specs: [(METHOD, seconds after t0)] (t0 defaults to now). Records ctx.state[key] = {title, fires: [datetime]}."""
+    t0 = t0 or now(ctx)
     fires = []
 
     def reminders():
-        n = now(ctx)
-        start = n.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+        # the event starts tomorrow at the hour the editor proposed when it was opened
+        opened = ctx.state["editor_opened_at"]
+        start = opened.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1, days=1)
         out = []
-        for method, lead in specs:
-            minutes = max(1, math.ceil(((start - n).total_seconds() - lead) / 60))
+        for method, after in specs:
+            target = t0 + timedelta(seconds=after)
+            minutes = max(1, int((start - target).total_seconds() // 60))
             out.append((method, minutes))
             fires.append(start - timedelta(minutes=minutes))
         return out
 
-    full = F.create_event(ctx, title, reminders=reminders)
+    full = F.create_event(ctx, title, reminders=reminders, day_offset=1)
     ctx.state[key] = dict(title=full, fires=sorted(fires))
     return ctx.state[key]
+
+
+def g_setup(ctx):
+    """Creates every event of the group once; the clock of the reminders starts here."""
+    if ctx.state.get("g_ready"):
+        return
+    set_alarm_duration(ctx, 1)
+    t0 = now(ctx)
+    names = {"g_popup": "gpopup", "g_alarm": "galarm", "g_kill": "gkill", "g_pair": "gpair", "g_boot": "gboot", "g_early": "gearly"}
+    for key, specs in DUE.items():
+        create_with_reminders(ctx, key, names[key], specs, t0)
+    ctx.state["g_ready"] = True
+    ctx.note("due: " + ", ".join(f"{k[2:]} {ctx.state[k]['fires'][0].time()}" for k in DUE))
 
 
 def wait_until(ctx, moment, margin=0):
@@ -99,7 +114,7 @@ def set_alarm_duration(ctx, minutes):
     F.home(ctx)
     d.click(tag="btn_settings")
     d.wait(timeout=10, tag="settings_notifications")
-    d.click(tag="settings_notifications")
+    d.tap(*F.scroll_to(ctx, "settings_notifications").center)
     sl = d.wait(timeout=8, tag="notif_alarm_slider")
     ctx.check(sl, "the notifications sheet did not open")
     # 10 values along the track: drag to the exact spot
@@ -109,45 +124,37 @@ def set_alarm_duration(ctx, minutes):
     ctx.check(d.find(text=re.compile(rf"^{minutes} ", re.I)), f"the slider did not reach {minutes} minute(s)")
     d.back()
     time.sleep(0.6)
-    d.click(tag="settings_back")
     F.home(ctx)
 
 
 def show_shade(ctx):
-    d = ctx.d
-    d.shell("cmd statusbar expand-notifications")
+    ctx.d.shell("cmd statusbar expand-notifications")
     time.sleep(1.5)
 
 
-def collapse_shade(ctx):
-    ctx.d.shell("cmd statusbar collapse")
-    time.sleep(0.8)
+def D():
+    import cases_d
+    return cases_d
 
 
-# ================================================================= G. reminders
+# ================================================================= G. reminders (in the order they fall due)
 @case("T50", "G", "Popup notification at the right time", account=True, slow=True)
 def t50(ctx):
-    d = ctx.d
-    set_alarm_duration(ctx, 1)
-    e1 = create_with_reminders(ctx, "g_popup", "gpopup", [("POPUP", 200)])
-    e2 = create_with_reminders(ctx, "g_alarm", "galarm", [("ALARM", 330)])
-    e4 = create_with_reminders(ctx, "g_early", "gearly", [("ALARM", 1500)])
-    ctx.note(f"popup due {e1['fires'][0].time()}, alarm due {e2['fires'][0].time()}")
-    wait_until(ctx, e1["fires"][0], 20)
-    ok = notified(ctx, e1["title"])
+    g_setup(ctx)
+    e = ctx.state["g_popup"]
+    wait_until(ctx, e["fires"][0], 20)
     ctx.step("after_popup")
-    ctx.check(ok, "the popup notification did not appear when due")
-    ctx.state["popup_seen_at"] = now(ctx)
+    ctx.check(notified(ctx, e["title"]), "the popup notification did not appear when due")
 
 
 @case("T51", "G", "Tap on the notification opens the event", account=True, slow=True)
 def t51(ctx):
     d = ctx.d
-    e1 = ctx.state.get("g_popup")
-    if not e1:
+    e = ctx.state.get("g_popup")
+    if not e:
         ctx.skip("needs T50")
     show_shade(ctx)
-    n = d.wait(timeout=8, text=re.compile(re.escape(e1["title"])))
+    n = d.wait(timeout=8, text=re.compile(re.escape(e["title"])))
     ctx.step("shade")
     ctx.check(n, "the notification is not in the shade")
     d.tap(*n.center)
@@ -168,25 +175,6 @@ def t57(ctx):
     ctx.d.tap(*rows[0].center)
     ctx.check(ctx.d.wait(timeout=10, tag="detail_close"), "tapping a row did not open the event")
     F.close_detail(ctx)
-
-
-@case("T58", "G", "Close an alarm early (with confirmation): it no longer rings", account=True, slow=True)
-def t58(ctx):
-    d = ctx.d
-    e = ctx.state.get("g_early")
-    if not e:
-        ctx.skip("needs T50")
-    rows, nodes = alarm_rows(ctx, e["title"])
-    ctx.check(rows, "the alarm to close is not in the list")
-    close = [n for n in nodes if n.rid == "alarm_close" and rows[0].t <= n.center[1] <= rows[0].b]
-    ctx.check(close, "the close button of the row is missing")
-    d.tap(*close[0].center)
-    ctx.check(d.wait(timeout=6, tag="alarm_close_confirm"), "no confirmation before closing the alarm")
-    d.click(tag="alarm_close_confirm")
-    time.sleep(1.5)
-    rows, nodes = alarm_rows(ctx, e["title"])
-    ctx.check(not rows, "the closed alarm is still in the list")
-    F.home(ctx)
 
 
 @case("T52", "G", "Alarm with the screen off: full-screen alarm and ringing service", account=True, slow=True)
@@ -225,17 +213,30 @@ def t53(ctx):
     F.home(ctx)
 
 
-def create_pair(ctx):
-    """One event with two alarms, the second a minute after the first (for snooze, queue and missed alarm)."""
-    if "g_pair" not in ctx.state:
-        create_with_reminders(ctx, "g_pair", "gpair", [("ALARM", 130), ("ALARM", 70)])
-    return ctx.state["g_pair"]
+@case("T59", "G", "A popup still shows after the app process was killed", account=True, slow=True)
+def t59(ctx):
+    d = ctx.d
+    e = ctx.state.get("g_kill")
+    if not e:
+        ctx.skip("needs T50")
+    d.key(3)  # HOME: the app goes to the background, so that `am kill` may kill it
+    time.sleep(2)
+    d.shell(f"am kill {PKG}")
+    time.sleep(2)
+    ctx.note("process after kill: " + (d.pid() or "none"))
+    ctx.check(now(ctx) < e["fires"][0], "the popup was already due before the process was killed")
+    wait_until(ctx, e["fires"][0], 25)
+    ctx.step("after_kill")
+    ctx.check(notified(ctx, e["title"]), "the popup did not appear after the process was killed")
+    F.start_app(ctx)
 
 
 @case("T54", "G", "Snooze 5 minutes: it is listed as snoozed", account=True, slow=True)
 def t54(ctx):
     d = ctx.d
-    e = create_pair(ctx)
+    e = ctx.state.get("g_pair")
+    if not e:
+        ctx.skip("needs T50")
     ctx.note(f"alarms due {e['fires'][0].time()} and {e['fires'][1].time()}")
     F.home(ctx)
     wait_until(ctx, e["fires"][0], 12)
@@ -255,7 +256,7 @@ def t54(ctx):
 def t56(ctx):
     d = ctx.d
     e = ctx.state.get("g_pair")
-    if not e:
+    if not e or len(e["fires"]) < 2:
         ctx.skip("needs T54")
     wait_until(ctx, e["fires"][1], 12)
     stop = d.wait(timeout=20, tag="alarm_stop")
@@ -270,7 +271,7 @@ def t55(ctx):
     since = ctx.state.get("second_ringing_since")
     if not since:
         ctx.skip("needs T56")
-    # the duration was set to 1 minute in T50
+    # the duration was set to 1 minute in g_setup
     time.sleep(max(0, 75 - (now(ctx) - since).total_seconds()))
     ctx.check(d.gone(timeout=10, tag="alarm_stop") or not alarm_service_running(ctx), "the alarm kept ringing past the set duration")
     ctx.check(not alarm_service_running(ctx), "the ringing service did not stop by itself")
@@ -281,44 +282,12 @@ def t55(ctx):
     set_alarm_duration(ctx, 2)
 
 
-@case("T59", "G", "A popup still shows after the app process was killed", account=True, slow=True)
-def t59(ctx):
-    d = ctx.d
-    e = create_with_reminders(ctx, "g_kill", "gkill", [("POPUP", 150)])
-    d.key(3)  # HOME: the app goes to the background, so that `am kill` may kill it
-    time.sleep(2)
-    d.shell(f"am kill {PKG}")
-    time.sleep(2)
-    ctx.note("process after kill: " + (d.pid() or "none"))
-    wait_until(ctx, e["fires"][0], 25)
-    ctx.step("after_kill")
-    ctx.check(notified(ctx, e["title"]), "the popup did not appear after the process was killed")
-    F.start_app(ctx)
-
-
-@case("T60", "G", "Reminders are restored after a reboot of the device", account=True, slow=True)
-def t60(ctx):
-    d = ctx.d
-    e = create_with_reminders(ctx, "g_boot", "gboot", [("POPUP", 330)])
-    before = d.shell("dumpsys alarm | grep -c " + PKG).strip()
-    d.adb("reboot", timeout=60)
-    time.sleep(15)
-    ctx.check(d.wait_boot(300), "the emulator did not come back after the reboot")
-    d.wake()
-    time.sleep(25)
-    after = d.shell("dumpsys alarm | grep -c " + PKG).strip()
-    ctx.note(f"alarm entries of the app: {before} before, {after} after the reboot")
-    ctx.check(int(after or 0) > 0, "no alarm of the app is registered after the reboot")
-    wait_until(ctx, e["fires"][0], 40)
-    ctx.step("after_reboot")
-    ctx.check(notified(ctx, e["title"]), "the popup did not appear after the reboot")
-    F.start_app(ctx)
-
-
 @case("T61", "G", "A time zone change keeps the app working and the alarms registered", account=True, slow=True)
 def t61(ctx):
     d = ctx.d
-    e = create_with_reminders(ctx, "g_tz", "gtz", [("POPUP", 1500)])
+    e = ctx.state.get("g_early")
+    if not e:
+        ctx.skip("needs T50")
     count = lambda: int((d.shell("dumpsys alarm | grep -c " + PKG).strip() or "0"))
     before = count()
     for zone in ("Asia/Tokyo", "America/New_York", "UTC"):
@@ -335,9 +304,49 @@ def t61(ctx):
     F.close_detail(ctx)
 
 
-def D():
-    import cases_d
-    return cases_d
+@case("T60", "G", "Reminders are restored after a reboot of the device", account=True, slow=True)
+def t60(ctx):
+    d = ctx.d
+    e = ctx.state.get("g_boot")
+    if not e:
+        ctx.skip("needs T50")
+    ctx.check(now(ctx) < e["fires"][0] - timedelta(seconds=150), "too late to reboot before the reminder falls due")
+    before = d.shell("dumpsys alarm | grep -c " + PKG).strip()
+    d.adb("reboot", timeout=60)
+    time.sleep(15)
+    ctx.check(d.wait_boot(300), "the emulator did not come back after the reboot")
+    d.shell("svc power stayon true")
+    d.shell("settings put global window_animation_scale 0.0")
+    d.shell("settings put global transition_animation_scale 0.0")
+    d.shell("settings put global animator_duration_scale 0.0")
+    d.wake()
+    time.sleep(25)
+    after = d.shell("dumpsys alarm | grep -c " + PKG).strip()
+    ctx.note(f"alarm entries of the app: {before} before, {after} after the reboot")
+    ctx.check(int(after or 0) > 0, "no alarm of the app is registered after the reboot")
+    wait_until(ctx, e["fires"][0], 40)
+    ctx.step("after_reboot")
+    ctx.check(notified(ctx, e["title"]), "the popup did not appear after the reboot")
+    F.start_app(ctx)
+
+
+@case("T58", "G", "Close an alarm early (with confirmation): it no longer rings", account=True, slow=True)
+def t58(ctx):
+    d = ctx.d
+    e = ctx.state.get("g_early")
+    if not e:
+        ctx.skip("needs T50")
+    rows, nodes = alarm_rows(ctx, e["title"])
+    ctx.check(rows, "the alarm to close is not in the list")
+    close = [n for n in nodes if n.rid == "alarm_close" and rows[0].t <= n.center[1] <= rows[0].b]
+    ctx.check(close, "the close button of the row is missing")
+    d.tap(*close[0].center)
+    ctx.check(d.wait(timeout=6, tag="alarm_close_confirm"), "no confirmation before closing the alarm")
+    d.click(tag="alarm_close_confirm")
+    time.sleep(1.5)
+    rows, nodes = alarm_rows(ctx, e["title"])
+    ctx.check(not rows, "the closed alarm is still in the list")
+    F.home(ctx)
 
 
 @case("T64", "G", "Email reminder is kept in the event", account=True)
