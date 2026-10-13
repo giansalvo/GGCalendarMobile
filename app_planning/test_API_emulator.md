@@ -180,13 +180,13 @@ Cartella `tools/emutest/` (Python 3 con Pillow, adb dell'SDK, nessuna altra dipe
 | Data | Immagine | Versione app | Esito | Note |
 |---|---|---|---|---|
 | 13/10/2026 | API 26 (google_apis, senza account) | 0.4.0/0.4.1 | parziale, manuale | Trovati e corretti: sync accelerato prima di Android 12 (`getForegroundInfo` non implementato), crash di `+` senza account |
-| 13/10/2026 | API 26 (google_apis_playstore x86, con account) | 0.4.1 | script a blocchi, tutti i gruppi provati almeno una volta | Passano: A (T01-T08, T10, T12), B (T13-T17, T19), C (T20-T27), D (T30-T33R, T37-T40), E (T41-T44), G (T50-T61, T64, T65), H (T71), I (T80-T82), T70 con la build di debug. Saltati: F (richiede Android 10+), T34 (scriverebbe fuori dal calendario principale), T35-T36 (servono il permesso dei contatti, scelta dell'utente). **Aperto**: T70 fallisce con la build di release (vedi sotto). |
+| 13/10/2026 | API 26 (google_apis_playstore x86, con account) | 0.4.1 | script a blocchi, tutti i gruppi provati almeno una volta | Passano: A (T01-T08, T10, T12), B (T13-T17, T19), C (T20-T27), D (T30-T33R, T37-T40), E (T41-T44), G (T50-T61, T64, T65), H (T71), I (T80-T82), T70 con la build di debug. Saltati: F (richiede Android 10+), T34 (scriverebbe fuori dal calendario principale), T35-T36 (servono il permesso dei contatti, scelta dell'utente). T70 passa con la build di debug; con la release sull'emulatore il badge non compare (non è un difetto, vedi sotto). |
 
 **Difetti dell'app trovati dai test (13/10/2026)**
 1. Prima di Android 12 il sync su richiesta falliva (corretto in 0.4.1).
 2. Con nessun account, "+" chiudeva l'app (corretto in 0.4.1).
 3. L'editor non ripartiva da zero dopo un annullamento: aprendo un nuovo evento ricompariva il testo scartato (corretto in 0.4.2, `EventEditorViewModel.forget()`).
-4. **Da verificare**: con la build di **release**, un evento creato in modalità aereo non mostra il numero delle modifiche in attesa sull'icona Aggiorna, mentre con la build di debug sì (il lavoro di sync risulta comunque in attesa della rete). Va provato sul Samsung (modalità aereo, crea un evento, guarda l'icona Aggiorna).
+4. **Non è un difetto dell'app**: sull'emulatore con la build di release il numero delle modifiche in attesa non compare sull'icona Aggiorna, mentre con la build di debug sì; **sul Samsung con la release il numero compare correttamente (provato dall'utente il 13/10/2026)**. Il test T70 accetta come prova anche il lavoro di sync in attesa della rete (`dumpsys jobscheduler`) e lo annota.
 
 **Note di taratura**
 - La tastiera dell'emulatore a volte storpia il titolo digitato (`[TEST-EMU] x` diventava `[To] x`): lo script ora rilegge il titolo e rifà la digitazione, e rifiuta di salvare se resta sbagliato.
