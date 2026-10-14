@@ -184,7 +184,9 @@ def t33(ctx):
 
 @case("T34", "D", "Move an event to another calendar", account=True)
 def t34(ctx):
-    ctx.skip("would write outside the primary calendar of the test account (not allowed by the test rules)")
+    # needs two accounts signed in (14/10/2026): a second writable calendar is the other account's, and the test must
+    # not write outside the test account's primary calendar. Not scripted yet; to be done by hand with two accounts.
+    ctx.skip("needs two Google accounts signed in to the app (a second writable calendar); not scripted, done by hand")
 
 
 @case("T35", "D", "Guests (only @example.com), without sending anything", account=True)

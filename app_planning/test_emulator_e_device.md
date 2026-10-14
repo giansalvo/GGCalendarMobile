@@ -84,7 +84,7 @@ Colonna "Auto": **A** = completamente automatico; **S** = serve un gesto dell'ut
 | T31 | Evento di tutto il giorno e di più giorni | Barra nella fascia "tutto il giorno" e nel Mese; dopo il round trip invariato | A |
 | T32 | Modifica titolo e orario | Cambia in tutte le viste; round trip | A |
 | T33 | Eliminazione con conferma | Sparisce; round trip | A |
-| T34 | Cambio di calendario dell'evento (se c'è più di un calendario scrivibile) | Cambia colore e calendario | A / SKIP |
+| T34 | Cambio di calendario dell'evento (**richiede due account Google collegati nell'app**, cioè un secondo calendario scrivibile) | Cambia colore e calendario | A / SKIP (lo script salta; da fare a mano con due account) |
 | T35 | Invitati (solo `@example.com`), "Non inviare" | Chip invitato, permessi, nessuna email; nessuna domanda superflua senza invitati | A |
 | T36 | Avviso agli invitati su modifica, spostamento ed eliminazione | Compaiono le tre scelte Invia / Non inviare / Annulla (si sceglie sempre "Non inviare") | A |
 | T37 | Google Meet | "Aggiungi Meet" crea il link; compare "Partecipa con Google Meet" | A |
@@ -244,7 +244,7 @@ Totali: A 54 pass, 3 skip (57 casi); B 4 fail, 49 pass, 1 skip (54 casi); C 1 fa
 | T32 | Modifica titolo e orario | A | ✔ | ✔ | ✔ |
 | T33 | Eliminazione con conferma | A | ✔ | ✔ | ✔ |
 | T33R | Giro completo con Google dopo pm clear | A | ✔ | ✔ | — |
-| T34 | Cambio di calendario dell'evento (se c'è più di un calendario scrivibi | A | salt. | salt. | — |
+| T34 | Cambio di calendario dell'evento (richiede due account Google collegati nell'app) | A | salt. | salt. | — |
 | T35 | Invitati (solo @example.com), "Non inviare" | A | salt. | ✔ | ✔ |
 | T36 | Avviso agli invitati su modifica, spostamento ed eliminazione | A | salt. | ✔ | ✔ |
 | T37 | Google Meet | A | ✔ | ✔ | ✔ |
@@ -289,7 +289,7 @@ Totali: A 54 pass, 3 skip (57 casi); B 4 fail, 49 pass, 1 skip (54 casi); C 1 fa
 - **Samsung (C)**: 51 casi su 52 passano con la 0.4.4; l'unico fallito è T70. T70 esegue anche "Cancella dati" dell'app: sul telefono ha azzerato account locale, impostazioni dell'app e permesso notifiche (nessun evento su Google è stato toccato). Per questo T70 non va più lanciato sul telefono e il giro con `pm clear` (`flows.roundtrip`) ora rifiuta di partire fuori dagli emulatori. T71 è stato interrotto con la serie e non ha un esito valido. Casi passati sul telefono in questa sessione: T03–T08, T13–T17, T19–T27 (T25 e T26 con il selettore di One UI), T30–T33, T35–T48, T50, T51, T54–T59, T61, T64, T81, T82 e T51D.
 - **Non eseguiti sul telefono per scelta di sicurezza**: T01, T02, T09 (installano, disinstallano o richiedono l'assenza di account), T10, T12 (cambiano tema e dimensioni di sistema), T33R, T65, T80 (usano `pm clear`), T52, T53 (schermo spento con PIN), T60 (riavvio con PIN), T70, T71 (modalità aereo, vedi sopra). Restano nella lista manuale di `test_pre_release_v1.md`.
 - **Emulatore API 36 (B)**: i quattro fallimenti (T51, T54, T57, T58) erano due problemi diversi, entrambi già risolti: T51 per notifiche vecchie raggruppate (script), T54, T57 e T58 per il foglio "Sveglie attive" che non mostrava le righe (**difetto dell'app**, corretto nella 0.4.3). Sull'emulatore non sono stati rilanciati con la 0.4.4; sul telefono passano.
-- **Emulatore API 26 (A)**: tutti i casi eseguiti passano; salt. T34 (scriverebbe fuori dal calendario principale), T35 e T36 (richiedevano il permesso dei contatti, poi concesso con `pm grant` solo su API 36). Il gruppo F (trascinamento) richiede Android 10 o successivo e non gira su API 26.
+- **Emulatore API 26 (A)**: tutti i casi eseguiti passano; salt. T34 (serve un secondo account Google collegato, vedi la tabella), T35 e T36 (richiedevano il permesso dei contatti, poi concesso con `pm grant` solo su API 36). Il gruppo F (trascinamento) richiede Android 10 o successivo e non gira su API 26.
 - **Mai eseguiti da script**: T01, T02, T09 (provati a mano su API 26), T11 (lingua), T18 (compleanni, permesso contatti), T62 (ora di sistema, serve root), T63 (permessi notifiche revocati), T72 (conflitto con il telefono), T73 (autorizzazione), T74 (rimozione account: dopo la rimozione, per riaggiungerlo serve il consenso a mano sulla pagina di Google; lo script lo segna SKIP).
 
 **Difetti dell'app trovati dai test e cambiamenti collegati (in ordine)**
