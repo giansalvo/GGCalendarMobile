@@ -36,7 +36,7 @@ Spunta ogni riga; annota modello, versione e qualsiasi stranezza. Gli id sono TM
 - **TM5 Sveglia con Non disturbare attivo**: suona lo stesso.
 - **TM6 Popup con il telefono in Silenzioso**: la notifica arriva, senza suono.
 - **TM7 Popup con Non disturbare attivo**: rispetta la modalità (nessun suono, vibrazione né banner; resta l'icona nella barra di stato e nella tendina).
-- **TM8 Riavvio con il PIN non ancora inserito** e una sveglia in arrivo: suona prima dello sblocco; dopo il PIN i promemoria risultano registrati.
+- **TM8 Riavvio con il PIN non ancora inserito**: servono **due sveglie** (metodo Sveglia, non popup, perché Sveglie attive non mostra i popup): A fra 5 minuti e B fra 40 minuti. Riavvia il telefono e non inserire il PIN: A suona prima dello sblocco. Dopo il PIN, Sveglie attive mostra B con il tempo rimanente (A, già suonata, non c'è più).
 - **TM9 App chiusa dalle recenti**: un popup e una sveglia arrivano comunque.
 - **TM10 Modalità aereo**: modifica un evento, il badge sul tasto Aggiorna mostra le modifiche in coda, al ritorno della rete partono da sole e il badge sparisce.
 - **TM11 Due account**: eventi, colori e promemoria di entrambi; un evento presente in due account non duplica sveglia e popup.
