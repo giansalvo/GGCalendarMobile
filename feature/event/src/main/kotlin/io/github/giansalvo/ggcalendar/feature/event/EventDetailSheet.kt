@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -129,8 +128,10 @@ fun EventDetailSheet(
             }
         }
     }
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet) {
-        detail?.let { d ->
+    // The sheet opens only once the event is read: with a placeholder first, the half-open height was measured on the
+    // placeholder and, with the system animations off, never grew to the content (0.4.5: description below the edge).
+    detail?.let { d ->
+        ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet) {
             DetailContent(
                 instance = instance,
                 detail = d,
@@ -146,7 +147,7 @@ fun EventDetailSheet(
                     }
                 },
             )
-        } ?: Spacer(Modifier.height(120.dp))
+        }
     }
 }
 
