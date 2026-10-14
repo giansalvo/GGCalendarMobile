@@ -13,10 +13,20 @@
 
 ---
 
-> **Stato:** in sviluppo (milestone M0). Il piano completo è in [app_planning/plan.md](app_planning/plan.md).
-> **Status:** under development (milestone M0). The full plan is in [app_planning/plan.md](app_planning/plan.md) (Italian).
+> **Stato:** versione 1.0.0. L'APK firmato è nella pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases). Il piano e i test sono in [app_planning/](app_planning/).
+> **Status:** version 1.0.0. The signed APK is on the [Releases](https://github.com/giansalvo/GGCalendarMobile/releases) page. Planning and test records are in [app_planning/](app_planning/) (Italian).
 
-## Funzionalità previste
+## Installazione e primo accesso
+
+1. Scarica `GGCalendar-1.0.0.apk` dalla pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases) e, se vuoi, controlla l'impronta con il file `.sha256` (`certutil -hashfile GGCalendar-1.0.0.apk SHA256` su Windows, `sha256sum` su Linux e macOS).
+2. Apri il file sul telefono e consenti l'installazione da questa fonte quando Android lo chiede. Serve Android 8 o successivo.
+3. Aggiungi il tuo account Google dal menu dell'app.
+
+> **Nota: "Google non ha verificato questa app".** L'accesso ai dati del calendario non ha ancora completato la verifica di Google, quindi al primo accesso Google mostra l'avviso *"Google non ha verificato questa app"*. È previsto e non indica un problema dell'app: tocca **Avanzate**, poi **Vai a GGCalendar (non sicuro)** e concedi l'accesso al calendario. Il codice è pubblico in questo repository e l'app non ha server propri (vedi la [privacy](https://profgusinu.altervista.org/GGCalendar/privacy.html)). Finché l'app non è verificata, Google limita a 100 il numero di utenti che possono autorizzarla.
+>
+> *Note: "Google hasn't verified this app". Access to calendar data has not yet completed Google's verification, so Google shows this warning the first time you sign in. It is expected: tap **Advanced**, then **Go to GGCalendar (unsafe)**, and grant calendar access. Until the app is verified, Google limits it to 100 users.*
+
+## Funzionalità
 
 - Viste programma, giorno, 6 giorni, settimana e mese
 - Sincronizzazione bidirezionale con uno o più account Google Calendar, anche offline, con gestione dei conflitti
