@@ -51,7 +51,7 @@ Spunta ogni riga; annota modello, versione e qualsiasi stranezza. Gli id sono TM
 
 ## Stato al 13/10/2026
 - **Parte 1 (automatica sul Samsung A56, build 0.4.4)**: 44 casi eseguiti, tutti passano (dettaglio nella sezione 9 di `test_emulator_e_device.md`). Mancano sul telefono i casi che cambiano le Impostazioni (T13, T15–T17, T19): gli script ora le leggono e le rimettono, da rilanciare. Il prefisso degli eventi di prova è `[TEST GGCAL]`.
-- **Parte 2 (lista manuale)**, in corso dal 14/10/2026 sul Samsung A56 con la 0.4.8 (id TM1…TM19, tabella 9.2 di `test_emulator_e_device.md`): **passano** TM1, TM3, TM4, TM5, TM6, TM7, TM8, TM9, TM10, TM11, TM12, TM13, TM14, TM15, TM17, TM18, TM19. **Da fare**: TM16 (fuso orario). **Rimandati**: TM2 (serve un secondo telefono o un account mai usato), T33R e T65 (cancellano i dati dell'app).
+- **Parte 2 (lista manuale)**, in corso dal 14/10/2026 sul Samsung A56 con la 0.4.8 (id TM1…TM19, tabella 9.2 di `test_emulator_e_device.md`): **passano** TM1, TM3, TM4, TM5, TM6, TM7, TM8, TM9, TM10, TM11, TM12, TM13, TM14, TM15, TM16, TM17, TM18, TM19: 18 casi su 19. **Da fare**: nessuno. **Rimandati**: TM2 (serve un secondo telefono o un account mai usato), T33R e T65 (cancellano i dati dell'app).
 
 ## Casi automatici che sul telefono restano manuali (decisione del 13/10/2026)
 Non si lanciano da script sul Samsung perché cancellano i dati dell'app, richiedono lo sblocco con il PIN o cambiano impostazioni di sistema. Da fare a mano e spuntare:
