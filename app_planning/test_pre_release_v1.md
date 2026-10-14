@@ -48,7 +48,6 @@ Spunta ogni riga; annota modello, versione e qualsiasi stranezza.
 ## Stato al 13/10/2026
 - **Parte 1 (automatica sul Samsung A56, build 0.4.4)**: 44 casi eseguiti, tutti passano (dettaglio nella sezione 9 di `test_emulator_e_device.md`). Mancano sul telefono i casi che cambiano le Impostazioni (T13, T15–T17, T19): gli script ora le leggono e le rimettono, da rilanciare. Il prefisso degli eventi di prova è `[TEST GGCAL]`.
 - **Parte 2 (lista manuale)**: da fare.
-- Prima della v1.0 restano da chiarire: la schermata della sveglia che si è chiusa da sola mentre la suoneria continuava, e il suono del popup non udito sul telefono.
 
 ## Casi automatici che sul telefono restano manuali (decisione del 13/10/2026)
 Non si lanciano da script sul Samsung perché cancellano i dati dell'app, richiedono lo sblocco con il PIN o cambiano impostazioni di sistema. Da fare a mano e spuntare:

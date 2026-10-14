@@ -299,8 +299,6 @@ Totali: A 54 pass, 3 skip (57 casi); B 4 fail, 49 pass, 1 skip (54 casi); C 1 fa
 7. **Funzione mancante: uscire da un account** (richiesta dell'utente, 0.4.5): pulsante di rimozione accanto a ogni account nel menu laterale, con conferma; toglie dal telefono account, calendari, eventi e coda di invio di quell'account e prova a revocare l'accesso su Google (2 test unitari, `AccountRemovalTest`).
 
 **Da verificare (non ancora risolto)**
-- La schermata della sveglia "gearly" si è chiusa senza intervento dell'utente mentre la suoneria è continuata fino all'arresto automatico. Non riprodotto da script: va indagato.
-- Il suono del popup sul Samsung non è stato udito dall'utente (il canale "Promemoria" ha il suono di sistema; probabile volume o modalità del telefono).
 - Dopo l'ultima modifica a `flows.reveal` T30 non è stato rilanciato sull'emulatore.
 
 **Cambiamenti agli script (13/10/2026, sera)**: modalità `--mode slow`; `settings_state.py` (le impostazioni dell'utente si leggono all'inizio e si rimettono alla fine, con la durata della sveglia); sul telefono nessuna accelerazione, nessun `pm grant`, nessun cambio di tema, densità, timeout dello schermo, e `roundtrip` (cancellazione dei dati) vietato; `usable_h` (la barra di navigazione a tre pulsanti del Samsung toglie 126 px); ricerca del giorno nel selettore di date indipendente dalla lingua; fuso New York riconosciuto anche in italiano; chiusura della tendina delle notifiche prima di ogni caso (una tendina aperta bloccava `uiautomator`); `g_setup` crea solo gli eventi dei casi scelti; T61 rimette il fuso del telefono; il prefisso degli eventi di prova ora è **`[TEST GGCAL]`** (era `[TEST-EMU]`).
