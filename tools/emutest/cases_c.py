@@ -189,3 +189,23 @@ def t27(ctx):
         d.back()
         time.sleep(1)
         F.home(ctx)
+
+
+@case("T74", "C", "Remove the account from the app (log out): calendars go, adding it again brings them back", account=True)
+def t74(ctx):
+    d = ctx.d
+    if not d.serial.startswith("emulator-"):
+        ctx.skip("on a phone the account is removed by hand (it would wipe the local copy)")
+    F.home(ctx)
+    F.open_drawer(ctx)
+    F.drawer_item(ctx, "drawer_account_remove")
+    ctx.check(d.wait(timeout=8, tag="account_remove_confirm"), "no confirmation question for removing the account")
+    d.click(tag="account_remove_cancel")
+    ctx.check(d.gone(timeout=5, tag="account_remove_confirm"), "Cancel did not close the question")
+    ctx.check(d.find(tag="calendar_row"), "Cancel removed the account")
+    F.drawer_item(ctx, "drawer_account_remove")
+    d.click(tag="account_remove_confirm")
+    ctx.check(d.gone(timeout=10, tag="calendar_row"), "the calendars of the account are still in the drawer")
+    ctx.step("account_removed")
+    d.back()
+    ctx.check(F.login(ctx), "adding the account again did not bring the calendars back")

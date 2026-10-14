@@ -1,6 +1,6 @@
 # Test pre-release v1.0 sul telefono (Samsung A56, Android 16)
 
-Due parti: (1) casi automatici lanciati sul telefono con uno degli account reali; (2) lista manuale, corta. Gli emulatori (API 26, 30, 34, 36, 37) restano nel piano `test_API_emulator.md`.
+Due parti: (1) casi automatici lanciati sul telefono con uno degli account reali; (2) lista manuale, corta. Gli emulatori (API 26, 30, 34, 36, 37) restano nel piano `test_emulator_e_device.md`.
 
 ## 1. Casi automatici sul telefono
 **Prima di lanciare, l'utente dice quale account usare** (`--account`) e se parte la modalità rapida o quella completa. Io non lancio nulla sul telefono senza questo via libera.
@@ -12,7 +12,7 @@ Due parti: (1) casi automatici lanciati sul telefono con uno degli account reali
 - Il telefono resta in carica e con lo schermo acceso; lo script rimette a posto animazioni e "schermo sempre acceso" alla fine.
 - Prima del run: sincronizzazione completata e nessuna modifica in coda (badge del tasto Aggiorna vuoto).
 
-**Casi inclusi** (id del piano `test_API_emulator.md`)
+**Casi inclusi** (id del piano `test_emulator_e_device.md`)
 | Gruppo | Casi | Note |
 |---|---|---|
 | A, B | T03–T08, T10, T13–T17, T19 | struttura, viste, Informazioni (versione e data uguali all'APK), Impostazioni con Salva |
@@ -46,6 +46,17 @@ Spunta ogni riga; annota modello, versione e qualsiasi stranezza.
 15. **Pulizia finale**: nessun evento `[TEST GGCAL]` rimasto, nessun messaggio d'errore pendente nel menu.
 
 ## Stato al 13/10/2026
-- **Parte 1 (automatica sul Samsung A56, build 0.4.4)**: 44 casi eseguiti, tutti passano (dettaglio nella sezione 9 di `test_API_emulator.md`). Mancano sul telefono i casi che cambiano le Impostazioni (T13, T15–T17, T19): gli script ora le leggono e le rimettono, da rilanciare. Il prefisso degli eventi di prova è `[TEST GGCAL]`.
+- **Parte 1 (automatica sul Samsung A56, build 0.4.4)**: 44 casi eseguiti, tutti passano (dettaglio nella sezione 9 di `test_emulator_e_device.md`). Mancano sul telefono i casi che cambiano le Impostazioni (T13, T15–T17, T19): gli script ora le leggono e le rimettono, da rilanciare. Il prefisso degli eventi di prova è `[TEST GGCAL]`.
 - **Parte 2 (lista manuale)**: da fare.
 - Prima della v1.0 restano da chiarire: la schermata della sveglia che si è chiusa da sola mentre la suoneria continuava, e il suono del popup non udito sul telefono.
+
+## Casi automatici che sul telefono restano manuali (decisione del 13/10/2026)
+Non si lanciano da script sul Samsung perché cancellano i dati dell'app, richiedono lo sblocco con il PIN o cambiano impostazioni di sistema. Da fare a mano e spuntare:
+- **T52, T53** sveglia a schermo spento e bloccato, poi "Ferma la sveglia" (punto 3 della lista sopra).
+- **T60** riavvio con il PIN e promemoria pendente (punto 5).
+- **T33R, T65** dopo "Cancella dati" dell'app e nuovo accesso: gli eventi creati e la sveglia (resta una sveglia, non diventa una notifica) tornano da Google. Crea un evento di prova con una sveglia, cancella i dati dell'app da Impostazioni di Android, riapri e accedi.
+- **T80** monkey: non si fa sul telefono (tocchi casuali su dati reali).
+- **T10, T12** tema scuro di sistema, carattere e schermo ingranditi (punto 12).
+- **T01, T02, T09** installazione pulita, aggiornamento sopra la versione precedente (punto 1), "+" senza account (solo con l'app appena installata).
+- **T11, T18, T62, T63, T72, T73** lingua, compleanni con il permesso contatti (punto 11), cambio dell'ora, avviso con le notifiche bloccate (revoca il permesso notifiche e apri un evento con promemoria), conflitto con una modifica dal web (punto 14), errore di autorizzazione.
+- **T34** cambio di calendario di un evento (da fare solo con un evento di prova).

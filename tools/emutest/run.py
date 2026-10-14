@@ -1,4 +1,4 @@
-"""Runs the emulator tests described in app_planning/test_API_emulator.md.
+"""Runs the emulator tests described in app_planning/test_emulator_e_device.md.
 
   python run.py --serial emulator-5556 --apk ../../dist/GGCalendar-0.4.1.apk
   python run.py --serial emulator-5556 --apk ... --only T03,T04     (a few cases)
@@ -111,6 +111,7 @@ def main():
     outdir = os.path.join(a.out, f"{stamp}_api{probe.api}_{version}")
     d = Device(a.serial, outdir)
     ctx = harness.Ctx(d, a.account, apk)
+    ctx.state["chosen"] = {c[0] for c in chosen}
     print(f"API {d.api}, app {version}, {len(chosen)} cases -> {outdir}")
 
     results = []
@@ -158,8 +159,7 @@ def main():
             except Exception:
                 pass
         try:
-            if is_emu:
-                d.network(True)
+            d.network(True)  # a no-op unless a case left the airplane mode on
         except Exception:
             pass
 

@@ -33,6 +33,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -84,8 +85,10 @@ internal fun ScheduleView(
     onReachEnd: () -> Unit,
     onEventClick: (EventInstance) -> Unit,
     modifier: Modifier = Modifier,
+    dimPast: Boolean = false,
 ) {
     val today = LocalDate.now()
+    val now = rememberNow()
     val items = remember(from, to, instances) { buildItems(from, to, instances, today, Instant.now()) }
     fun indexOf(day: LocalDate) = items.indexOfFirst { it !is ScheduleItem.WeekHeader && it.day >= day }.let { if (it < 0) items.lastIndex else it }.coerceAtLeast(0)
 
@@ -126,7 +129,7 @@ internal fun ScheduleView(
         items(items, key = { it.key }) { item ->
             when (item) {
                 is ScheduleItem.WeekHeader -> WeekHeader(item.start)
-                is ScheduleItem.Event -> DayRow(item.day, item.firstOfDay, today) { EventCard(item.instance, item.day) { onEventClick(item.instance) } }
+                is ScheduleItem.Event -> DayRow(item.day, item.firstOfDay, today) { EventCard(item.instance, item.day, dimmed = dimPast && item.instance.end < now) { onEventClick(item.instance) } }
                 is ScheduleItem.NowLine -> DayRow(item.day, item.firstOfDay, today) { NowLine() }
                 is ScheduleItem.Empty -> DayRow(item.day, true, today) {
                     Text(
@@ -204,12 +207,13 @@ private fun DateLabel(day: LocalDate, isToday: Boolean) {
 }
 
 @Composable
-private fun EventCard(instance: EventInstance, day: LocalDate, onClick: () -> Unit) {
+private fun EventCard(instance: EventInstance, day: LocalDate, dimmed: Boolean, onClick: () -> Unit) {
     val background = parseColor(instance.colorHex)
     val content = contentColorOn(background)
     Row(
         Modifier
             .fillMaxWidth()
+            .alpha(if (dimmed) 0.6f else 1f)
             .background(background, RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 10.dp),

@@ -2,6 +2,7 @@ package io.github.giansalvo.ggcalendar.core.data
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.withTransaction
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -33,6 +34,7 @@ class CalendarRepository @Inject constructor(
     private val scheduler: SyncScheduler,
     private val prefs: AppPreferences,
     private val birthdays: BirthdaySync,
+    private val reminders: ReminderHooks,
 ) {
     val syncing: StateFlow<Boolean> get() = engine.syncing
 
@@ -103,6 +105,19 @@ class CalendarRepository @Inject constructor(
     suspend fun addAccount(email: String) {
         db.accountDao().insert(AccountEntity(email))
         scheduler.syncNow()
+    }
+
+    /**
+     * Removes an account from the phone: its calendars, events and instances go (cascade), and so does whatever was queued
+     * for it. Nothing is deleted on Google. The reminders are planned again without it.
+     */
+    suspend fun removeAccount(email: String) {
+        val prefix = email.replace("!", "!!").replace("%", "!%").replace("_", "!_") + "|"
+        db.withTransaction {
+            db.outboxDao().discardForAccount(prefix)
+            db.accountDao().delete(email)
+        }
+        reminders.changed()
     }
 
     suspend fun markMessageRead(id: Long) = db.syncMessageDao().markRead(id)

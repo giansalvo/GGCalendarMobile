@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.Cake
 import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Info
@@ -122,6 +123,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
     var alarmsOpen by rememberSaveable { mutableStateOf(false) }
     var aboutOpen by rememberSaveable { mutableStateOf(false) }
     var exportOpen by rememberSaveable { mutableStateOf(false) }
+    var removing by rememberSaveable { mutableStateOf<String?>(null) }
     var settingsOpen by rememberSaveable { mutableStateOf(false) }
     var searchOpen by rememberSaveable { mutableStateOf(false) }
 
@@ -184,6 +186,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                 },
                 onToggleCalendar = viewModel::toggleCalendar,
                 onAddAccount = { pickAccount.launch(viewModel.chooseAccountIntent()) },
+                onRemoveAccount = { removing = it },
                 onActiveAlarms = {
                     alarmsOpen = true
                     scope.launch { drawerState.close() }
@@ -263,12 +266,14 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                         onReachStart = { viewModel.extendSchedule(past = true) },
                         onReachEnd = { viewModel.extendSchedule(past = false) },
                         onEventClick = viewModel::openEvent,
+                        dimPast = state.dimPast,
                     )
                     CalendarView.MONTH -> MonthView(
                         date = state.date,
                         instances = state.instances,
                         onMonthChange = viewModel::showMonth,
                         onDayClick = viewModel::openDay,
+                        dimPast = state.dimPast,
                     )
                     CalendarView.MONTH_LIST -> MonthListView(
                         date = state.date,
@@ -276,6 +281,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                         onMonthChange = viewModel::showMonth,
                         onDayClick = viewModel::goTo,
                         onEventClick = viewModel::openEvent,
+                        dimPast = state.dimPast,
                     )
                     CalendarView.DAY, CalendarView.SIX_DAYS, CalendarView.WEEK -> key(state.view) {
                         TimeGridView(
@@ -336,6 +342,21 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
         SettingsScreen(onClose = { settingsOpen = false }, onOpenNotifications = { notificationsOpen = true })
     }
     if (exportOpen) ExportDialog(accounts = state.accounts, onDismiss = { exportOpen = false })
+    removing?.let { email ->
+        AlertDialog(
+            modifier = Modifier.exposeTestTags(),
+            onDismissRequest = { removing = null },
+            title = { Text(stringResource(R.string.remove_account_title)) },
+            text = { Text(stringResource(R.string.remove_account_text, email)) },
+            confirmButton = {
+                TextButton(modifier = Modifier.testTag("account_remove_confirm"), onClick = {
+                    removing = null
+                    viewModel.removeAccount(email)
+                }) { Text(stringResource(R.string.remove_account_confirm)) }
+            },
+            dismissButton = { TextButton(modifier = Modifier.testTag("account_remove_cancel"), onClick = { removing = null }) { Text(stringResource(R.string.remove_account_cancel)) } },
+        )
+    }
     if (aboutOpen) AboutSheet(onDismiss = { aboutOpen = false })
     if (searchOpen) {
         SearchScreen(search = viewModel::search, refreshKey = state.selected, onOpen = viewModel::openEvent, onClose = { searchOpen = false })
@@ -427,6 +448,7 @@ private fun CalendarDrawer(
     onRefresh: () -> Unit,
     onToggleCalendar: (String, Boolean) -> Unit,
     onAddAccount: () -> Unit,
+    onRemoveAccount: (String) -> Unit,
     onActiveAlarms: () -> Unit,
     onSettings: () -> Unit,
     onExport: () -> Unit,
@@ -467,9 +489,12 @@ private fun CalendarDrawer(
             state.accounts.forEach { account ->
                 Row(Modifier.padding(16.dp, 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Avatar(account.email)
-                    Column(Modifier.padding(start = 16.dp)) {
+                    Column(Modifier.padding(start = 16.dp).weight(1f)) {
                         Text(account.email, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text("Google", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    IconButton(onClick = { onRemoveAccount(account.email) }, modifier = Modifier.testTag("drawer_account_remove")) {
+                        Icon(Icons.AutoMirrored.Outlined.Logout, contentDescription = stringResource(R.string.remove_account_cd, account.email))
                     }
                 }
                 account.calendars.forEach { CalendarRow(it, onToggleCalendar) }

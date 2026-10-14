@@ -1,4 +1,4 @@
-"""Thin adb + UI Automator layer used by the emulator tests (see app_planning/test_API_emulator.md).
+"""Thin adb + UI Automator layer used by the emulator tests (see app_planning/test_emulator_e_device.md).
 
 Everything goes through adb without root, so it also works on images with the Play Store.
 Controls are found by their `testTag` (exposed as resource id), or by text / content description, where text can be

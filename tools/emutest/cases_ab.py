@@ -1,4 +1,4 @@
-"""Groups A (start and structure) and B (settings). See app_planning/test_API_emulator.md."""
+"""Groups A (start and structure) and B (settings). See app_planning/test_emulator_e_device.md."""
 import io
 import re
 import time

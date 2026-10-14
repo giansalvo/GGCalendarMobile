@@ -134,6 +134,10 @@ interface OutboxDao {
     @Query("DELETE FROM outbox WHERE event_id = :eventId")
     suspend fun discardFor(eventId: String)
 
+    /** Drops what was queued for the calendars of an account that is being removed ([likePrefix] is `email|` escaped with `!`). */
+    @Query("DELETE FROM outbox WHERE calendar_id LIKE :likePrefix || '%' ESCAPE '!'")
+    suspend fun discardForAccount(likePrefix: String)
+
     @Query("UPDATE outbox SET attempts = attempts + 1, last_error = :error WHERE seq = :seq")
     suspend fun failed(seq: Long, error: String?)
 }

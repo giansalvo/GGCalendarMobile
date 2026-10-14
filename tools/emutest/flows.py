@@ -493,6 +493,8 @@ def cleanup(ctx, limit=40):
 def roundtrip(ctx):
     """Clears the app data and logs in again: whatever is still there came back from Google."""
     d = ctx.d
+    if not d.serial.startswith("emulator-"):  # it wipes the app data: never on a real phone (it happened on 13/10/2026 with T70)
+        raise Skip("clearing the app data is only done on emulators")
     d.shell(f"pm clear {PKG}")
     time.sleep(1.5)
     grant_permissions(ctx)

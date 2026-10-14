@@ -1,4 +1,4 @@
-# Piano di test automatico sull'emulatore Android (GGCalendar Mobile)
+# Piano e risultati dei test su emulatore e telefono (GGCalendar Mobile)
 
 Scritto il 13/10/2026. Serve a rifare lo stesso giro di prove su qualunque immagine di emulatore (API 26, 30, 34, 36, 37...) e a ogni nuova versione dell'app, con il minimo intervento dell'utente. Complementa le prove sul Samsung (Doze profondo, riavvio con PIN, telefono vero), che restano manuali.
 
@@ -199,13 +199,15 @@ Cartella `tools/emutest/` (Python 3 con Pillow, adb dell'SDK, nessuna altra dipe
 - Offline = modalità aereo dal pannello delle impostazioni rapide (`svc wifi disable` e un proxy non isolano l'app sull'emulatore).
 - `pm clear` (giro completo con Google) azzera anche il permesso dei contatti.
 
-## 9. Risultati consolidati (13/10/2026)
+## 9. Risultati consolidati (aggiornato il 13/10/2026, sera)
 
-Per ogni caso, l'ultimo esito su ciascuna piattaforma: **A** = emulatore API 26 (Android 8, build 0.4.1, inglese), **B** = emulatore API 36 (Android 16, build 0.4.2, inglese), **C** = Samsung Galaxy A56 con One UI 8.5 / Android 16 (build 0.4.3 e 0.4.4, italiano, account reale profgusinu@gmail.com). ✔ passa, ✖ fallisce, salt. = saltato dallo script, — = non eseguito su quella piattaforma.
+Per ogni caso, l'ultimo esito su ciascuna piattaforma: **A** = emulatore API 26 (Android 8, build 0.4.1, inglese), **B** = emulatore API 36 (Android 16, build 0.4.2, inglese), **C** = Samsung Galaxy A56, One UI 8.5 / Android 16 = API 36 (build 0.4.3 e 0.4.4, italiano, account reale profgusinu@gmail.com). ✔ passa, ✖ fallisce, salt. = saltato dallo script, — = non eseguito su quella piattaforma.
 
-Totali (casi eseguiti): A {'PASS': 54, 'SKIP': 3}; B {'PASS': 49, 'SKIP': 1, 'FAIL': 4}; C {'PASS': 44}.
+Totali: A 54 pass, 3 skip (57 casi); B 4 fail, 49 pass, 1 skip (54 casi); C 1 fail, 51 pass (52 casi).
 
-| ID | Caso | A: API 26 | B: API 36 emul. | C: Samsung A56 (API 36) |
+**Tabella 9.1 – Esito di ciascun caso di test per piattaforma (A: emulatore API 26, B: emulatore API 36, C: Samsung A56 con API 36)**
+
+| ID | Caso | A: emul. API 26 | B: emul. API 36 | C: Samsung A56 (API 36) |
 |---|---|---|---|---|
 | T01 | Installazione pulita e primo avvio | — | — | — |
 | T02 | Aggiornamento sopra la versione precedente (install -r) | — | — | — |
@@ -219,19 +221,19 @@ Totali (casi eseguiti): A {'PASS': 54, 'SKIP': 3}; B {'PASS': 49, 'SKIP': 1, 'FA
 | T10 | Rotazione dello schermo e tema scuro del sistema | ✔ | — | — |
 | T11 | Lingua italiana / inglese | — | — | — |
 | T12 | Dimensione del carattere e dello schermo maggiorate (settings put syst | ✔ | — | — |
-| T13 | Tema Chiaro / Scuro / Sistema + Salva | ✔ | ✔ | — |
+| T13 | Tema Chiaro / Scuro / Sistema + Salva | ✔ | ✔ | ✔ |
 | T14 | Esci con modifiche non salvate | ✔ | ✔ | ✔ |
-| T15 | Primo giorno della settimana: Lunedì / Sabato / Domenica | ✔ | ✔ | — |
-| T16 | Inizio della giornata | ✔ | ✔ | — |
-| T17 | Eventi passati attenuati | ✔ | ✔ | — |
+| T15 | Primo giorno della settimana: Lunedì / Sabato / Domenica | ✔ | ✔ | ✔ |
+| T16 | Inizio della giornata | ✔ | ✔ | ✔ |
+| T17 | Eventi passati attenuati | ✔ | ✔ | ✔ |
 | T18 | Compleanni dalla rubrica | — | — | — |
-| T19 | "Notifiche e sveglie" dalle Impostazioni | ✔ | ✔ | — |
+| T19 | "Notifiche e sveglie" dalle Impostazioni | ✔ | ✔ | ✔ |
 | T20 | Sincronizzazione iniziale e tasto Aggiorna | ✔ | ✔ | ✔ |
 | T21 | Tocco su un evento | ✔ | ✔ | ✔ |
 | T22 | Tocco su spazio vuoto della griglia | ✔ | ✔ | ✔ |
 | T23 | Ricerca | ✔ | ✔ | ✔ |
 | T24 | Mini-calendario | ✔ | ✔ | ✔ |
-| T25 | Esportazione .ics | ✔ | ✔ | — |
+| T25 | Esportazione .ics | ✔ | ✔ | ✔ |
 | T26 | Esportazione CSV | ✔ | ✔ | ✔ |
 | T27 | Condividi evento come testo e come .ics | ✔ | ✔ | ✔ |
 | T30 | Crea evento singolo con titolo, ora, luogo, descrizione | ✔ | ✔ | ✔ |
@@ -265,12 +267,12 @@ Totali (casi eseguiti): A {'PASS': 54, 'SKIP': 3}; B {'PASS': 49, 'SKIP': 1, 'FA
 | T58 | Chiusura anticipata di una sveglia | ✔ | ✖ | ✔ |
 | T59 | App chiusa dalle recenti (am force-stop e kill) | ✔ | ✔ | ✔ |
 | T60 | Riavvio dell'emulatore con promemoria pendente | ✔ | ✔ | — |
-| T61 | Cambio di fuso (service call alarm 3 s16 Asia/Tokyo e ritorno) | ✔ | ✔ | — |
+| T61 | Cambio di fuso (service call alarm 3 s16 Asia/Tokyo e ritorno) | ✔ | ✔ | ✔ |
 | T62 | Cambio dell'ora di sistema | — | — | — |
 | T63 | Avviso nel dettaglio se le notifiche sono bloccate | — | — | — |
 | T64 | Promemoria email | ✔ | ✔ | ✔ |
 | T65 | Sveglia sincronizzata (ggAlarm) | ✔ | ✔ | — |
-| T70 | Modifica offline (svc wifi disable; svc data disable) | ✔ | ✔ | — |
+| T70 | Modifica offline (svc wifi disable; svc data disable) | ✔ | ✔ | ✖ |
 | T71 | Assenza di rete all'avvio | ✔ | ✔ | — |
 | T72 | Conflitto: modifica offline sull'emulatore e modifica dello stesso eve | — | — | — |
 | T73 | Errore di autorizzazione | — | — | — |
@@ -278,25 +280,29 @@ Totali (casi eseguiti): A {'PASS': 54, 'SKIP': 3}; B {'PASS': 49, 'SKIP': 1, 'FA
 | T81 | Memoria bassa e app in background (am send-trim-memory, am kill) e rit | ✔ | ✔ | ✔ |
 | T82 | Scansione logcat dell'intera sessione | ✔ | ✔ | ✔ |
 | T51D | Solo telefono: popup e tocco sulla notifica | — | — | ✔ |
+| T74 | Rimozione dell'account dall'app (solo emulatore, non ancora eseguito) | — | — | — |
 
 **Lettura dei risultati**
-- **Samsung (C)**: tutti i 44 casi eseguiti passano con la 0.4.4 (T45–T48, T50–T51, T54–T59 e T64 dopo le correzioni sotto). Non eseguiti sul telefono per scelta di sicurezza: T01, T02, T09 (cancellano o richiedono l'assenza di account), T10, T12, T13, T15–T17, T19 (cambierebbero tema e impostazioni dell'utente: ora gli script le leggono e le rimettono, vedi sotto, ma i casi non sono stati ancora rilanciati sul telefono), T25 (selettore file di One UI), T33R, T65, T70, T71, T80 (cancellano i dati dell'app o attivano la modalità aereo), T52, T53 (schermo spento con PIN), T60, T61 (riavvio e fuso).
-- **Emulatore API 36 (B)**: i quattro fallimenti (T51, T54, T57, T58) erano due problemi diversi, entrambi già risolti: T51 per notifiche vecchie raggruppate (script), T54, T57 e T58 per il foglio "Sveglie attive" che non mostrava le righe (**difetto dell'app**, corretto nella 0.4.3). Sull'emulatore non sono stati rilanciati con la 0.4.4 (sospeso su richiesta); sul telefono passano.
+- **Samsung (C)**: 51 casi su 52 passano con la 0.4.4; l'unico fallito è T70. T70 esegue anche "Cancella dati" dell'app: sul telefono ha azzerato account locale, impostazioni dell'app e permesso notifiche (nessun evento su Google è stato toccato). Per questo T70 non va più lanciato sul telefono e il giro con `pm clear` (`flows.roundtrip`) ora rifiuta di partire fuori dagli emulatori. T71 è stato interrotto con la serie e non ha un esito valido. Casi passati sul telefono in questa sessione: T03–T08, T13–T17, T19–T27 (T25 e T26 con il selettore di One UI), T30–T33, T35–T48, T50, T51, T54–T59, T61, T64, T81, T82 e T51D.
+- **Non eseguiti sul telefono per scelta di sicurezza**: T01, T02, T09 (installano, disinstallano o richiedono l'assenza di account), T10, T12 (cambiano tema e dimensioni di sistema), T33R, T65, T80 (usano `pm clear`), T52, T53 (schermo spento con PIN), T60 (riavvio con PIN), T70, T71 (modalità aereo, vedi sopra). Restano nella lista manuale di `test_pre_release_v1.md`.
+- **Emulatore API 36 (B)**: i quattro fallimenti (T51, T54, T57, T58) erano due problemi diversi, entrambi già risolti: T51 per notifiche vecchie raggruppate (script), T54, T57 e T58 per il foglio "Sveglie attive" che non mostrava le righe (**difetto dell'app**, corretto nella 0.4.3). Sull'emulatore non sono stati rilanciati con la 0.4.4; sul telefono passano.
 - **Emulatore API 26 (A)**: tutti i casi eseguiti passano; salt. T34 (scriverebbe fuori dal calendario principale), T35 e T36 (richiedevano il permesso dei contatti, poi concesso con `pm grant` solo su API 36). Il gruppo F (trascinamento) richiede Android 10 o successivo e non gira su API 26.
-- **Mai eseguiti da script**: T01, T02, T09 (provati a mano su API 26), T11 (lingua), T18 (compleanni, permesso contatti), T62 (ora di sistema, serve root), T63 (permessi notifiche revocati), T72 (conflitto con il telefono), T73 (autorizzazione).
+- **Mai eseguiti da script**: T01, T02, T09 (provati a mano su API 26), T11 (lingua), T18 (compleanni, permesso contatti), T62 (ora di sistema, serve root), T63 (permessi notifiche revocati), T72 (conflitto con il telefono), T73 (autorizzazione), T74 (rimozione account, scritto ma non ancora lanciato).
 
-**Difetti dell'app trovati dai test, in ordine (aggiornato)**
+**Difetti dell'app trovati dai test e cambiamenti collegati (in ordine)**
 1. Prima di Android 12 il sync su richiesta falliva (corretto in 0.4.1).
 2. Con nessun account, "+" chiudeva l'app (0.4.1).
 3. L'editor mostrava una bozza scartata (0.4.2).
-4. **Foglio "Sveglie attive"** (0.4.3): la lista arriva dopo l'apertura del foglio e il foglio restava ancorato all'altezza iniziale, con le righe sotto il bordo dello schermo. Visto su emulatore API 36 (grafica software), non sul Samsung la prima volta. Ora ha un'altezza fissa (60% dello schermo). Verificato sul Samsung (T57, T54, T58).
-5. **Errore 403 "limite di richieste"** (0.4.4): una serie di creazioni di eventi ravvicinate faceva rispondere Google con un 403; l'app trattava ogni 403 come rifiuto definitivo, scartava l'operazione e riscaricava il calendario, quindi l'evento nuovo spariva dal telefono. L'ipotesi viene dalla lettura del codice e dal comportamento osservato (eventi creati dopo circa 40 minuti di prove non più ritrovati, poi di nuovo regolari con la 0.4.4); la risposta di Google non è stata registrata. Ora 429 e 403 con `rateLimitExceeded`/`userRateLimitExceeded`/`quotaExceeded` restano in coda e si riprovano (`GoogleApiException.isRateLimit`, test `rateLimitKeepsTheQueueAndTheLocalEvent`).
+4. **Foglio "Sveglie attive"** (0.4.3): la lista arriva dopo l'apertura del foglio e il foglio restava ancorato all'altezza iniziale, con le righe sotto il bordo dello schermo. Ora ha un'altezza fissa (60% dello schermo). Verificato sul Samsung (T57, T54, T58).
+5. **Errore 403 "limite di richieste"** (0.4.4): una serie di creazioni di eventi ravvicinate faceva rispondere Google con un 403; l'app lo trattava come rifiuto definitivo, scartava l'operazione e riscaricava il calendario, quindi l'evento nuovo spariva dal telefono. L'ipotesi viene dalla lettura del codice e dal comportamento osservato (eventi non più ritrovati dopo circa 40 minuti di prove, poi regolari con la 0.4.4); la risposta di Google non è stata registrata. Ora 429 e 403 con `rateLimitExceeded`/`userRateLimitExceeded`/`quotaExceeded` restano in coda e si riprovano (`GoogleApiException.isRateLimit`, test `rateLimitKeepsTheQueueAndTheLocalEvent`).
+6. **Eventi passati non attenuati** (segnalato dall'utente, corretto in 0.4.5): l'impostazione "Attenua gli eventi passati" valeva solo per le griglie (Giorno, 6 giorni, Settimana) e la fascia "tutto il giorno"; ora vale anche per Mese, Programma e Mese + Programma.
+7. **Funzione mancante: uscire da un account** (richiesta dell'utente, 0.4.5): pulsante di rimozione accanto a ogni account nel menu laterale, con conferma; toglie dal telefono account, calendari, eventi e coda di invio di quell'account e prova a revocare l'accesso su Google (2 test unitari, `AccountRemovalTest`).
 
 **Da verificare (non ancora risolto)**
-- Durante la serie con sveglia reale l'utente ha riferito che la schermata della sveglia "gearly" si è chiusa senza intervento e la suoneria è continuata fino all'arresto automatico. Non riprodotto da script: va indagato (la schermata a tutto schermo si chiude mentre il servizio continua a suonare?).
+- La schermata della sveglia "gearly" si è chiusa senza intervento dell'utente mentre la suoneria è continuata fino all'arresto automatico. Non riprodotto da script: va indagato.
 - Il suono del popup sul Samsung non è stato udito dall'utente (il canale "Promemoria" ha il suono di sistema; probabile volume o modalità del telefono).
-- Dopo l'ultima modifica a `flows.reveal` (limite dell'altezza) T30 non è stato rilanciato sull'emulatore: due esecuzioni intermedie fallivano per quella modifica, poi tornata al limite precedente.
+- Dopo l'ultima modifica a `flows.reveal` T30 non è stato rilanciato sull'emulatore.
 
-**Cambiamenti agli script (13/10/2026, sera)**: modalità `--mode slow`; `settings_state.py` (le impostazioni dell'utente si leggono all'inizio e si rimettono alla fine, con la durata della sveglia); sul telefono nessuna accelerazione, nessun `pm grant`, nessun cambio di tema, densità, timeout dello schermo; `usable_h` (la barra di navigazione a tre pulsanti del Samsung toglie 126 px); ricerca del giorno nel selettore di date indipendente dalla lingua ("mercoledì 14 ottobre 2026"); fuso New York riconosciuto anche in italiano; chiusura della tendina delle notifiche prima di ogni caso (una tendina aperta bloccava `uiautomator`); pulizia delle notifiche vecchie solo sugli emulatori; il prefisso degli eventi di prova ora è **`[TEST GGCAL]`** (era `[TEST-EMU]`), perché gli script girano anche sul telefono.
+**Cambiamenti agli script (13/10/2026, sera)**: modalità `--mode slow`; `settings_state.py` (le impostazioni dell'utente si leggono all'inizio e si rimettono alla fine, con la durata della sveglia); sul telefono nessuna accelerazione, nessun `pm grant`, nessun cambio di tema, densità, timeout dello schermo, e `roundtrip` (cancellazione dei dati) vietato; `usable_h` (la barra di navigazione a tre pulsanti del Samsung toglie 126 px); ricerca del giorno nel selettore di date indipendente dalla lingua; fuso New York riconosciuto anche in italiano; chiusura della tendina delle notifiche prima di ogni caso (una tendina aperta bloccava `uiautomator`); `g_setup` crea solo gli eventi dei casi scelti; T61 rimette il fuso del telefono; il prefisso degli eventi di prova ora è **`[TEST GGCAL]`** (era `[TEST-EMU]`).
 
-**Prossimi passi dei test**: emulatori API 30, 34 e 37 (serve il tuo account aggiunto con Norton spento) in modalità rapida e completa; modalità completa su API 26 in un'unica esecuzione; sul telefono, i casi che cambiano le Impostazioni (T13, T15–T17, T19) con il nuovo ripristino; la lista manuale di `test_pre_release_v1.md`.
+**Prossimi passi dei test**: T74 sull'emulatore; emulatori API 30, 34 e 37 (serve il tuo account aggiunto con Norton spento) in modalità rapida e completa; modalità completa su API 26 in un'unica esecuzione; sul telefono, rilanciare le verifiche della 0.4.5 (eventi passati attenuati, rimozione account a mano); la lista manuale di `test_pre_release_v1.md`.

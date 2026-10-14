@@ -76,7 +76,12 @@ def g_setup(ctx):
     clear_shade(ctx)
     set_alarm_duration(ctx, 1)
     on_phone = not ctx.d.serial.startswith("emulator-")
-    skip = ("g_alarm", "g_boot") if on_phone else ()  # no screen-off alarm and no reboot on a phone
+    skip = ["g_alarm", "g_boot"] if on_phone else []  # no screen-off alarm and no reboot on a phone
+    chosen = ctx.state.get("chosen")
+    if chosen:  # create only the events the selected cases use (every alarm created rings on the phone)
+        uses = {"g_popup": ("T50", "T51"), "g_alarm": ("T52", "T53", "T57"), "g_kill": ("T59",), "g_pair": ("T54", "T55", "T56"),
+                "g_boot": ("T60",), "g_early": ("T57", "T58", "T61")}
+        skip += [k for k, ids in uses.items() if k not in skip and not any(i in chosen for i in ids)]
     t0 = now(ctx)
     names = {"g_popup": "gpopup", "g_alarm": "galarm", "g_kill": "gkill", "g_pair": "gpair", "g_boot": "gboot", "g_early": "gearly"}
     for key, specs in DUE.items():
@@ -359,12 +364,17 @@ def t61(ctx):
         ctx.skip("needs T50")
     count = lambda: int((d.shell("dumpsys alarm | grep -c " + PKG).strip() or "0"))
     before = count()
-    for zone in ("Asia/Tokyo", "America/New_York", "UTC"):
-        out = d.shell(f"cmd alarm set-timezone {zone}")
-        if "rror" in out or "nknown" in out:
-            d.shell(f"service call alarm 3 s16 {zone}")
-        time.sleep(5)
-        ctx.check(d.pid(), f"the app died when the zone changed to {zone}")
+    original = d.shell("getprop persist.sys.timezone").strip() or "UTC"
+    try:
+        for zone in ("Asia/Tokyo", "America/New_York", "UTC"):
+            out = d.shell(f"cmd alarm set-timezone {zone}")
+            if "rror" in out or "nknown" in out:
+                d.shell(f"service call alarm 3 s16 {zone}")
+            time.sleep(5)
+            ctx.check(d.pid(), f"the app died when the zone changed to {zone}")
+    finally:
+        d.shell(f"cmd alarm set-timezone {original}")  # a real phone goes back to its own zone
+        ctx.note(f"time zone back to {original}")
     time.sleep(3)
     ctx.check(count() > 0, f"no alarm registered after the zone changes (before: {before})")
     F.home(ctx)

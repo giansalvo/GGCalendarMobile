@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
+import com.google.android.gms.auth.api.identity.RevokeAccessRequest
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.common.api.Scope
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -50,6 +51,15 @@ class GoogleAuthorizer @Inject constructor(@ApplicationContext context: Context)
             AuthorizationOutcome.NeedsConsent(email, pending.intentSender)
         } else {
             AuthorizationOutcome.Authorized(email, result.accessToken ?: throw GoogleAuthException("Google returned no access token"))
+        }
+    }
+
+    /** Takes the Calendar access of [email] away from this app on Google's side (best effort: a failure is not an error). */
+    suspend fun revoke(email: String) {
+        runCatching {
+            client.revokeAccess(
+                RevokeAccessRequest.builder().setAccount(Account(email, GOOGLE_ACCOUNT_TYPE)).setScopes(listOf(Scope(CALENDAR_SCOPE))).build(),
+            ).await()
         }
     }
 

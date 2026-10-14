@@ -291,6 +291,12 @@ class CalendarViewModel @Inject constructor(
         }
     }
 
+    /** Logs the account out of the app (and takes the access away from Google, if it can). */
+    fun removeAccount(email: String) = launchAction {
+        repository.removeAccount(email)
+        authorizer.revoke(email)
+    }
+
     fun toggleCalendar(id: String, visible: Boolean) = viewModelScope.launch { repository.setCalendarVisible(id, visible) }
 
     fun dismissError() = transient.update { it.copy(error = null) }

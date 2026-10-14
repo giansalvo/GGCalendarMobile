@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
@@ -47,7 +48,9 @@ internal fun MonthListView(
     onMonthChange: (YearMonth) -> Unit,
     onDayClick: (LocalDate) -> Unit,
     onEventClick: (EventInstance) -> Unit,
+    dimPast: Boolean = false,
 ) {
+    val now = rememberNow()
     val eventDays = remember(instances) {
         instances.flatMapTo(HashSet()) { it.daysIn(it.startDay, minOf(it.endDay, it.startDay.plusDays(62))).asIterable() }
     }
@@ -81,18 +84,19 @@ internal fun MonthListView(
         }
         // Room at the end so that the floating button never covers the last card.
         LazyColumn(Modifier.weight(1f), contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 12.dp, end = 12.dp, bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(dayEvents, key = { it.eventId + it.begin.toEpochMilli() }) { EventCard(it, onClick = { onEventClick(it) }) }
+            items(dayEvents, key = { it.eventId + it.begin.toEpochMilli() }) { EventCard(it, onClick = { onEventClick(it) }, dimmed = dimPast && it.end < now) }
         }
     }
 }
 
 @Composable
-internal fun EventCard(instance: EventInstance, onClick: () -> Unit) {
+internal fun EventCard(instance: EventInstance, onClick: () -> Unit, dimmed: Boolean = false) {
     val context = LocalContext.current
     val time = remember(context) { DateFormat.getTimeFormat(context) }
     Row(
         Modifier
             .fillMaxWidth()
+            .alpha(if (dimmed) 0.6f else 1f)
             .background(MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(20.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),

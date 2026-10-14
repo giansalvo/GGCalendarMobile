@@ -51,6 +51,7 @@ internal fun MonthView(
     onMonthChange: (YearMonth) -> Unit,
     onDayClick: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
+    dimPast: Boolean = false,
 ) {
     val month = YearMonth.from(date)
     val pager = rememberPagerState(initialPage = CENTER + ChronoUnit.MONTHS.between(BASE_MONTH, month).toInt()) { PAGES }
@@ -79,13 +80,13 @@ internal fun MonthView(
             }
         }
         HorizontalPager(pager, Modifier.weight(1f), beyondViewportPageCount = 1) { page ->
-            MonthGrid(BASE_MONTH.plusMonths((page - CENTER).toLong()), instances, onDayClick)
+            MonthGrid(BASE_MONTH.plusMonths((page - CENTER).toLong()), instances, dimPast, onDayClick)
         }
     }
 }
 
 @Composable
-private fun MonthGrid(month: YearMonth, instances: List<EventInstance>, onDayClick: (LocalDate) -> Unit) {
+private fun MonthGrid(month: YearMonth, instances: List<EventInstance>, dimPast: Boolean, onDayClick: (LocalDate) -> Unit) {
     val gridStart = weekStart(month.atDay(1), firstDayOfWeek())
     val today = LocalDate.now()
     BoxWithConstraints(Modifier.fillMaxSize().padding(horizontal = 4.dp)) {
@@ -98,6 +99,7 @@ private fun MonthGrid(month: YearMonth, instances: List<EventInstance>, onDayCli
                     month = month,
                     today = today,
                     instances = instances,
+                    dimPast = dimPast,
                     slots = slots,
                     onDayClick = onDayClick,
                     modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -114,10 +116,12 @@ private fun WeekRow(
     month: YearMonth,
     today: LocalDate,
     instances: List<EventInstance>,
+    dimPast: Boolean,
     slots: Int,
     onDayClick: (LocalDate) -> Unit,
     modifier: Modifier,
 ) {
+    val now = rememberNow()
     val lanes = remember(start, instances) {
         val end = start.plusDays(7)
         val spans = instances
@@ -143,6 +147,7 @@ private fun WeekRow(
             EventBar(
                 l.span.item,
                 onClick = null,
+                dimmed = dimPast && l.span.item.end < now,
                 modifier = Modifier
                     .offset(x = column * l.span.startCol + 3.dp, y = (DAY_HEADER_DP + 1.5 + CHIP_ROW_DP * l.lane).dp)
                     .width(column * (l.span.endCol - l.span.startCol) - 6.dp)

@@ -59,4 +59,9 @@
     <string name="export_ics">Esporta (.ics, CSV)</string>
     <string name="settings">Impostazioni</string>
     <string name="contacts">Rubrica del telefono</string>
+    <string name="remove_account_title">Rimuovere l\'account?</string>
+    <string name="remove_account_text">%1$s verrà tolto da questo telefono: i suoi calendari e i suoi eventi spariscono dall\'app e le modifiche non ancora inviate a Google si perdono. Su Google non si cancella nulla e puoi aggiungere di nuovo l\'account.</string>
+    <string name="remove_account_confirm">Rimuovi</string>
+    <string name="remove_account_cancel">Annulla</string>
+    <string name="remove_account_cd">Rimuovi l\'account %1$s</string>
 </resources>
