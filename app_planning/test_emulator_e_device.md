@@ -289,6 +289,29 @@ Totali: A 54 pass, 3 skip (57 casi); B (API 30) 3 pass (T01, T02, T09), il resto
 | T80 | Monkey: adb shell monkey -p io.github.giansalvo.ggcalendar --throttle | A | ✔ | bloc. | ✔ 0.4.7 | ✔ | — | bloc. |
 | T81 | Memoria bassa e app in background (am send-trim-memory, am kill) e rit | A | ✔ | bloc. | ✔ 0.4.7 | ✔ | ✔ | bloc. |
 | T82 | Scansione logcat dell'intera sessione | A | ✔ | bloc. | ✔ 0.4.7 | ✔ | ✔ | bloc. |
+
+**Tabella 9.2 – Casi manuali della lista pre-release (`test_pre_release_v1.md`, parte 2) sul Samsung A56 (Android 16, italiano); TM = test manuale, la colonna T indica i casi automatici di 9.1 che coprono la stessa area**
+
+| ID | Caso | Procedura | Casi T collegati | Esito Samsung | Note |
+|---|---|---|---|---|---|
+| TM1 | Installazione sopra la versione precedente | `install -r` sopra la build installata; Informazioni mostra versione e data | T02 | ✔ 0.4.8 | Controllato dall'utente |
+| TM2 | Primo login pulito | Secondo telefono o account mai usato: schermata "app non verificata" e primo sync | T01, T09 | rimandato | Serve un account mai usato |
+| TM3 | Sveglia a telefono bloccato e schermo spento | Schermata a tutto schermo, suoneria, Ferma; poi Posticipa 5 minuti | T52, T53, T54 | ✔ 0.4.8 | Con il telefono sbloccato e in uso la sveglia compare come notifica in alto (comportamento di Android) |
+| TM4 | Sveglia con il telefono in Silenzioso | Sveglia fra 3 minuti con suoneria silenziata: suona lo stesso | T52 | da fare |  |
+| TM5 | Sveglia con Non disturbare attivo | Sveglia fra 3 minuti con Non disturbare: suona lo stesso | T52 | da fare |  |
+| TM6 | Popup con il telefono in Silenzioso | Popup fra 3 minuti: compare senza suono | T50 | da fare |  |
+| TM7 | Popup con Non disturbare attivo | Popup fra 3 minuti: rispetta la modalità, nessun suono né comparsa | T50 | da fare |  |
+| TM8 | Riavvio con il PIN non ancora inserito | Sveglia in arrivo, riavvio, niente PIN: suona prima dello sblocco; dopo il PIN i promemoria risultano registrati | T60 | da fare |  |
+| TM9 | App chiusa dalle recenti | Un popup e una sveglia fra pochi minuti, app chiusa dalle recenti: arrivano comunque | T59 | ✔ 0.4.8 |  |
+| TM10 | Modalità aereo | Modifica un evento: il badge di Aggiorna mostra la coda; tolta la modalità aereo le modifiche partono e il badge sparisce | T70, T71 | ✔ 0.4.8 |  |
+| TM11 | Due account | Eventi, colori e promemoria di entrambi; evento presente in due account senza sveglia doppia | — | ✔ 0.4.8 | Evento ppp con invito tra profgusinu e giansalvo: due eventi (uno per calendario), una sola sveglia in Sveglie attive; il popup all'ora prevista non verificato |
+| TM12 | Esporta .ics e CSV | Selettore di One UI, file in Download, CSV con accenti e `;`, eventi privati esclusi con il riepilogo | T26 | ✔ 0.4.8 |  |
+| TM13 | Condividi un evento | Testo e `.ics`; "Scrivi agli invitati" con un evento con invitati | T27 | ✔ 0.4.8 |  |
+| TM14 | Compleanni dalla rubrica | Interruttore, permesso contatti, calendario "Compleanni (rubrica)", spento sparisce | T18 | ✔ 0.4.7 |  |
+| TM15 | Tema, lingua e carattere | Chiaro, scuro, di sistema; italiano e inglese; carattere grande: nessun testo tagliato | T10, T11, T12 | ✔ 0.4.7 |  |
+| TM16 | Cambio di fuso orario | Fuso del telefono cambiato con l'app aperta e chiusa: orari e sveglie seguono; i compleanni seguono la mezzanotte locale | T61 | da fare |  |
+| TM17 | Eventi di prova sul web | Crea, modifica ed elimina da calendar.google.com e controlla l'allineamento; conflitto offline con la copia "(conflitto)" | T72 | ✔ 0.4.8 | Conflitto (T72) e errore di autorizzazione (T73) passano |
+| TM18 | Pulizia finale | Nessun evento `[TEST GGCAL]` rimasto, nessun messaggio d'errore pendente nel menu | T82 | da fare |  |
 | T74 | Rimozione dell'account dall'app (dopo la rimozione Google chiede di nuovo il consenso, quindi si fa a mano) | M | — | bloc. | salt. | ✖ 0.4.5 | ✔ 0.4.7 | bloc. |
 
 **Lettura dei risultati**
