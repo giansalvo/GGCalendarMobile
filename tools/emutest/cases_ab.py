@@ -170,25 +170,31 @@ def t08(ctx):
 @case("T10", "A", "Rotation and system dark mode do not crash")
 def t10(ctx):
     d = ctx.d
+    saved = d.display_state()  # a phone has its own theme and rotation: put back as found, not as a default
     F.select_view(ctx, "WEEK")
-    d.shell("settings put system accelerometer_rotation 0")
-    for rot in (1, 3, 0):
-        d.shell(f"settings put system user_rotation {rot}")
+    try:
+        d.shell("settings put system accelerometer_rotation 0")
+        for rot in (1, 3, 0):
+            d.shell(f"settings put system user_rotation {rot}")
+            time.sleep(2)
+            ctx.check(d.pid(), f"the app died at rotation {rot}")
+            ctx.check(d.wait(timeout=8, tag="btn_menu"), f"no toolbar at rotation {rot}")
+            ctx.step(f"rotation_{rot}")
+        d.shell("cmd uimode night yes")
         time.sleep(2)
-        ctx.check(d.pid(), f"the app died at rotation {rot}")
-        ctx.check(d.wait(timeout=8, tag="btn_menu"), f"no toolbar at rotation {rot}")
-        ctx.step(f"rotation_{rot}")
-    d.shell("cmd uimode night yes")
-    time.sleep(2)
-    ctx.step("system_night")
-    d.shell("cmd uimode night no")
-    ctx.check(d.pid(), "the app died when the system theme changed")
+        ctx.step("system_night")
+        d.shell("cmd uimode night no")
+        ctx.check(d.pid(), "the app died when the system theme changed")
+    finally:
+        d.restore_display_state(saved)
+        time.sleep(2)
     F.select_view(ctx, "SCHEDULE")
 
 
 @case("T12", "A", "Larger font and display size keep the main controls")
 def t12(ctx):
     d = ctx.d
+    saved = d.display_state()  # the phone's own density override must come back, not the factory value
     F.home(ctx)
     try:
         d.shell("settings put system font_scale 1.3")
@@ -202,8 +208,7 @@ def t12(ctx):
         F.drawer_item(ctx, "drawer_about", click=False)
         d.back()
     finally:
-        d.shell("settings put system font_scale 1.0")
-        d.shell("wm density reset")
+        d.restore_display_state(saved)
         time.sleep(2)
     F.start_app(ctx, fresh=True)
 

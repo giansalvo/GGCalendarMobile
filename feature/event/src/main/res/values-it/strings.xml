@@ -115,6 +115,10 @@
     <string name="discard_question">Ignorare le modifiche?</string>
     <string name="discard">Ignora</string>
     <string name="keep_editing">Continua a modificare</string>
+    <string name="move_calendar_title">Spostare l\'evento?</string>
+    <string name="move_calendar_question">Da %1$s a %2$s.</string>
+    <string name="move_calendar_other_account">L\'evento viene creato di nuovo nell\'altro account e rimosso da questo.</string>
+    <string name="move_calendar_confirm">Sposta</string>
     <string name="search_time_zone">Cerca fuso orario</string>
     <string name="color_lavender">Lavanda</string>
     <string name="color_sage">Salvia</string>

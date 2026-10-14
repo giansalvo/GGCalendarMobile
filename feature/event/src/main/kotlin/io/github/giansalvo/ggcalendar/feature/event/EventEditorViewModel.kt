@@ -105,6 +105,24 @@ class EventEditorViewModel @Inject constructor(private val repository: EventRepo
         askScope = false
     }
 
+    /**
+     * Saving an existing event in another calendar waits for the user's confirmation, so that a stray tap on the calendar
+     * field cannot move it (to another account, it is created again there). An occurrence of a series keeps its calendar.
+     */
+    var askMove by mutableStateOf(false)
+        private set
+    private var moveConfirmed = false
+    val originalCalendarId: String? get() = original?.calendarId
+
+    fun cancelMove() {
+        askMove = false
+    }
+
+    fun confirmMove(onDone: () -> Unit) {
+        moveConfirmed = true
+        save(onDone)
+    }
+
     /** Saving an event that has guests (or had them) waits for the answer on whether to tell them. */
     var askNotify by mutableStateOf(false)
         private set
@@ -131,6 +149,8 @@ class EventEditorViewModel @Inject constructor(private val repository: EventRepo
     fun load(request: EditorRequest) {
         if (loadedFor == request) return
         loadedFor = request
+        moveConfirmed = false
+        askMove = false
         draft = null
         viewModelScope.launch {
             val d = when (request) {
@@ -151,7 +171,9 @@ class EventEditorViewModel @Inject constructor(private val repository: EventRepo
     }
 
     fun update(transform: (Draft) -> Draft) {
+        val before = draft?.calendarId
         draft = draft?.let(transform)
+        if (draft?.calendarId != before) moveConfirmed = false // a new choice of calendar needs its own confirmation
     }
 
     private suspend fun newDraft(request: EditorRequest.New): Draft {
@@ -208,6 +230,11 @@ class EventEditorViewModel @Inject constructor(private val repository: EventRepo
             return
         }
         askScope = false
+        if (original != null && occurrence == null && original?.calendarId != d.calendarId && !moveConfirmed) {
+            askMove = true
+            return
+        }
+        askMove = false
         // An existing event with guests: changes, new or removed guests are told only if the user wants.
         if (notify == null && original != null && (d.attendees.isNotEmpty() || original?.attendees.orEmpty().isNotEmpty())) {
             pendingScope = scope
@@ -249,9 +276,10 @@ class EventEditorViewModel @Inject constructor(private val repository: EventRepo
             var saved = entity.copy(calendarId = d.calendarId)
             if (previous != null && previous.calendarId != d.calendarId) {
                 repository.writer.move(previous.id, d.calendarId, send)
-                // Another account: the event is created anew there, without the old Google ids.
+                // Another account: the event is created anew there, without the old Google ids. Nor the old organizer:
+                // it is the other account, and an event whose organizer is not the calendar's own is read-only (0.4.7).
                 if (previous.calendarId.substringBefore('|') != d.calendarId.substringBefore('|')) {
-                    saved = saved.copy(remoteId = null, etag = null, iCalUid = null, meetLink = null)
+                    saved = saved.copy(remoteId = null, etag = null, iCalUid = null, meetLink = null, organizerEmail = null)
                 }
             }
             repository.writer.save(saved, send)

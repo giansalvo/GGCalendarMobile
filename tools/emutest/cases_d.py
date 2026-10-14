@@ -182,11 +182,103 @@ def t33(ctx):
     ctx.state["roundtrip_gone"] = title
 
 
-@case("T34", "D", "Move an event to another calendar", account=True)
+def _calendar_field(ctx, email):
+    """In the open editor: scrolls to the calendar field (its supporting text is the account) and opens the drop-down."""
+    d = ctx.d
+    pat = re.compile("^" + re.escape(email) + "$", re.I)
+    F.hide_keyboard(ctx)
+    for _ in range(8):
+        found = d.find(text=pat)
+        if found and 350 < found[0].center[1] < d.usable_h - 250:
+            d.tap(540, found[0].center[1] - 75)  # the field sits right above its supporting text
+            time.sleep(1.0)
+            return
+        d.swipe(540, 1700, 540, 800, 350) if not found or found[0].center[1] >= d.usable_h - 250 else d.swipe(540, 700, 540, 1500, 350)
+        time.sleep(0.5)
+    ctx.fail(f"the calendar field of the editor was not found ({email})")
+
+
+def _pick_primary_calendar_of(ctx, email):
+    """With the drop-down open: taps the 'My calendar' row that belongs to this account."""
+    d = ctx.d
+    label = S("my_calendar")
+    for _ in range(5):
+        nodes = d.dump()
+        rows = [n for n in nodes if n.text and label.match(n.text)]
+        mails = [n for n in nodes if n.text and n.text.lower() == email.lower()]
+        for r in rows:
+            if any(0 < m.center[1] - r.center[1] < 120 and abs(m.l - r.l) < 40 for m in mails):
+                d.tap(*r.center)
+                time.sleep(1.0)
+                return
+        d.swipe(540, 1500, 540, 900, 300)  # a long list of calendars: look further down
+        time.sleep(0.5)
+    ctx.fail(f"no primary calendar of {email} in the drop-down")
+
+
+def _change_calendar(ctx, title, current, target):
+    """Opens the event, changes its calendar from the account `current` to the account `target`, saves."""
+    d = ctx.d
+    F.open_event(ctx, title)
+    d.click(tag="detail_edit")
+    ctx.check(d.wait(timeout=12, tag="editor_title"), "the editor did not open from the detail")
+    _calendar_field(ctx, current)
+    _pick_primary_calendar_of(ctx, target)
+    ctx.check(d.find(text=re.compile("^" + re.escape(target) + "$", re.I)), f"the editor does not show {target} after the choice")
+    ctx.step("calendar_changed_" + target.split("@")[0])
+    # 0.4.7: Save asks first, so that a stray tap on the calendar field cannot move the event
+    d.click(tag="editor_save")
+    ctx.check(d.wait(timeout=8, tag="move_confirm"), "no question before moving the event to another calendar")
+    ctx.step("move_question")
+    d.click(tag="move_cancel")
+    ctx.check(d.gone(timeout=5, tag="move_confirm"), "Keep editing did not close the question")
+    ctx.check(d.find(tag="editor_title"), "the editor closed after Keep editing: the event may have moved")
+    d.click(tag="editor_save")
+    ctx.check(d.wait(timeout=8, tag="move_confirm"), "no question the second time")
+    d.click(tag="move_confirm")
+    F.handle_notify(ctx, notify=False)
+    ctx.check(d.gone(timeout=15, tag="editor_title"), "the editor did not close after Save")
+    time.sleep(1.5)
+
+
+@case("T34", "D", "Move an event to another calendar (another account)", account=True)
 def t34(ctx):
-    # needs two accounts signed in (14/10/2026): a second writable calendar is the other account's, and the test must
-    # not write outside the test account's primary calendar. Not scripted yet; to be done by hand with two accounts.
-    ctx.skip("needs two Google accounts signed in to the app (a second writable calendar); not scripted, done by hand")
+    # Needs a second Google account signed in to the app: its primary calendar is the destination. Pass it with
+    # --second-account; without it the case is skipped. Only a [TEST GGCAL] event moves, and it goes back at the end.
+    d = ctx.d
+    second = getattr(ctx, "second_account", "") or ""
+    if not second:
+        ctx.skip("needs a second Google account signed in to the app (--second-account)")
+    first = ctx.account_email
+    # a title of its own per run: an event left over from an earlier run must never be taken for this one
+    title = ensure_event(ctx, "mv", f"mv{int(time.time()) % 100000}")
+    # the second account must be one of the app's accounts: it is listed in the drop-down of the editor
+    F.home(ctx)
+    F.open_editor_new(ctx)
+    ctx.check(F.calendar_in_editor_is_test_account(ctx), f"the editor does not show {first}")
+    _calendar_field(ctx, first)
+    listed = [n for n in d.dump() if n.text and n.text.lower() == second.lower()]
+    d.back()  # closes the drop-down
+    d.back()  # closes the editor (nothing typed)
+    if d.wait(timeout=3, tag="discard_confirm"):
+        d.click(tag="discard_confirm")
+    if not listed:
+        ctx.skip(f"{second} is not an account of the app")
+    # first -> second
+    _change_calendar(ctx, title, first, second)
+    F.open_event(ctx, title)
+    ctx.check(second.lower() in detail_text(ctx).lower(), f"the detail does not show {second} after the move")
+    ctx.step("detail_second_account")
+    F.close_detail(ctx)
+    time.sleep(2)
+    d.click(tag="btn_refresh")  # let the move reach Google before it goes back
+    time.sleep(20)
+    # second -> first
+    _change_calendar(ctx, title, second, first)
+    F.open_event(ctx, title)
+    ctx.check(first.lower() in detail_text(ctx).lower(), f"the detail does not show {first} after the move back")
+    ctx.step("detail_first_account")
+    F.close_detail(ctx)
 
 
 @case("T35", "D", "Guests (only @example.com), without sending anything", account=True)

@@ -11,6 +11,15 @@ import time
 
 import flows as F
 
+# The cases that change the app settings (T19 only passes through the screen). A run without them never opens the
+# Settings screen to read or restore the values: there is nothing to put back.
+CHANGING_CASES = {"T13", "T14", "T15", "T16", "T17"}
+
+
+def needed(chosen_ids):
+    return bool(CHANGING_CASES & {c.upper() for c in chosen_ids})
+
+
 THEMES = ("SYSTEM", "LIGHT", "DARK")
 WEEK = ("MONDAY", "SATURDAY", "SUNDAY")
 SWITCHES = ("settings_dynamic", "settings_dim_past")

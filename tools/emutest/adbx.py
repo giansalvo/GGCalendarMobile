@@ -121,6 +121,33 @@ class Device:
         for key, v in saved.items():
             self.shell(f"settings delete global {key}" if v is None else f"settings put global {key} {v}")
 
+    def display_state(self):
+        """The system settings T10 and T12 change (rotation, system theme, font size, display size), to be put back after.
+
+        A real phone has its own values (dark theme, auto-rotate, a density override): resetting to the defaults would
+        change them for good.
+        """
+        def get(ns, key):
+            v = self.shell(f"settings get {ns} {key}").strip()
+            return None if v in ("", "null") else v
+        m = re.search(r"Override density:\s*(\d+)", self.shell("wm density"))
+        night = re.search(r"Night mode:\s*(\w+)", self.shell("cmd uimode night"))
+        return {
+            "font_scale": get("system", "font_scale"),
+            "accelerometer_rotation": get("system", "accelerometer_rotation"),
+            "user_rotation": get("system", "user_rotation"),
+            "density_override": m.group(1) if m else None,
+            "night": night.group(1) if night else None,
+        }
+
+    def restore_display_state(self, saved):
+        for key in ("font_scale", "accelerometer_rotation", "user_rotation"):
+            v = saved.get(key)
+            self.shell(f"settings delete system {key}" if v is None else f"settings put system {key} {v}")
+        self.shell("wm density reset" if saved.get("density_override") is None else f"wm density {saved['density_override']}")
+        if saved.get("night") in ("yes", "no", "auto"):
+            self.shell(f"cmd uimode night {saved['night']}")
+
     def prop(self, name):
         return self.shell(f"getprop {name}").strip()
 

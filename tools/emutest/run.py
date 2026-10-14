@@ -43,7 +43,7 @@ def setup_account(ctx):
             ctx.state["account_ok"] = True
         else:
             ctx.state["account_ok"] = bool(F.login(ctx))
-        if ctx.state["account_ok"]:
+        if ctx.state["account_ok"] and settings_state.needed(ctx.state["chosen"]):
             try:
                 settings_state.snapshot(ctx)  # put back at the end of the run
             except Exception as e:  # noqa: BLE001
@@ -58,6 +58,8 @@ def main():
     ap.add_argument("--serial", default="emulator-5556")
     ap.add_argument("--apk", default=None)
     ap.add_argument("--account", default="profgusinu@gmail.com")
+    ap.add_argument("--second-account", default="",
+                    help="a second Google account signed in to the app: T34 moves a [TEST GGCAL] event to its primary calendar and back")
     ap.add_argument("--only", default="")
     ap.add_argument("--group", default="")
     ap.add_argument("--mode", choices=["quick", "full", "slow"], default="",
@@ -111,6 +113,7 @@ def main():
     outdir = os.path.join(a.out, f"{stamp}_api{probe.api}_{version}")
     d = Device(a.serial, outdir)
     ctx = harness.Ctx(d, a.account, apk)
+    ctx.second_account = a.second_account
     ctx.state["chosen"] = {c[0] for c in chosen}
     print(f"API {d.api}, app {version}, {len(chosen)} cases -> {outdir}")
 
@@ -120,6 +123,7 @@ def main():
     # The animations are read first and put back at the end, on the emulator and on a real phone alike. They are off
     # during the run because some screens behave differently without them (the detail sheet, 0.4.5), so the cases see
     # what a user with the animations off sees. Other phone settings (screen, fonts) are not touched.
+    saved_display = d.display_state() if not is_emu else None  # safety net for a phone: T10 and T12 change these
     saved_animations = None
     if not a.no_speedup:
         saved_animations = d.animation_scales()
@@ -155,6 +159,12 @@ def main():
             except Exception as e:  # noqa: BLE001
                 print("finalizer failed:", e)
         # leave the device as found
+        if saved_display is not None:
+            try:
+                d.restore_display_state(saved_display)
+                print("  display settings restored:", saved_display)
+            except Exception as e:  # noqa: BLE001
+                print("display settings NOT restored, put them back by hand:", saved_display, e)
         if saved_animations is not None:
             try:
                 d.restore_animations(saved_animations)

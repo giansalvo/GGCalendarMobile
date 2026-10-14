@@ -209,6 +209,29 @@ fun EventEditorSheet(
         }
     }
 
+    if (viewModel.askMove) {
+        val all by viewModel.calendars.collectAsStateWithLifecycle()
+        val from = all.firstOrNull { it.id == viewModel.originalCalendarId }
+        val to = all.firstOrNull { it.id == viewModel.draft?.calendarId }
+        AlertDialog(
+            modifier = Modifier.exposeTestTags(),
+            onDismissRequest = viewModel::cancelMove,
+            title = { Text(stringResource(R.string.move_calendar_title)) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.move_calendar_question, from?.let { calendarWithAccount(it) } ?: "", to?.let { calendarWithAccount(it) } ?: ""))
+                    if (from?.accountEmail != to?.accountEmail) {
+                        Text(stringResource(R.string.move_calendar_other_account), modifier = Modifier.padding(top = 8.dp))
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(modifier = Modifier.testTag("move_confirm"), onClick = { viewModel.confirmMove(close) }) { Text(stringResource(R.string.move_calendar_confirm)) }
+            },
+            dismissButton = { TextButton(modifier = Modifier.testTag("move_cancel"), onClick = viewModel::cancelMove) { Text(stringResource(R.string.keep_editing)) } },
+        )
+    }
+
     if (viewModel.askNotify) {
         NotifyGuestsDialog(onCancel = viewModel::cancelNotify) { notify -> viewModel.saveNotifying(close, notify!!) }
     }
@@ -400,6 +423,11 @@ private fun CalendarChooser(calendars: List<CalendarEntity>, selectedId: String,
 @Composable
 private fun calendarLabel(cal: CalendarEntity): String =
     if (cal.isPrimary) stringResource(R.string.my_calendar) else cal.name
+
+/** The calendar with its account: "My calendar" and calendar names can repeat across accounts. */
+@Composable
+private fun calendarWithAccount(cal: CalendarEntity): String =
+    calendarLabel(cal) + (cal.accountEmail?.let { " ($it)" } ?: "")
 
 private enum class Picker { StartDate, EndDate, StartTime, EndTime, Zone, Recurrence, Reminder, Color, Visibility }
 

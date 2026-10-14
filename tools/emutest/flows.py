@@ -469,19 +469,22 @@ def cleanup(ctx, limit=40):
     """Deletes every event whose title starts with the prefix (and only those). Returns how many."""
     d = ctx.d
     removed = 0
+    skipped = 0  # rows that cannot be changed from the app (read-only): the next one is tried instead of stopping
     for _ in range(limit):
         nodes = search(ctx, TEST_PREFIX)
         hits = result_titles(ctx, nodes)
-        if not hits:
+        if skipped >= len(hits):
             close_search(ctx)
             break
-        d.tap(*hits[0].center)
+        d.tap(*hits[skipped].center)
         if d.wait(timeout=10, tag="detail_close") is None:
             close_search(ctx)
             break
-        if not d.find(tag="detail_more"):  # not ours to change
+        if not d.find(tag="detail_more"):  # not ours to change from here
+            print(f"  cleanup: '{hits[skipped].text}' is read-only in the app, left alone")
+            skipped += 1
             close_detail(ctx)
-            break
+            continue
         delete_open_event(ctx, "ALL")
         removed += 1
     home(ctx)

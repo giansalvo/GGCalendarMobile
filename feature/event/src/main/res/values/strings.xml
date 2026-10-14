@@ -118,6 +118,10 @@
     <string name="discard_question">Discard your changes?</string>
     <string name="discard">Discard</string>
     <string name="keep_editing">Keep editing</string>
+    <string name="move_calendar_title">Move this event?</string>
+    <string name="move_calendar_question">From %1$s to %2$s.</string>
+    <string name="move_calendar_other_account">The event is created again in the other account and removed from this one.</string>
+    <string name="move_calendar_confirm">Move</string>
     <string name="search_time_zone">Search time zone</string>
     <string name="color_lavender">Lavender</string>
     <string name="color_sage">Sage</string>
