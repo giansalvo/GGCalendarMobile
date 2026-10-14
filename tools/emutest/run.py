@@ -66,7 +66,7 @@ def main():
                          "slow: only what quick leaves out (reminders, alarms, reboot, round trips, offline, monkey, dragging). "
                          "Needed unless --only or --group is given.")
     ap.add_argument("--skip-slow", action="store_true", help="same as --mode quick")
-    ap.add_argument("--no-speedup", action="store_true", help="keep the animations and the full pauses")
+    ap.add_argument("--no-speedup", action="store_true", help="leave the animations as they are (otherwise they are off during the run and put back after it)")
     ap.add_argument("--out", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "runs"),
                     help="results folder; inside the project but git-ignored (it holds screenshots of the real calendar)")
     ap.add_argument("--list", action="store_true")
@@ -117,13 +117,18 @@ def main():
     results = []
     ctx.results = results
     is_emu = a.serial.startswith("emulator-")
-    if not is_emu:
-        a.no_speedup = True  # a real phone: its animation and screen settings are not touched
+    # The animations are read first and put back at the end, on the emulator and on a real phone alike. They are off
+    # during the run because some screens behave differently without them (the detail sheet, 0.4.5), so the cases see
+    # what a user with the animations off sees. Other phone settings (screen, fonts) are not touched.
+    saved_animations = None
     if not a.no_speedup:
+        saved_animations = d.animation_scales()
+        print("  animations before the run:", saved_animations)
         d.animations(False)
-        # UI settling pauses (up to 3 s) are halved once the animations are off; long waits (alarms) are not touched
-        _sleep = time.sleep
-        time.sleep = lambda secs: _sleep(secs * 0.5 if secs <= 3 else secs)
+        if is_emu:
+            # UI settling pauses (up to 3 s) are halved once the animations are off; long waits (alarms) are not touched
+            _sleep = time.sleep
+            time.sleep = lambda secs: _sleep(secs * 0.5 if secs <= 3 else secs)
     d.shell("svc power stayon true")
     if is_emu:
         d.shell("settings put system screen_off_timeout 1800000")
@@ -150,8 +155,12 @@ def main():
             except Exception as e:  # noqa: BLE001
                 print("finalizer failed:", e)
         # leave the device as found
-        if is_emu:
-            d.animations(True)
+        if saved_animations is not None:
+            try:
+                d.restore_animations(saved_animations)
+                print("  animations restored:", d.animation_scales())
+            except Exception as e:  # noqa: BLE001
+                print("animations NOT restored, put them back by hand:", saved_animations, e)
         for cmd in ("svc power stayon false",) if not is_emu else ("svc power stayon false", "settings put system screen_off_timeout 60000", "settings put system font_scale 1.0", "wm density reset", "settings put system user_rotation 0",
                     "cmd uimode night no"):
             try:

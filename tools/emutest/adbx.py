@@ -106,6 +106,21 @@ class Device:
         for key in ("window_animation_scale", "transition_animation_scale", "animator_duration_scale"):
             self.shell(f"settings put global {key} {v}")
 
+    ANIMATION_KEYS = ("window_animation_scale", "transition_animation_scale", "animator_duration_scale")
+
+    def animation_scales(self):
+        """The three animation settings as they are now; a value that was never set is None (the phone's animator scale)."""
+        saved = {}
+        for key in self.ANIMATION_KEYS:
+            v = self.shell(f"settings get global {key}").strip()
+            saved[key] = None if v in ("", "null") else v
+        return saved
+
+    def restore_animations(self, saved):
+        """Puts the settings back as animation_scales() read them, deleting the ones that were not set."""
+        for key, v in saved.items():
+            self.shell(f"settings delete global {key}" if v is None else f"settings put global {key} {v}")
+
     def prop(self, name):
         return self.shell(f"getprop {name}").strip()
 
