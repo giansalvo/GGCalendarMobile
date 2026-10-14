@@ -136,9 +136,13 @@ private fun AlarmRow(alarm: ActiveAlarm, now: Long, onClick: () -> Unit, onClose
     )
     val details = buildString {
         if (alarm.snoozed) append(stringResource(R.string.snoozed)).append(" · ")
-        if (alarm.allDay) append(stringResource(R.string.all_day))
-        else append(DateFormat.getTimeFormat(context).format(Date(alarm.beginUtc)))
-        if (alarm.minutesBefore > 0 && !alarm.snoozed) append(" · ").append(pluralStringResource(R.plurals.minutes_before, alarm.minutesBefore, alarm.minutesBefore))
+        val begin = DateFormat.getTimeFormat(context).format(Date(alarm.beginUtc))
+        // "60 minutes before 9:45 PM": the first line is when the alarm rings, this one says how it relates to the event
+        if (alarm.allDay) {
+            append(stringResource(R.string.all_day))
+            if (alarm.minutesBefore > 0 && !alarm.snoozed) append(" · ").append(pluralStringResource(R.plurals.minutes_before, alarm.minutesBefore, alarm.minutesBefore))
+        } else if (alarm.minutesBefore > 0 && !alarm.snoozed) append(pluralStringResource(R.plurals.minutes_before_time, alarm.minutesBefore, alarm.minutesBefore, begin))
+        else append(begin)
     }
     Row(Modifier.testTag("alarm_row").fillMaxWidth().clickable(onClick = onClick).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(Icons.Outlined.Alarm, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 16.dp))

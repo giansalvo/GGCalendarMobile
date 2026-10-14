@@ -46,6 +46,10 @@
         <item quantity="one">%d minute before</item>
         <item quantity="other">%d minutes before</item>
     </plurals>
+    <plurals name="minutes_before_time">
+        <item quantity="one">%1$d minute before %2$s</item>
+        <item quantity="other">%1$d minutes before %2$s</item>
+    </plurals>
     <string name="remaining_less_than_minute">&lt; 1 min</string>
     <string name="remaining_minutes">%d min</string>
     <string name="remaining_hours_minutes">%d h %d min</string>
