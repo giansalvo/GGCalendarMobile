@@ -295,7 +295,7 @@ Totali: A 54 pass, 3 skip (57 casi); B (API 30) 3 pass (T01, T02, T09), il resto
 | ID | Caso | Procedura | Casi T collegati | Esito Samsung | Note |
 |---|---|---|---|---|---|
 | TM1 | Installazione sopra la versione precedente | `install -r` sopra la build installata; Informazioni mostra versione e data | T02 | ✔ 0.4.8 | Controllato dall'utente |
-| TM2 | Primo login pulito | Secondo telefono o account mai usato: schermata "app non verificata" e primo sync | T01, T09 | rimandato | Serve un account mai usato |
+| TM2 | Primo login pulito | Secondo telefono o account mai usato: schermata "app non verificata" e primo sync | T01, T09 | ✔ 0.4.8 | Esito riferito dall'utente |
 | TM3 | Sveglia a telefono bloccato e schermo spento | Schermata a tutto schermo, suoneria, Ferma; poi Posticipa 5 minuti | T52, T53, T54 | ✔ 0.4.8 | Con il telefono sbloccato e in uso la sveglia compare come notifica in alto (comportamento di Android) |
 | TM4 | Sveglia con il telefono in Silenzioso | Sveglia fra 3 minuti con suoneria silenziata: suona lo stesso | T52 | ✔ 0.4.8 |  |
 | TM5 | Sveglia con Non disturbare attivo | Sveglia fra 3 minuti con Non disturbare: suona lo stesso | T52 | ✔ 0.4.8 |  |
