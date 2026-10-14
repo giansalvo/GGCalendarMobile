@@ -28,7 +28,7 @@ Due parti: (1) casi automatici lanciati sul telefono con uno degli account reali
 **Come si lancia** (dopo il via libera): `python tools/emutest/run.py --serial RZGYB28HPTJ --apk dist/GGCalendar-<versione>.apk --account <email> --only <elenco sopra>`; durata circa 45 minuti in modalità completa, 20 in quella rapida (togliere G). Il report va in `tools/emutest/runs/`.
 
 ## 2. Test manuali (circa 30 minuti)
-Spunta ogni riga; annota modello, versione e qualsiasi stranezza. Gli id sono TM1…TM18; i risultati stanno nella tabella 9.2 di `test_emulator_e_device.md`.
+Spunta ogni riga; annota modello, versione e qualsiasi stranezza. Gli id sono TM1…TM19; i risultati stanno nella tabella 9.2 di `test_emulator_e_device.md`.
 - **TM1 Installazione sopra la versione precedente**: i dati restano, l'app parte, Informazioni mostra versione e data della build che stai consegnando.
 - **TM2 Primo login pulito** (se hai un secondo telefono o un account mai usato): schermata "app non verificata" (o, a verifica Google completata, il consenso normale) e sincronizzazione.
 - **TM3 Sveglia a telefono bloccato e schermo spento**: schermata a tutto schermo, suoneria udita, Ferma; ripeti con Posticipa 5 minuti.
@@ -47,10 +47,11 @@ Spunta ogni riga; annota modello, versione e qualsiasi stranezza. Gli id sono TM
 - **TM16 Cambio di fuso orario del telefono** con l'app aperta e chiusa: orari e sveglie seguono; i compleanni di tutto il giorno seguono la mezzanotte locale.
 - **TM17 Eventi di prova sul web** (calendar.google.com): crea, modifica ed elimina da lì e controlla che il telefono li allinei; un conflitto (modifica offline sul telefono e sul web) lascia la versione di Google più la copia "(conflitto)".
 - **TM18 Pulizia finale**: nessun evento `[TEST GGCAL]` rimasto, nessun messaggio d'errore pendente nel menu.
+- **TM19 Rimozione dell'account dall'app** (ex T74): rimuovi l'account dal menu laterale con conferma e aggiungilo di nuovo; Google chiede di nuovo il consenso, i calendari tornano. La revoca vale per tutti i dispositivi collegati allo stesso account.
 
 ## Stato al 13/10/2026
 - **Parte 1 (automatica sul Samsung A56, build 0.4.4)**: 44 casi eseguiti, tutti passano (dettaglio nella sezione 9 di `test_emulator_e_device.md`). Mancano sul telefono i casi che cambiano le Impostazioni (T13, T15–T17, T19): gli script ora le leggono e le rimettono, da rilanciare. Il prefisso degli eventi di prova è `[TEST GGCAL]`.
-- **Parte 2 (lista manuale)**, in corso dal 14/10/2026 sul Samsung A56 con la 0.4.8 (id TM1…TM18, tabella 9.2 di `test_emulator_e_device.md`): **passano** TM1, TM3, TM4, TM5, TM6, TM7, TM9, TM10, TM11, TM12, TM13, TM14, TM15, TM17. **Da fare**: TM8 (riavvio con il PIN), TM16 (fuso orario), TM18 (pulizia finale). **Rimandati**: TM2 (serve un secondo telefono o un account mai usato), T33R e T65 (cancellano i dati dell'app).
+- **Parte 2 (lista manuale)**, in corso dal 14/10/2026 sul Samsung A56 con la 0.4.8 (id TM1…TM19, tabella 9.2 di `test_emulator_e_device.md`): **passano** TM1, TM3, TM4, TM5, TM6, TM7, TM9, TM10, TM11, TM12, TM13, TM14, TM15, TM17, TM19. **Da fare**: TM8 (riavvio con il PIN), TM16 (fuso orario), TM18 (pulizia finale). **Rimandati**: TM2 (serve un secondo telefono o un account mai usato), T33R e T65 (cancellano i dati dell'app).
 
 ## Casi automatici che sul telefono restano manuali (decisione del 13/10/2026)
 Non si lanciano da script sul Samsung perché cancellano i dati dell'app, richiedono lo sblocco con il PIN o cambiano impostazioni di sistema. Da fare a mano e spuntare:

@@ -191,7 +191,7 @@ def t27(ctx):
         F.home(ctx)
 
 
-@case("T74", "C", "Remove the account from the app (log out): calendars go, adding it again brings them back", account=True)
-def t74(ctx):
+@case("TM19", "C", "Remove the account from the app (log out): calendars go, adding it again brings them back", account=True)
+def tm19(ctx):
     # manual (14/10/2026): after the removal Google asks for the consent again, a step the script never takes
     ctx.skip("manual: adding the account again after the removal needs the user's consent on the Google page")
