@@ -10,7 +10,10 @@ import com.google.android.gms.auth.api.identity.RevokeAccessRequest
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.common.api.Scope
 import dagger.hilt.android.qualifiers.ApplicationContext
+import com.google.android.gms.auth.GoogleAuthUtil
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -30,7 +33,7 @@ class GoogleAuthException(message: String) : Exception(message)
  * once the user has granted access, [authorize] returns a fresh access token silently for that account.
  */
 @Singleton
-class GoogleAuthorizer @Inject constructor(@ApplicationContext context: Context) {
+class GoogleAuthorizer @Inject constructor(@ApplicationContext private val context: Context) {
     private val client = Identity.getAuthorizationClient(context)
 
     /** System account picker for Google accounts; the result carries [AccountManager.KEY_ACCOUNT_NAME]. */
@@ -52,6 +55,11 @@ class GoogleAuthorizer @Inject constructor(@ApplicationContext context: Context)
         } else {
             AuthorizationOutcome.Authorized(email, result.accessToken ?: throw GoogleAuthException("Google returned no access token"))
         }
+    }
+
+    /** Forgets a token that Google refused (401), so that the next [authorize] does not hand it out again. */
+    suspend fun invalidate(accessToken: String) {
+        runCatching { withContext(Dispatchers.IO) { GoogleAuthUtil.clearToken(context, accessToken) } }
     }
 
     /** Takes the Calendar access of [email] away from this app on Google's side (best effort: a failure is not an error). */

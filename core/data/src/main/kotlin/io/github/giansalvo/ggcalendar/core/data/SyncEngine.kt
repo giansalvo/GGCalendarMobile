@@ -58,15 +58,41 @@ class SyncEngine @Inject constructor(
         }
     }
 
+    /** One unread "authorize again" message per account: a failing sync every 15 minutes must not pile them up. */
+    private suspend fun needsAuthorization(email: String) {
+        if (!messages.hasUnread(email, "auth")) {
+            messages.insert(SyncMessageEntity(accountEmail = email, kind = "auth", text = "Access to Google Calendar must be granted again"))
+        }
+    }
+
     private suspend fun syncAccount(email: String) {
         try {
-            val token = when (val outcome = authorizer.authorize(email)) {
-                is AuthorizationOutcome.Authorized -> outcome.accessToken
-                is AuthorizationOutcome.NeedsConsent -> {
-                    messages.insert(SyncMessageEntity(accountEmail = email, kind = "auth", text = "Access to Google Calendar must be granted again"))
-                    return
-                }
-            }
+            withFreshTokenOnce(
+                getToken = {
+                    when (val outcome = authorizer.authorize(email)) {
+                        is AuthorizationOutcome.Authorized -> outcome.accessToken
+                        is AuthorizationOutcome.NeedsConsent -> throw NeedsConsentException()
+                    }
+                },
+                invalidate = { authorizer.invalidate(it) },
+            ) { token -> syncWithToken(email, token) }
+        } catch (e: NeedsConsentException) {
+            needsAuthorization(email)
+        } catch (e: GoogleApiException) {
+            // Still 401 with a new token: the user has to authorize again (a clear message, not Google's JSON).
+            if (e.status == 401) needsAuthorization(email)
+            else messages.insert(SyncMessageEntity(accountEmail = email, kind = "error", text = e.message ?: e.toString()))
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            if (e is java.io.IOException) return
+            messages.insert(SyncMessageEntity(accountEmail = email, kind = "error", text = e.message ?: e.toString()))
+        }
+    }
+
+    private class NeedsConsentException : Exception()
+
+    private suspend fun syncWithToken(email: String, token: String) {
+        run {
             val remote = api.listCalendars(token)
             val existing = calendars.getForAccount(email).associateBy { it.id }
             val current = remote.map { r ->
@@ -93,15 +119,12 @@ class SyncEngine @Inject constructor(
                     if (e is kotlinx.coroutines.CancellationException) throw e
                     // No network is not an error to show: the next sync (the worker waits for a connection) picks up again.
                     if (e is java.io.IOException) return@forEach
+                    if (e is GoogleApiException && e.status == 401) throw e // the token, not the calendar: handled by the caller
                     messages.insert(SyncMessageEntity(accountEmail = email, kind = "error", text = "${cal.name}: ${e.message}"))
                 }
             }
             // Conflict copies are queued during the push: send them now rather than at the next sync.
             if (conflicts) pusher.push(email, token, ::recomputeInstances)
-        } catch (e: Exception) {
-            if (e is kotlinx.coroutines.CancellationException) throw e
-            if (e is java.io.IOException) return
-            messages.insert(SyncMessageEntity(accountEmail = email, kind = "error", text = e.message ?: e.toString()))
         }
     }
 

@@ -205,82 +205,82 @@ Per ogni caso, l'ultimo esito su ciascuna piattaforma: **A** = emulatore API 26 
 
 Totali: A 54 pass, 3 skip (57 casi); B 4 fail, 49 pass, 1 skip (54 casi); C 1 fail, 51 pass (52 casi).
 
-**Tabella 9.1 – Esito di ciascun caso di test per piattaforma (A: emulatore API 26, B: emulatore API 36, C: Samsung A56 con API 36)**
+**Tabella 9.1 – Esito di ciascun caso di test per piattaforma (A: emulatore API 26, B: emulatore API 36, C: Samsung A56 con API 36); la colonna Tipo dice se il caso è automatico (A, c'è uno script in `tools/emutest/`) o manuale (M, senza script)**
 
-| ID | Caso | A: emul. API 26 | B: emul. API 36 | C: Samsung A56 (API 36) |
-|---|---|---|---|---|
-| T01 | Installazione pulita e primo avvio | — | — | — |
-| T02 | Aggiornamento sopra la versione precedente (install -r) | — | — | — |
-| T03 | Menu laterale | ✔ | ✔ | ✔ |
-| T04 | Cambio vista con ciascuna voce | ✔ | — | ✔ |
-| T05 | Titolo del mese, griglia degli anni | ✔ | — | ✔ |
-| T06 | Icona "oggi" | ✔ | — | ✔ |
-| T07 | Scorrimento orizzontale tra periodi (Settimana, Mese, Giorno) | ✔ | — | ✔ |
-| T08 | Informazioni | ✔ | — | ✔ |
-| T09 | + senza account | — | — | — |
-| T10 | Rotazione dello schermo e tema scuro del sistema | ✔ | — | — |
-| T11 | Lingua italiana / inglese | — | — | — |
-| T12 | Dimensione del carattere e dello schermo maggiorate (settings put syst | ✔ | — | — |
-| T13 | Tema Chiaro / Scuro / Sistema + Salva | ✔ | ✔ | ✔ |
-| T14 | Esci con modifiche non salvate | ✔ | ✔ | ✔ |
-| T15 | Primo giorno della settimana: Lunedì / Sabato / Domenica | ✔ | ✔ | ✔ |
-| T16 | Inizio della giornata | ✔ | ✔ | ✔ |
-| T17 | Eventi passati attenuati | ✔ | ✔ | ✔ |
-| T18 | Compleanni dalla rubrica | — | — | — |
-| T19 | "Notifiche e sveglie" dalle Impostazioni | ✔ | ✔ | ✔ |
-| T20 | Sincronizzazione iniziale e tasto Aggiorna | ✔ | ✔ | ✔ |
-| T21 | Tocco su un evento | ✔ | ✔ | ✔ |
-| T22 | Tocco su spazio vuoto della griglia | ✔ | ✔ | ✔ |
-| T23 | Ricerca | ✔ | ✔ | ✔ |
-| T24 | Mini-calendario | ✔ | ✔ | ✔ |
-| T25 | Esportazione .ics | ✔ | ✔ | ✔ |
-| T26 | Esportazione CSV | ✔ | ✔ | ✔ |
-| T27 | Condividi evento come testo e come .ics | ✔ | ✔ | ✔ |
-| T30 | Crea evento singolo con titolo, ora, luogo, descrizione | ✔ | ✔ | ✔ |
-| T31 | Evento di tutto il giorno e di più giorni | ✔ | ✔ | ✔ |
-| T32 | Modifica titolo e orario | ✔ | ✔ | ✔ |
-| T33 | Eliminazione con conferma | ✔ | ✔ | ✔ |
-| T33R | Giro completo con Google dopo pm clear | ✔ | ✔ | — |
-| T34 | Cambio di calendario dell'evento (se c'è più di un calendario scrivibi | salt. | salt. | — |
-| T35 | Invitati (solo @example.com), "Non inviare" | salt. | ✔ | ✔ |
-| T36 | Avviso agli invitati su modifica, spostamento ed eliminazione | salt. | ✔ | ✔ |
-| T37 | Google Meet | ✔ | ✔ | ✔ |
-| T38 | Fuso orario dell'evento | ✔ | ✔ | ✔ |
-| T39 | Annulla con modifiche non salvate | ✔ | ✔ | ✔ |
-| T40 | Colore, disponibilità, visibilità privata | ✔ | ✔ | ✔ |
-| T41 | Preset: ogni giorno, settimana, mese, anno, feriali | ✔ | ✔ | ✔ |
-| T42 | Personalizzata: ogni N giorni, giorni della settimana, fine mai / data | ✔ | ✔ | ✔ |
-| T43 | Modifica "solo questo / questo e successivi / tutti" | ✔ | ✔ | ✔ |
-| T44 | Eliminazione con i tre ambiti | ✔ | ✔ | ✔ |
-| T45 | Pressione prolungata e spostamento nello stesso giorno | — | ✔ | ✔ |
-| T46 | Spostamento su un altro giorno | — | ✔ | ✔ |
-| T47 | Ridimensionamento dal bordo inferiore | — | ✔ | ✔ |
-| T48 | Trascinamento di un evento di serie | — | ✔ | ✔ |
-| T50 | Notifica popup all'ora giusta | ✔ | ✔ | ✔ |
-| T51 | Tocco sulla notifica | ✔ | ✖ | ✔ |
-| T52 | Sveglia con schermo spento e bloccato | ✔ | ✔ | — |
-| T53 | "Ferma la sveglia" | ✔ | ✔ | — |
-| T54 | Posticipa (5, 10, 15, 30, 60 min) | ✔ | ✖ | ✔ |
-| T55 | Nessuna risposta | ✔ | ✔ | ✔ |
-| T56 | Due sveglie insieme | ✔ | ✔ | ✔ |
-| T57 | Sveglie attive | ✔ | ✖ | ✔ |
-| T58 | Chiusura anticipata di una sveglia | ✔ | ✖ | ✔ |
-| T59 | App chiusa dalle recenti (am force-stop e kill) | ✔ | ✔ | ✔ |
-| T60 | Riavvio dell'emulatore con promemoria pendente | ✔ | ✔ | — |
-| T61 | Cambio di fuso (service call alarm 3 s16 Asia/Tokyo e ritorno) | ✔ | ✔ | ✔ |
-| T62 | Cambio dell'ora di sistema | — | — | — |
-| T63 | Avviso nel dettaglio se le notifiche sono bloccate | — | — | — |
-| T64 | Promemoria email | ✔ | ✔ | ✔ |
-| T65 | Sveglia sincronizzata (ggAlarm) | ✔ | ✔ | — |
-| T70 | Modifica offline (svc wifi disable; svc data disable) | ✔ | ✔ | ✖ |
-| T71 | Assenza di rete all'avvio | ✔ | ✔ | — |
-| T72 | Conflitto: modifica offline sull'emulatore e modifica dello stesso eve | — | — | — |
-| T73 | Errore di autorizzazione | — | — | — |
-| T80 | Monkey: adb shell monkey -p io.github.giansalvo.ggcalendar --throttle  | ✔ | ✔ | — |
-| T81 | Memoria bassa e app in background (am send-trim-memory, am kill) e rit | ✔ | ✔ | ✔ |
-| T82 | Scansione logcat dell'intera sessione | ✔ | ✔ | ✔ |
-| T51D | Solo telefono: popup e tocco sulla notifica | — | — | ✔ |
-| T74 | Rimozione dell'account dall'app (solo emulatore, non ancora eseguito) | — | — | — |
+| ID | Caso | Tipo | A: emul. API 26 | B: emul. API 36 | C: Samsung A56 (API 36) |
+|---|---|---|---|---|---|
+| T01 | Installazione pulita e primo avvio | A | — | — | — |
+| T02 | Aggiornamento sopra la versione precedente (install -r) | A | — | — | — |
+| T03 | Menu laterale | A | ✔ | ✔ | ✔ |
+| T04 | Cambio vista con ciascuna voce | A | ✔ | — | ✔ |
+| T05 | Titolo del mese, griglia degli anni | A | ✔ | — | ✔ |
+| T06 | Icona "oggi" | A | ✔ | — | ✔ |
+| T07 | Scorrimento orizzontale tra periodi (Settimana, Mese, Giorno) | A | ✔ | — | ✔ |
+| T08 | Informazioni | A | ✔ | — | ✔ |
+| T09 | + senza account | A | — | — | — |
+| T10 | Rotazione dello schermo e tema scuro del sistema | A | ✔ | — | — |
+| T11 | Lingua italiana / inglese | M | — | — | — |
+| T12 | Dimensione del carattere e dello schermo maggiorate (settings put syst | A | ✔ | — | — |
+| T13 | Tema Chiaro / Scuro / Sistema + Salva | A | ✔ | ✔ | ✔ |
+| T14 | Esci con modifiche non salvate | A | ✔ | ✔ | ✔ |
+| T15 | Primo giorno della settimana: Lunedì / Sabato / Domenica | A | ✔ | ✔ | ✔ |
+| T16 | Inizio della giornata | A | ✔ | ✔ | ✔ |
+| T17 | Eventi passati attenuati | A | ✔ | ✔ | ✔ |
+| T18 | Compleanni dalla rubrica | M | — | — | — |
+| T19 | "Notifiche e sveglie" dalle Impostazioni | A | ✔ | ✔ | ✔ |
+| T20 | Sincronizzazione iniziale e tasto Aggiorna | A | ✔ | ✔ | ✔ |
+| T21 | Tocco su un evento | A | ✔ | ✔ | ✔ |
+| T22 | Tocco su spazio vuoto della griglia | A | ✔ | ✔ | ✔ |
+| T23 | Ricerca | A | ✔ | ✔ | ✔ |
+| T24 | Mini-calendario | A | ✔ | ✔ | ✔ |
+| T25 | Esportazione .ics | A | ✔ | ✔ | ✔ |
+| T26 | Esportazione CSV | A | ✔ | ✔ | ✔ |
+| T27 | Condividi evento come testo e come .ics | A | ✔ | ✔ | ✔ |
+| T30 | Crea evento singolo con titolo, ora, luogo, descrizione | A | ✔ | ✔ | ✔ |
+| T31 | Evento di tutto il giorno e di più giorni | A | ✔ | ✔ | ✔ |
+| T32 | Modifica titolo e orario | A | ✔ | ✔ | ✔ |
+| T33 | Eliminazione con conferma | A | ✔ | ✔ | ✔ |
+| T33R | Giro completo con Google dopo pm clear | A | ✔ | ✔ | — |
+| T34 | Cambio di calendario dell'evento (se c'è più di un calendario scrivibi | A | salt. | salt. | — |
+| T35 | Invitati (solo @example.com), "Non inviare" | A | salt. | ✔ | ✔ |
+| T36 | Avviso agli invitati su modifica, spostamento ed eliminazione | A | salt. | ✔ | ✔ |
+| T37 | Google Meet | A | ✔ | ✔ | ✔ |
+| T38 | Fuso orario dell'evento | A | ✔ | ✔ | ✔ |
+| T39 | Annulla con modifiche non salvate | A | ✔ | ✔ | ✔ |
+| T40 | Colore, disponibilità, visibilità privata | A | ✔ | ✔ | ✔ |
+| T41 | Preset: ogni giorno, settimana, mese, anno, feriali | A | ✔ | ✔ | ✔ |
+| T42 | Personalizzata: ogni N giorni, giorni della settimana, fine mai / data | A | ✔ | ✔ | ✔ |
+| T43 | Modifica "solo questo / questo e successivi / tutti" | A | ✔ | ✔ | ✔ |
+| T44 | Eliminazione con i tre ambiti | A | ✔ | ✔ | ✔ |
+| T45 | Pressione prolungata e spostamento nello stesso giorno | A | — | ✔ | ✔ |
+| T46 | Spostamento su un altro giorno | A | — | ✔ | ✔ |
+| T47 | Ridimensionamento dal bordo inferiore | A | — | ✔ | ✔ |
+| T48 | Trascinamento di un evento di serie | A | — | ✔ | ✔ |
+| T50 | Notifica popup all'ora giusta | A | ✔ | ✔ | ✔ |
+| T51 | Tocco sulla notifica | A | ✔ | ✖ | ✔ |
+| T52 | Sveglia con schermo spento e bloccato | A | ✔ | ✔ | — |
+| T53 | "Ferma la sveglia" | A | ✔ | ✔ | — |
+| T54 | Posticipa (5, 10, 15, 30, 60 min) | A | ✔ | ✖ | ✔ |
+| T55 | Nessuna risposta | A | ✔ | ✔ | ✔ |
+| T56 | Due sveglie insieme | A | ✔ | ✔ | ✔ |
+| T57 | Sveglie attive | A | ✔ | ✖ | ✔ |
+| T58 | Chiusura anticipata di una sveglia | A | ✔ | ✖ | ✔ |
+| T59 | App chiusa dalle recenti (am force-stop e kill) | A | ✔ | ✔ | ✔ |
+| T60 | Riavvio dell'emulatore con promemoria pendente | A | ✔ | ✔ | — |
+| T61 | Cambio di fuso (service call alarm 3 s16 Asia/Tokyo e ritorno) | A | ✔ | ✔ | ✔ |
+| T62 | Cambio dell'ora di sistema | M | — | — | — |
+| T63 | Avviso nel dettaglio se le notifiche sono bloccate | M | — | — | — |
+| T64 | Promemoria email | A | ✔ | ✔ | ✔ |
+| T65 | Sveglia sincronizzata (ggAlarm) | A | ✔ | ✔ | — |
+| T70 | Modifica offline (svc wifi disable; svc data disable) | A | ✔ | ✔ | ✖ |
+| T71 | Assenza di rete all'avvio | A | ✔ | ✔ | — |
+| T72 | Conflitto: modifica offline sull'emulatore e modifica dello stesso eve | M | — | — | — |
+| T73 | Errore di autorizzazione | M | — | — | — |
+| T80 | Monkey: adb shell monkey -p io.github.giansalvo.ggcalendar --throttle  | A | ✔ | ✔ | — |
+| T81 | Memoria bassa e app in background (am send-trim-memory, am kill) e rit | A | ✔ | ✔ | ✔ |
+| T82 | Scansione logcat dell'intera sessione | A | ✔ | ✔ | ✔ |
+| T51D | Solo telefono: popup e tocco sulla notifica | A | — | — | ✔ |
+| T74 | Rimozione dell'account dall'app (solo emulatore, non ancora eseguito) | A | — | — | — |
 
 **Lettura dei risultati**
 - **Samsung (C)**: 51 casi su 52 passano con la 0.4.4; l'unico fallito è T70. T70 esegue anche "Cancella dati" dell'app: sul telefono ha azzerato account locale, impostazioni dell'app e permesso notifiche (nessun evento su Google è stato toccato). Per questo T70 non va più lanciato sul telefono e il giro con `pm clear` (`flows.roundtrip`) ora rifiuta di partire fuori dagli emulatori. T71 è stato interrotto con la serie e non ha un esito valido. Casi passati sul telefono in questa sessione: T03–T08, T13–T17, T19–T27 (T25 e T26 con il selettore di One UI), T30–T33, T35–T48, T50, T51, T54–T59, T61, T64, T81, T82 e T51D.

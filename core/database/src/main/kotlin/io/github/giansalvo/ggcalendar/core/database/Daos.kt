@@ -274,4 +274,7 @@ interface SyncMessageDao {
 
     @Query("UPDATE sync_messages SET read = 1 WHERE id = :id")
     suspend fun markRead(id: Long)
+
+    @Query("SELECT EXISTS(SELECT 1 FROM sync_messages WHERE read = 0 AND account_email = :email AND kind = :kind)")
+    suspend fun hasUnread(email: String, kind: String): Boolean
 }
