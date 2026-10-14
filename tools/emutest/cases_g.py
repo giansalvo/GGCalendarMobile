@@ -197,30 +197,45 @@ def t50(ctx):
     ctx.check(notified(ctx, e["title"]), "the popup notification did not appear when due")
 
 
+def tap_notification(ctx, title):
+    """Taps the notification of this event in the shade and waits for the detail.
+
+    Several notifications of the app are bundled in one group (an older missed-alarm notice, say): on Android 14 the first
+    tap on a collapsed group only expands it, the next one opens the event. So it taps again when the detail has not opened."""
+    d = ctx.d
+    pat = re.compile(re.escape(title))
+    n = d.wait(timeout=8, text=pat)
+    ctx.step("shade")
+    ctx.check(n, "the notification is not in the shade")
+    d.tap(*n.center)
+    if d.wait(timeout=8, tag="detail_close") is None:
+        ctx.note("first tap on the notification did not open the event (a bundle expands first); tapping again")
+        n = d.wait(timeout=4, text=pat)
+        if n is None:
+            show_shade(ctx)
+            n = d.wait(timeout=8, text=pat)
+        ctx.check(n, "the notification is gone after the first tap")
+        d.tap(*n.center)
+    ctx.check(d.wait(timeout=15, tag="detail_close"), "the notification did not open the event")
+
+
 @case("T51", "G", "Tap on the notification opens the event", account=True, slow=True)
 def t51(ctx):
-    d = ctx.d
     e = ctx.state.get("g_popup")
     if not e:
         ctx.skip("needs T50")
     show_shade(ctx)
-    n = d.wait(timeout=8, text=re.compile(re.escape(e["title"])))
-    ctx.step("shade")
-    ctx.check(n, "the notification is not in the shade")
-    d.tap(*n.center)
-    if d.wait(timeout=15, tag="detail_close") is None:
-        ctx.note("first tap on the notification did not open the event; tapping again")
-        show_shade(ctx)
-        n = d.wait(timeout=8, text=re.compile(re.escape(e["title"])))
-        ctx.check(n, "the notification is gone after the first tap")
-        d.tap(*n.center)
-    ctx.check(d.wait(timeout=15, tag="detail_close"), "the notification did not open the event")
+    tap_notification(ctx, e["title"])
     F.close_detail(ctx)
 
 
 @case("T51D", "G", "Device: a popup comes up and a tap on it opens the event (one event, no alarms)", account=True, slow=True)
 def t51d(ctx):
     d = ctx.d
+    # The variant for a real phone, where the group has no alarm cases. On an emulator it takes about six minutes in the
+    # middle of the group: the alarms of T52, T57 and T59 fall due meanwhile and those cases fail (API 34, 14/10/2026).
+    if d.serial.startswith("emulator-"):
+        ctx.skip("phone-only variant of T51; on an emulator T51 covers the tap and T51D would make the later alarms fall due")
     t0 = now(ctx)
     e = create_with_reminders(ctx, "d_popup", "dpopup", [("POPUP", 300)], t0)
     ctx.note(f"popup due {e['fires'][0].time()}")
@@ -228,11 +243,7 @@ def t51d(ctx):
     wait_until(ctx, e["fires"][0], 25)
     ctx.check(notified(ctx, e["title"]), "the popup did not appear")
     show_shade(ctx)
-    n = d.wait(timeout=8, text=re.compile(re.escape(e["title"])))
-    ctx.step("shade")
-    ctx.check(n, "the notification is not in the shade")
-    d.tap(*n.center)
-    ctx.check(d.wait(timeout=15, tag="detail_close"), "the notification did not open the event")
+    tap_notification(ctx, e["title"])
     F.close_detail(ctx)
 
 

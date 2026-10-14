@@ -29,6 +29,11 @@ def grant_permissions(ctx):
         d.shell(f"pm grant {PKG} {perm}")  # a permission the Android version does not know is simply refused
     d.shell(f"appops set {PKG} SCHEDULE_EXACT_ALARM allow")
     d.shell(f"appops set {PKG} USE_FULL_SCREEN_INTENT allow")
+    # The Play Store images carry Google's own Calendar app: signed in with the test account it posts its own reminder
+    # notifications for the same events (title included), and a tap on one opens Google Calendar, not GGCalendar. The cases
+    # that read the shade would then see the wrong notifications (T51, T51D, T57, T59 on API 34, 14/10/2026).
+    # Disabled on the emulator only (undo: pm enable com.google.android.calendar); a phone's apps are never touched.
+    d.shell("pm disable-user --user 0 com.google.android.calendar")
 
 
 # ---------------------------------------------------------------- app lifecycle
@@ -173,6 +178,11 @@ def login(ctx):
         ctx.fail(f"{ctx.account_email} is not among the accounts of the device")
     d.tap(*n.center)
     time.sleep(0.8)
+    # On Android 14 a tap on the address does not choose the row (OK stays disabled): then the radio button at its right does.
+    ok = d.wait(timeout=6, text=OK)
+    if ok is not None and not ok.enabled:
+        d.tap(int(d.screen_w * 0.765), n.center[1])
+        time.sleep(0.8)
     d.click(timeout=6, text=OK)
     # the drawer stays open behind the account question; the first sync fills its calendar list
     found = d.wait(timeout=120, interval=2.0, tag="calendar_row") is not None

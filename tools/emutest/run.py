@@ -43,6 +43,8 @@ def setup_account(ctx):
             ctx.state["account_ok"] = True
         else:
             ctx.state["account_ok"] = bool(F.login(ctx))
+            if not ctx.state["account_ok"]:
+                print("  (login: no calendar appeared in 120 s; the cases that need the account will be skipped)")
         if ctx.state["account_ok"] and settings_state.needed(ctx.state["chosen"]):
             try:
                 settings_state.snapshot(ctx)  # put back at the end of the run
@@ -135,7 +137,7 @@ def main():
             time.sleep = lambda secs: _sleep(secs * 0.5 if secs <= 3 else secs)
     d.shell("svc power stayon true")
     if is_emu:
-        d.shell("settings put system screen_off_timeout 1800000")
+        d.shell("settings put system screen_off_timeout 2147483647")
     try:
         for entry in chosen:
             cid, group, title, opts, _ = entry
@@ -171,7 +173,8 @@ def main():
                 print("  animations restored:", d.animation_scales())
             except Exception as e:  # noqa: BLE001
                 print("animations NOT restored, put them back by hand:", saved_animations, e)
-        for cmd in ("svc power stayon false",) if not is_emu else ("svc power stayon false", "settings put system screen_off_timeout 60000", "settings put system font_scale 1.0", "wm density reset", "settings put system user_rotation 0",
+        # An emulator keeps its screen on (stayon and the maximum timeout stay as emu.py set them); a phone gets its own back.
+        for cmd in ("svc power stayon false",) if not is_emu else ("settings put system font_scale 1.0", "wm density reset", "settings put system user_rotation 0",
                     "cmd uimode night no"):
             try:
                 d.shell(cmd)

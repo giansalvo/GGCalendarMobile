@@ -151,6 +151,12 @@ class EventEditorViewModel @Inject constructor(private val repository: EventRepo
         loadedFor = request
         moveConfirmed = false
         askMove = false
+        // This view model outlives the editor: what the previous event left (the occurrence of a series being edited, a
+        // pending question) must not reach the next one. Without this, a new event created after editing an occurrence of a
+        // series asked "Edit recurring event" on Save and was never written (0.4.7, found on API 34).
+        occurrence = null
+        askScope = false
+        askNotify = false
         draft = null
         viewModelScope.launch {
             val d = when (request) {

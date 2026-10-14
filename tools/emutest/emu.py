@@ -8,7 +8,7 @@
 The default renderer is the software one (-gpu swiftshader_indirect): slower but steady. With --gpu host the emulator uses the
 PC's graphics card; it fell back to software if it would not start, but on 13/10/2026 it gave one "not responding" stall of the
 app (the graphics services of the emulator at 40-50% CPU), so it is an option, not the default.
-The animations are switched off by run.py, which also speeds up the UI.
+The animations are switched off by run.py, which also speeds up the UI. The screen stays on (start sets it, run.py leaves it); the timeout is the maximum, as "always on" only counts while plugged in.
 """
 import os
 import subprocess
@@ -45,6 +45,14 @@ def booted(serial):
     return adb("shell", "getprop", "sys.boot_completed", serial=serial).strip() == "1"
 
 
+def keep_screen_on(serial):
+    """The test emulators never switch the screen off (a dark window looks like a dead emulator); run.py leaves it so."""
+    adb("shell", "svc power stayon true", serial=serial)
+    adb("shell", "settings put system screen_off_timeout 2147483647", serial=serial)
+    adb("shell", "input keyevent 224", serial=serial)  # wake up
+    adb("shell", "wm dismiss-keyguard", serial=serial)
+
+
 def start(avd, gpu="swiftshader_indirect", wait=300):
     stop_all()
     time.sleep(2)
@@ -59,7 +67,8 @@ def start(avd, gpu="swiftshader_indirect", wait=300):
                 break  # the emulator quit: try the next renderer
             if serial in running() and booted(serial):
                 time.sleep(5)
-                print(f"{avd} is up on {serial} (gpu {mode})")
+                keep_screen_on(serial)
+                print(f"{avd} is up on {serial} (gpu {mode}, screen always on)")
                 return serial
             time.sleep(3)
         if proc.poll() is None:

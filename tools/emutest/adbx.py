@@ -88,6 +88,14 @@ class Device:
         return self._screen_h
 
     @property
+    def screen_w(self):
+        """Width in pixels of the screen (the size override of `wm size` wins over the physical one)."""
+        if getattr(self, "_screen_w", None) is None:
+            m = re.findall(r"(\d+)x(\d+)", self.shell("wm size"))
+            self._screen_w = int(m[-1][0]) if m else 1080
+        return self._screen_w
+
+    @property
     def usable_h(self):
         """Bottom edge of the app area: a navigation bar (3 buttons) takes its height off the screen."""
         if getattr(self, "_usable_h", None) is None:

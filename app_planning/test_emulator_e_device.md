@@ -168,7 +168,7 @@ Cartella `tools/emutest/` (Python 3 con Pillow, adb dell'SDK, nessuna altra dipe
 - `settings_state.py` (14/10/2026): all'inizio del run legge dalla schermata Impostazioni tema, colori dinamici, inizio settimana, inizio giornata e eventi passati attenuati (e `cases_g` la durata della sveglia), e alla fine li rimette com'erano; serve soprattutto sul telefono vero, dove i test non devono lasciare valori propri. Su Android 16 un radio scelto risulta `checked`, sulle versioni precedenti `selected`.
 - `harness.py`: registro dei casi, esiti PASS/FAIL/SKIP, controllo dei crash nel log dopo ogni caso.
 - `cases_ab.py` (gruppi A e B), `cases_c.py` (C), `cases_d.py` (D, E, F), `cases_g.py` (G), `cases_h.py` (H e I).
-- `run.py`: `python run.py --serial emulator-5556 --apk <apk> [--only T03,T04] [--group G] [--skip-slow] [--list]`. **Animazioni (14/10/2026)**: all'inizio legge le tre scale di animazione del dispositivo (emulatore o telefono), le porta a 0 per tutta l'esecuzione e alla fine le rimette come erano (anche un valore mai impostato torna "assente"); `--no-speedup` le lascia come sono. Il dimezzamento delle pause resta solo sull'emulatore. Se l'esecuzione viene uccisa a metà le animazioni restano a 0 (sul telefono è il valore voluto; sull'emulatore si rimettono con `settings put global`).
+- `run.py`: `python run.py --serial emulator-5556 --apk <apk> [--only T03,T04] [--group G] [--skip-slow] [--list]`. **Animazioni (14/10/2026)**: all'inizio legge le tre scale di animazione del dispositivo (emulatore o telefono), le porta a 0 per tutta l'esecuzione e alla fine le rimette come erano (anche un valore mai impostato torna "assente"); `--no-speedup` le lascia come sono. Il dimezzamento delle pause resta solo sull'emulatore. **Schermo (14/10/2026)**: sugli emulatori resta sempre acceso (`emu.py start` imposta `stayon` e un timeout al massimo (circa 24 giorni), `run.py` non li rimette a 60 secondi); sul telefono lo script non lo cambia oltre al `stayon` del run. Se l'esecuzione viene uccisa a metà le animazioni restano a 0 (sul telefono è il valore voluto; sull'emulatore si rimettono con `settings put global`).
 - I risultati vanno in `tools/emutest/runs/<data>_api<N>_<versione>/` (screenshot, `report.md`, `results.json`), cartella ignorata da git e controllata dalla CI e dal hook locale, perché contiene immagini del calendario vero.
 
 **Etichette stabili nell'app**: `testTag` sui controlli principali (barra, menu, editor, dettaglio, impostazioni, ricerca, sveglia, finestre di conferma), esposti come resource id con `Modifier.exposeTestTags()` (`core/notifications/UiTags.kt`), da applicare una volta alla radice di ogni finestra. Chi aggiunge una schermata o un dialogo nuovo deve dargli i tag e la radice.
@@ -189,6 +189,7 @@ Cartella `tools/emutest/` (Python 3 con Pillow, adb dell'SDK, nessuna altra dipe
 | 14/10/2026 | API 36 (emulatore, animazioni spente) | 0.4.6 | passa T30 | Verifica della correzione del foglio di dettaglio. |
 | 14/10/2026 | Samsung Galaxy A56, Android 16 (telefono, italiano, animazioni a 0) | 0.4.6 | passa T30 | Foglio di dettaglio a metà schermo con luogo e descrizione visibili; l'evento è arrivato a Google e la pulizia lo ha tolto (verificato dall'utente su Google Calendar). |
 | 14/10/2026 | Samsung Galaxy A56, Android 16 (telefono, italiano, animazioni a 0) | 0.4.7 | passa T34 (secondo giro; il primo ha trovato un difetto), T10 e T12 sulla 0.4.6 | T34 sposta un evento `[TEST GGCAL] mvNNNNN` da profgusinu@gmail.com al calendario principale di giansalvo.gusinu@gmail.com e lo riporta indietro. Primo giro: il ritorno lasciava l'evento in sola lettura (organizzatore del vecchio account) e la pulizia non lo poteva cancellare; corretto in 0.4.7. L'evento rimasto da quel giro (`[TEST GGCAL] mv`, titolo senza numero) è in sola lettura nell'app ma modificabile su Google: va cancellato da Google Calendar. T10 e T12 salvano e rimettono tema scuro, rotazione automatica e densità 420 (`display_state`). |
+| 14/10/2026 | API 34 (Android 14, google_apis_playstore x86_64, inglese) | 0.4.7 | modalità completa in tre giri: 63 casi passano, T34 e T74 saltati, T51D NA | Primo giro (T01–T44 passano, poi 6 fallimenti): T45–T48, T50 e le sveglie fallivano perché un evento nuovo, creato dopo la modifica di un'occorrenza di serie (T43), chiedeva "Modifica evento ricorrente" e non veniva scritto (**difetto dell'app**, corretto in 0.4.7: l'editor non azzerava `occurrence`). Poi problemi dello script: l'app Google Calendar dell'immagine Play Store mostrava le sue notifiche per gli stessi eventi (ora disattivata sugli emulatori con `pm disable-user`); T51D, variante da telefono, durava sei minuti e faceva scadere le sveglie di T52, T57 e T59 (ora NA sugli emulatori); il login falliva in silenzio su Android 14 (il tocco sull'indirizzo non sceglie la riga: ora tocca anche il pallino). Il login ora stampa un messaggio se non compaiono calendari. T01–T42 sono stati eseguiti sulla build prima della correzione dell'editor; T43–T48 e T50–T82 dopo. |
 
 **Difetti dell'app trovati dai test (13/10/2026)**
 1. Prima di Android 12 il sync su richiesta falliva (corretto in 0.4.1).
@@ -205,91 +206,91 @@ Cartella `tools/emutest/` (Python 3 con Pillow, adb dell'SDK, nessuna altra dipe
 
 ## 9. Risultati consolidati (aggiornato il 14/10/2026)
 
-Per ogni caso, l'ultimo esito su ciascuna piattaforma: **A** = emulatore API 26 (Android 8, build 0.4.1, inglese), **B** = emulatore API 36 (Android 16, build 0.4.2, inglese), **C** = Samsung Galaxy A56, One UI 8.5 / Android 16 = API 36 (build 0.4.3 e 0.4.4, italiano, account reale profgusinu@gmail.com). ✔ passa, ✖ fallisce, salt. = saltato dallo script, — = non eseguito su quella piattaforma, **NA = non eseguibile con quella versione di Android** (T45–T48 su API 26: il trascinamento richiede `input motionevent`, da Android 10). **Dal 14/10/2026** una cella con un numero di versione (per esempio ✔ 0.4.6) è stata rieseguita con quella build: T01, T02, T03, T30 e T33 su B (API 36), T03, T10, T12 e T30 sul Samsung (animazioni a 0), T34 sul Samsung con due account (0.4.7, `--second-account`); T74 (✖ 0.4.5) ha chiesto di nuovo il consenso a Google ed è diventato manuale. T34 resta saltato (servono due account).
+Per ogni caso, l'ultimo esito su ciascuna piattaforma: **A** = emulatore API 26 (Android 8, build 0.4.1, inglese), **B** = emulatore API 34 (Android 14, build 0.4.7, inglese; sessione completa del 14/10/2026: 63 casi passano, T34 e T74 saltati, T51D NA), **C** = emulatore API 36 (Android 16, build 0.4.2, inglese), **D** = Samsung Galaxy A56, One UI 8.5 / Android 16 = API 36 (build 0.4.3 e 0.4.4, italiano, account reale profgusinu@gmail.com). ✔ passa, ✖ fallisce, salt. = saltato dallo script, — = non eseguito su quella piattaforma, **NA = non eseguibile con quella versione di Android** (T45–T48 su API 26: il trascinamento richiede `input motionevent`, da Android 10). **Dal 14/10/2026** una cella con un numero di versione (per esempio ✔ 0.4.6) è stata rieseguita con quella build: T01, T02, T03, T30 e T33 su C (API 36), T03, T10, T12 e T30 sul Samsung (animazioni a 0), T34 sul Samsung con due account (0.4.7, `--second-account`); T74 (✖ 0.4.5) ha chiesto di nuovo il consenso a Google ed è diventato manuale. T34 resta saltato sugli emulatori (servono due account). **NA** vale anche per T51D sugli emulatori (variante pensata per il telefono).
 
-Totali: A 54 pass, 3 skip (57 casi); B 5 fail, 51 pass, 1 skip (57 casi) (5 fail: T51, T54, T57, T58 e T74, quest'ultimo manuale: ha chiesto il consenso); C 1 fail, 54 pass (55 casi). Le celle NA non sono contate.
+Totali: A 54 pass, 3 skip (57 casi); B 63 pass, 2 skip (65 casi); C 5 fail, 51 pass, 1 skip (57 casi) (5 fail: T51, T54, T57, T58 e T74, quest'ultimo manuale: ha chiesto il consenso); D 1 fail, 54 pass (55 casi). Le celle NA non sono contate.
 
-**Tabella 9.1 – Esito di ciascun caso di test per piattaforma (A: emulatore API 26, B: emulatore API 36, C: Samsung A56 con API 36); la colonna Tipo dice se il caso è automatico (A, c'è uno script in `tools/emutest/`) o manuale (M, senza script)**
+**Tabella 9.1 – Esito di ciascun caso di test per piattaforma (colonne in ordine di API: A: emulatore API 26, B: emulatore API 34, C: emulatore API 36, D: Samsung A56 con API 36); la colonna Tipo dice se il caso è automatico (A, c'è uno script in `tools/emutest/`) o manuale (M, senza script)**
 
-| ID | Caso | Tipo | A: emul. API 26 | B: emul. API 36 | C: Samsung A56 (API 36) |
-|---|---|---|---|---|---|
-| T01 | Installazione pulita e primo avvio | A | — | ✔ 0.4.6 | — |
-| T02 | Aggiornamento sopra la versione precedente (install -r) | A | — | ✔ 0.4.6 | — |
-| T03 | Menu laterale | A | ✔ | ✔ 0.4.6 | ✔ 0.4.6 |
-| T04 | Cambio vista con ciascuna voce | A | ✔ | — | ✔ |
-| T05 | Titolo del mese, griglia degli anni | A | ✔ | — | ✔ |
-| T06 | Icona "oggi" | A | ✔ | — | ✔ |
-| T07 | Scorrimento orizzontale tra periodi (Settimana, Mese, Giorno) | A | ✔ | — | ✔ |
-| T08 | Informazioni | A | ✔ | — | ✔ |
-| T09 | + senza account | A | — | — | — |
-| T10 | Rotazione dello schermo e tema scuro del sistema | A | ✔ | — | ✔ 0.4.6 |
-| T11 | Lingua italiana / inglese | M | — | — | — |
-| T12 | Dimensione del carattere e dello schermo maggiorate (settings put syst | A | ✔ | — | ✔ 0.4.6 |
-| T13 | Tema Chiaro / Scuro / Sistema + Salva | A | ✔ | ✔ | ✔ |
-| T14 | Esci con modifiche non salvate | A | ✔ | ✔ | ✔ |
-| T15 | Primo giorno della settimana: Lunedì / Sabato / Domenica | A | ✔ | ✔ | ✔ |
-| T16 | Inizio della giornata | A | ✔ | ✔ | ✔ |
-| T17 | Eventi passati attenuati | A | ✔ | ✔ | ✔ |
-| T18 | Compleanni dalla rubrica | M | — | — | — |
-| T19 | "Notifiche e sveglie" dalle Impostazioni | A | ✔ | ✔ | ✔ |
-| T20 | Sincronizzazione iniziale e tasto Aggiorna | A | ✔ | ✔ | ✔ |
-| T21 | Tocco su un evento | A | ✔ | ✔ | ✔ |
-| T22 | Tocco su spazio vuoto della griglia | A | ✔ | ✔ | ✔ |
-| T23 | Ricerca | A | ✔ | ✔ | ✔ |
-| T24 | Mini-calendario | A | ✔ | ✔ | ✔ |
-| T25 | Esportazione .ics | A | ✔ | ✔ | ✔ |
-| T26 | Esportazione CSV | A | ✔ | ✔ | ✔ |
-| T27 | Condividi evento come testo e come .ics | A | ✔ | ✔ | ✔ |
-| T30 | Crea evento singolo con titolo, ora, luogo, descrizione | A | ✔ | ✔ 0.4.6 | ✔ 0.4.6 |
-| T31 | Evento di tutto il giorno e di più giorni | A | ✔ | ✔ | ✔ |
-| T32 | Modifica titolo e orario | A | ✔ | ✔ | ✔ |
-| T33 | Eliminazione con conferma | A | ✔ | ✔ 0.4.5 | ✔ |
-| T33R | Giro completo con Google dopo pm clear | A | ✔ | ✔ | — |
-| T34 | Cambio di calendario dell'evento (richiede due account Google collegati nell'app) | A | salt. | salt. | ✔ 0.4.7 |
-| T35 | Invitati (solo @example.com), "Non inviare" | A | salt. | ✔ | ✔ |
-| T36 | Avviso agli invitati su modifica, spostamento ed eliminazione | A | salt. | ✔ | ✔ |
-| T37 | Google Meet | A | ✔ | ✔ | ✔ |
-| T38 | Fuso orario dell'evento | A | ✔ | ✔ | ✔ |
-| T39 | Annulla con modifiche non salvate | A | ✔ | ✔ | ✔ |
-| T40 | Colore, disponibilità, visibilità privata | A | ✔ | ✔ | ✔ |
-| T41 | Preset: ogni giorno, settimana, mese, anno, feriali | A | ✔ | ✔ | ✔ |
-| T42 | Personalizzata: ogni N giorni, giorni della settimana, fine mai / data | A | ✔ | ✔ | ✔ |
-| T43 | Modifica "solo questo / questo e successivi / tutti" | A | ✔ | ✔ | ✔ |
-| T44 | Eliminazione con i tre ambiti | A | ✔ | ✔ | ✔ |
-| T45 | Pressione prolungata e spostamento nello stesso giorno | A | NA | ✔ | ✔ |
-| T46 | Spostamento su un altro giorno | A | NA | ✔ | ✔ |
-| T47 | Ridimensionamento dal bordo inferiore | A | NA | ✔ | ✔ |
-| T48 | Trascinamento di un evento di serie | A | NA | ✔ | ✔ |
-| T50 | Notifica popup all'ora giusta | A | ✔ | ✔ | ✔ |
-| T51 | Tocco sulla notifica | A | ✔ | ✖ | ✔ |
-| T52 | Sveglia con schermo spento e bloccato | A | ✔ | ✔ | — |
-| T53 | "Ferma la sveglia" | A | ✔ | ✔ | — |
-| T54 | Posticipa (5, 10, 15, 30, 60 min) | A | ✔ | ✖ | ✔ |
-| T55 | Nessuna risposta | A | ✔ | ✔ | ✔ |
-| T56 | Due sveglie insieme | A | ✔ | ✔ | ✔ |
-| T57 | Sveglie attive | A | ✔ | ✖ | ✔ |
-| T58 | Chiusura anticipata di una sveglia | A | ✔ | ✖ | ✔ |
-| T59 | App chiusa dalle recenti (am force-stop e kill) | A | ✔ | ✔ | ✔ |
-| T60 | Riavvio dell'emulatore con promemoria pendente | A | ✔ | ✔ | — |
-| T61 | Cambio di fuso (service call alarm 3 s16 Asia/Tokyo e ritorno) | A | ✔ | ✔ | ✔ |
-| T62 | Cambio dell'ora di sistema | M | — | — | — |
-| T63 | Avviso nel dettaglio se le notifiche sono bloccate | M | — | — | — |
-| T64 | Promemoria email | A | ✔ | ✔ | ✔ |
-| T65 | Sveglia sincronizzata (ggAlarm) | A | ✔ | ✔ | — |
-| T70 | Modifica offline (svc wifi disable; svc data disable) | A | ✔ | ✔ | ✖ |
-| T71 | Assenza di rete all'avvio | A | ✔ | ✔ | — |
-| T72 | Conflitto: modifica offline sull'emulatore e modifica dello stesso eve | M | — | — | — |
-| T73 | Errore di autorizzazione | M | — | — | — |
-| T80 | Monkey: adb shell monkey -p io.github.giansalvo.ggcalendar --throttle  | A | ✔ | ✔ | — |
-| T81 | Memoria bassa e app in background (am send-trim-memory, am kill) e rit | A | ✔ | ✔ | ✔ |
-| T82 | Scansione logcat dell'intera sessione | A | ✔ | ✔ | ✔ |
-| T51D | Solo telefono: popup e tocco sulla notifica | A | — | — | ✔ |
-| T74 | Rimozione dell'account dall'app (dopo la rimozione Google chiede di nuovo il consenso, quindi si fa a mano) | M | — | ✖ 0.4.5 | — |
+| ID | Caso | Tipo | A: emul. API 26 | B: emul. API 34 | C: emul. API 36 | D: Samsung A56 (API 36) |
+|---|---|---|---|---|---|---|
+| T01 | Installazione pulita e primo avvio | A | — | ✔ 0.4.7 | ✔ 0.4.6 | — |
+| T02 | Aggiornamento sopra la versione precedente (install -r) | A | — | ✔ 0.4.7 | ✔ 0.4.6 | — |
+| T03 | Menu laterale | A | ✔ | ✔ 0.4.7 | ✔ 0.4.6 | ✔ 0.4.6 |
+| T04 | Cambio vista con ciascuna voce | A | ✔ | ✔ 0.4.7 | — | ✔ |
+| T05 | Titolo del mese, griglia degli anni | A | ✔ | ✔ 0.4.7 | — | ✔ |
+| T06 | Icona "oggi" | A | ✔ | ✔ 0.4.7 | — | ✔ |
+| T07 | Scorrimento orizzontale tra periodi (Settimana, Mese, Giorno) | A | ✔ | ✔ 0.4.7 | — | ✔ |
+| T08 | Informazioni | A | ✔ | ✔ 0.4.7 | — | ✔ |
+| T09 | + senza account | A | — | ✔ 0.4.7 | — | — |
+| T10 | Rotazione dello schermo e tema scuro del sistema | A | ✔ | ✔ 0.4.7 | — | ✔ 0.4.6 |
+| T11 | Lingua italiana / inglese | M | — | — | — | — |
+| T12 | Dimensione del carattere e dello schermo maggiorate (settings put syst | A | ✔ | ✔ 0.4.7 | — | ✔ 0.4.6 |
+| T13 | Tema Chiaro / Scuro / Sistema + Salva | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T14 | Esci con modifiche non salvate | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T15 | Primo giorno della settimana: Lunedì / Sabato / Domenica | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T16 | Inizio della giornata | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T17 | Eventi passati attenuati | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T18 | Compleanni dalla rubrica | M | — | — | — | — |
+| T19 | "Notifiche e sveglie" dalle Impostazioni | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T20 | Sincronizzazione iniziale e tasto Aggiorna | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T21 | Tocco su un evento | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T22 | Tocco su spazio vuoto della griglia | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T23 | Ricerca | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T24 | Mini-calendario | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T25 | Esportazione .ics | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T26 | Esportazione CSV | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T27 | Condividi evento come testo e come .ics | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T30 | Crea evento singolo con titolo, ora, luogo, descrizione | A | ✔ | ✔ 0.4.7 | ✔ 0.4.6 | ✔ 0.4.6 |
+| T31 | Evento di tutto il giorno e di più giorni | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T32 | Modifica titolo e orario | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T33 | Eliminazione con conferma | A | ✔ | ✔ 0.4.7 | ✔ 0.4.5 | ✔ |
+| T33R | Giro completo con Google dopo pm clear | A | ✔ | ✔ 0.4.7 | ✔ | — |
+| T34 | Cambio di calendario dell'evento (richiede due account Google collegati nell'app) | A | salt. | salt. | salt. | ✔ 0.4.7 |
+| T35 | Invitati (solo @example.com), "Non inviare" | A | salt. | ✔ 0.4.7 | ✔ | ✔ |
+| T36 | Avviso agli invitati su modifica, spostamento ed eliminazione | A | salt. | ✔ 0.4.7 | ✔ | ✔ |
+| T37 | Google Meet | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T38 | Fuso orario dell'evento | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T39 | Annulla con modifiche non salvate | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T40 | Colore, disponibilità, visibilità privata | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T41 | Preset: ogni giorno, settimana, mese, anno, feriali | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T42 | Personalizzata: ogni N giorni, giorni della settimana, fine mai / data | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T43 | Modifica "solo questo / questo e successivi / tutti" | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T44 | Eliminazione con i tre ambiti | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T45 | Pressione prolungata e spostamento nello stesso giorno | A | NA | ✔ 0.4.7 | ✔ | ✔ |
+| T46 | Spostamento su un altro giorno | A | NA | ✔ 0.4.7 | ✔ | ✔ |
+| T47 | Ridimensionamento dal bordo inferiore | A | NA | ✔ 0.4.7 | ✔ | ✔ |
+| T48 | Trascinamento di un evento di serie | A | NA | ✔ 0.4.7 | ✔ | ✔ |
+| T50 | Notifica popup all'ora giusta | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T51 | Tocco sulla notifica | A | ✔ | ✔ 0.4.7 | ✖ | ✔ |
+| T52 | Sveglia con schermo spento e bloccato | A | ✔ | ✔ 0.4.7 | ✔ | — |
+| T53 | "Ferma la sveglia" | A | ✔ | ✔ 0.4.7 | ✔ | — |
+| T54 | Posticipa (5, 10, 15, 30, 60 min) | A | ✔ | ✔ 0.4.7 | ✖ | ✔ |
+| T55 | Nessuna risposta | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T56 | Due sveglie insieme | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T57 | Sveglie attive | A | ✔ | ✔ 0.4.7 | ✖ | ✔ |
+| T58 | Chiusura anticipata di una sveglia | A | ✔ | ✔ 0.4.7 | ✖ | ✔ |
+| T59 | App chiusa dalle recenti (am force-stop e kill) | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T60 | Riavvio dell'emulatore con promemoria pendente | A | ✔ | ✔ 0.4.7 | ✔ | — |
+| T61 | Cambio di fuso (service call alarm 3 s16 Asia/Tokyo e ritorno) | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T62 | Cambio dell'ora di sistema | M | — | — | — | — |
+| T63 | Avviso nel dettaglio se le notifiche sono bloccate | M | — | — | — | — |
+| T64 | Promemoria email | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T65 | Sveglia sincronizzata (ggAlarm) | A | ✔ | ✔ 0.4.7 | ✔ | — |
+| T70 | Modifica offline (svc wifi disable; svc data disable) | A | ✔ | ✔ 0.4.7 | ✔ | ✖ |
+| T71 | Assenza di rete all'avvio | A | ✔ | ✔ 0.4.7 | ✔ | — |
+| T72 | Conflitto: modifica offline sull'emulatore e modifica dello stesso eve | M | — | — | — | — |
+| T73 | Errore di autorizzazione | M | — | — | — | — |
+| T80 | Monkey: adb shell monkey -p io.github.giansalvo.ggcalendar --throttle  | A | ✔ | ✔ 0.4.7 | ✔ | — |
+| T81 | Memoria bassa e app in background (am send-trim-memory, am kill) e rit | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T82 | Scansione logcat dell'intera sessione | A | ✔ | ✔ 0.4.7 | ✔ | ✔ |
+| T51D | Solo telefono: popup e tocco sulla notifica | A | NA | NA | NA | ✔ |
+| T74 | Rimozione dell'account dall'app (dopo la rimozione Google chiede di nuovo il consenso, quindi si fa a mano) | M | — | salt. | ✖ 0.4.5 | — |
 
 **Lettura dei risultati**
-- **Samsung (C)**: 51 casi su 52 passano con la 0.4.4; l'unico fallito è T70. T70 esegue anche "Cancella dati" dell'app: sul telefono ha azzerato account locale, impostazioni dell'app e permesso notifiche (nessun evento su Google è stato toccato). Per questo T70 non va più lanciato sul telefono e il giro con `pm clear` (`flows.roundtrip`) ora rifiuta di partire fuori dagli emulatori. T71 è stato interrotto con la serie e non ha un esito valido. Casi passati sul telefono in questa sessione: T03–T08, T13–T17, T19–T27 (T25 e T26 con il selettore di One UI), T30–T33, T35–T48, T50, T51, T54–T59, T61, T64, T81, T82 e T51D.
+- **Samsung (D)**: 51 casi su 52 passano con la 0.4.4; l'unico fallito è T70. T70 esegue anche "Cancella dati" dell'app: sul telefono ha azzerato account locale, impostazioni dell'app e permesso notifiche (nessun evento su Google è stato toccato). Per questo T70 non va più lanciato sul telefono e il giro con `pm clear` (`flows.roundtrip`) ora rifiuta di partire fuori dagli emulatori. T71 è stato interrotto con la serie e non ha un esito valido. Casi passati sul telefono in questa sessione: T03–T08, T13–T17, T19–T27 (T25 e T26 con il selettore di One UI), T30–T33, T35–T48, T50, T51, T54–T59, T61, T64, T81, T82 e T51D.
 - **Non eseguiti sul telefono per scelta di sicurezza**: T01, T02, T09 (installano, disinstallano o richiedono l'assenza di account), T10, T12 (cambiano tema e dimensioni di sistema), T33R, T65, T80 (usano `pm clear`), T52, T53 (schermo spento con PIN), T60 (riavvio con PIN), T70, T71 (modalità aereo, vedi sopra). Restano nella lista manuale di `test_pre_release_v1.md`.
-- **Emulatore API 36 (B)**: i quattro fallimenti (T51, T54, T57, T58) erano due problemi diversi, entrambi già risolti: T51 per notifiche vecchie raggruppate (script), T54, T57 e T58 per il foglio "Sveglie attive" che non mostrava le righe (**difetto dell'app**, corretto nella 0.4.3). Sull'emulatore non sono stati rilanciati con la 0.4.4; sul telefono passano.
+- **Emulatore API 36 (C)**: i quattro fallimenti (T51, T54, T57, T58) erano due problemi diversi, entrambi già risolti: T51 per notifiche vecchie raggruppate (script), T54, T57 e T58 per il foglio "Sveglie attive" che non mostrava le righe (**difetto dell'app**, corretto nella 0.4.3). Sull'emulatore non sono stati rilanciati con la 0.4.4; sul telefono passano.
 - **Emulatore API 26 (A)**: tutti i casi eseguiti passano; salt. T34 (serve un secondo account Google collegato, vedi la tabella), T35 e T36 (richiedevano il permesso dei contatti, poi concesso con `pm grant` solo su API 36). Il gruppo F (trascinamento) richiede Android 10 o successivo e non gira su API 26.
 - **Mai eseguiti da script**: T01, T02, T09 (provati a mano su API 26), T11 (lingua), T18 (compleanni, permesso contatti), T62 (ora di sistema, serve root), T63 (permessi notifiche revocati), T72 (conflitto con il telefono), T73 (autorizzazione), T74 (rimozione account: dopo la rimozione, per riaggiungerlo serve il consenso a mano sulla pagina di Google; lo script lo segna SKIP).
 
@@ -304,6 +305,7 @@ Totali: A 54 pass, 3 skip (57 casi); B 5 fail, 51 pass, 1 skip (57 casi) (5 fail
 8. **Foglio di dettaglio con le animazioni spente** (0.4.6): il foglio compariva con un segnaposto e restava a circa un quarto dello schermo, con luogo e descrizione fuori schermo; ora compare solo a evento letto. Verificato su emulatore API 36 e Samsung.
 9. **Spostamento di un evento tra due account** (0.4.7, trovato da T34 sul Samsung): l'evento ricreato nell'altro account conservava l'organizzatore del vecchio, quindi tornando indietro risultava di sola lettura (`canWrite` richiede organizzatore vuoto o uguale al calendario). Ora l'organizzatore si azzera.
 10. **Cambio di calendario senza conferma** (0.4.7, richiesta dell'utente): salvando un evento esistente in un altro calendario compare "Spostare l'evento?" con calendario e account di partenza e di arrivo; "Continua a modificare" lascia l'editor aperto. Vale per gli eventi singoli (un'occorrenza di serie non cambia calendario).
+11. **Evento nuovo che chiede "Modifica evento ricorrente" e non viene scritto** (0.4.7, trovato da T45 su API 34): il ViewModel dell'editor vive a lungo e `occurrence` (l'occorrenza di una serie modificata) non veniva azzerata aprendo un editor nuovo; dopo aver modificato un'occorrenza, il prossimo evento creato con + chiedeva l'ambito della serie e non veniva creato (`original!!` nullo). Ora `load()` azzera `occurrence`, `askScope` e `askNotify`. Provato con T43, T44 e T45–T48 di seguito.
 
 **Da verificare (non ancora risolto)**
 - Dopo l'ultima modifica a `flows.reveal` T30 non è stato rilanciato sull'emulatore.
