@@ -311,7 +311,7 @@ Totali: A 54 pass, 3 skip (57 casi); B (API 30) 3 pass (T01, T02, T09), il resto
 | TM15 | Tema, lingua e carattere | Chiaro, scuro, di sistema; italiano e inglese; carattere grande: nessun testo tagliato | T10, T11, T12 | ✔ 0.4.7 |  |
 | TM16 | Cambio di fuso orario | Fuso del telefono cambiato con l'app aperta e chiusa: orari e sveglie seguono; i compleanni seguono la mezzanotte locale | T61 | da fare |  |
 | TM17 | Eventi di prova sul web | Crea, modifica ed elimina da calendar.google.com e controlla l'allineamento; conflitto offline con la copia "(conflitto)" | T72 | ✔ 0.4.8 | Conflitto (T72) e errore di autorizzazione (T73) passano |
-| TM18 | Pulizia finale | Nessun evento `[TEST GGCAL]` rimasto, nessun messaggio d'errore pendente nel menu | T82 | da fare |  |
+| TM18 | Pulizia finale | Nessun evento `[TEST GGCAL]` rimasto, nessun messaggio d'errore pendente nel menu | T82 | ✔ 0.4.8 | Controllo dell'utente |
 | TM19 | Rimozione dell'account dall'app | Rimuovi l'account dal menu laterale (conferma) e aggiungilo di nuovo: dopo la rimozione Google chiede di nuovo il consenso, quindi si fa a mano; i calendari tornano | — | ✔ 0.4.7 | Ex T74. Storia: ✖ 0.4.5 su API 36 (il consenso ha interrotto lo script), salt. su API 34, bloc. su API 30; lo script (`cases_c.py`, caso TM19) lo salta. La revoca vale per tutti i dispositivi collegati allo stesso account |
 
 **Lettura dei risultati**
