@@ -297,10 +297,10 @@ Totali: A 54 pass, 3 skip (57 casi); B (API 30) 3 pass (T01, T02, T09), il resto
 | TM1 | Installazione sopra la versione precedente | `install -r` sopra la build installata; Informazioni mostra versione e data | T02 | ✔ 0.4.8 | Controllato dall'utente |
 | TM2 | Primo login pulito | Secondo telefono o account mai usato: schermata "app non verificata" e primo sync | T01, T09 | rimandato | Serve un account mai usato |
 | TM3 | Sveglia a telefono bloccato e schermo spento | Schermata a tutto schermo, suoneria, Ferma; poi Posticipa 5 minuti | T52, T53, T54 | ✔ 0.4.8 | Con il telefono sbloccato e in uso la sveglia compare come notifica in alto (comportamento di Android) |
-| TM4 | Sveglia con il telefono in Silenzioso | Sveglia fra 3 minuti con suoneria silenziata: suona lo stesso | T52 | da fare |  |
-| TM5 | Sveglia con Non disturbare attivo | Sveglia fra 3 minuti con Non disturbare: suona lo stesso | T52 | da fare |  |
-| TM6 | Popup con il telefono in Silenzioso | Popup fra 3 minuti: compare senza suono | T50 | da fare |  |
-| TM7 | Popup con Non disturbare attivo | Popup fra 3 minuti: rispetta la modalità, nessun suono né comparsa | T50 | da fare |  |
+| TM4 | Sveglia con il telefono in Silenzioso | Sveglia fra 3 minuti con suoneria silenziata: suona lo stesso | T52 | ✔ 0.4.8 |  |
+| TM5 | Sveglia con Non disturbare attivo | Sveglia fra 3 minuti con Non disturbare: suona lo stesso | T52 | ✔ 0.4.8 |  |
+| TM6 | Popup con il telefono in Silenzioso | Popup fra 3 minuti: compare senza suono | T50 | ✔ 0.4.8 |  |
+| TM7 | Popup con Non disturbare attivo | Popup fra 3 minuti con Non disturbare (solo interruzioni importanti): nessun suono, vibrazione né banner; resta l'icona nella barra di stato e nella tendina | T50 | ✔ 0.4.8 | Prima valutato ✖: l'icona nella barra di stato è la visibilità silenziosa normale di Android; il canale dei promemoria non scavalca Non disturbare (`mBypassDnd=false`) |
 | TM8 | Riavvio con il PIN non ancora inserito | Sveglia in arrivo, riavvio, niente PIN: suona prima dello sblocco; dopo il PIN i promemoria risultano registrati | T60 | da fare |  |
 | TM9 | App chiusa dalle recenti | Un popup e una sveglia fra pochi minuti, app chiusa dalle recenti: arrivano comunque | T59 | ✔ 0.4.8 |  |
 | TM10 | Modalità aereo | Modifica un evento: il badge di Aggiorna mostra la coda; tolta la modalità aereo le modifiche partono e il badge sparisce | T70, T71 | ✔ 0.4.8 |  |

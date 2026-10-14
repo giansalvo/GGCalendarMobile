@@ -35,7 +35,7 @@ Spunta ogni riga; annota modello, versione e qualsiasi stranezza. Gli id sono TM
 - **TM4 Sveglia con il telefono in Silenzioso**: suona lo stesso.
 - **TM5 Sveglia con Non disturbare attivo**: suona lo stesso.
 - **TM6 Popup con il telefono in Silenzioso**: la notifica arriva, senza suono.
-- **TM7 Popup con Non disturbare attivo**: rispetta la modalità (nessun suono e nessuna comparsa).
+- **TM7 Popup con Non disturbare attivo**: rispetta la modalità (nessun suono, vibrazione né banner; resta l'icona nella barra di stato e nella tendina).
 - **TM8 Riavvio con il PIN non ancora inserito** e una sveglia in arrivo: suona prima dello sblocco; dopo il PIN i promemoria risultano registrati.
 - **TM9 App chiusa dalle recenti**: un popup e una sveglia arrivano comunque.
 - **TM10 Modalità aereo**: modifica un evento, il badge sul tasto Aggiorna mostra le modifiche in coda, al ritorno della rete partono da sole e il badge sparisce.
@@ -50,7 +50,7 @@ Spunta ogni riga; annota modello, versione e qualsiasi stranezza. Gli id sono TM
 
 ## Stato al 13/10/2026
 - **Parte 1 (automatica sul Samsung A56, build 0.4.4)**: 44 casi eseguiti, tutti passano (dettaglio nella sezione 9 di `test_emulator_e_device.md`). Mancano sul telefono i casi che cambiano le Impostazioni (T13, T15–T17, T19): gli script ora le leggono e le rimettono, da rilanciare. Il prefisso degli eventi di prova è `[TEST GGCAL]`.
-- **Parte 2 (lista manuale)**, in corso dal 14/10/2026 sul Samsung A56 con la 0.4.8 (id TM1…TM18, tabella 9.2 di `test_emulator_e_device.md`): **passano** TM1, TM3, TM9, TM10, TM11, TM12, TM13, TM14, TM15, TM17. **Da fare**: TM4–TM7 (Silenzioso e Non disturbare, sveglia e popup), TM8 (riavvio con il PIN), TM16 (fuso orario), TM18 (pulizia finale). **Rimandati**: TM2 (serve un secondo telefono o un account mai usato), T33R e T65 (cancellano i dati dell'app).
+- **Parte 2 (lista manuale)**, in corso dal 14/10/2026 sul Samsung A56 con la 0.4.8 (id TM1…TM18, tabella 9.2 di `test_emulator_e_device.md`): **passano** TM1, TM3, TM4, TM5, TM6, TM7, TM9, TM10, TM11, TM12, TM13, TM14, TM15, TM17. **Da fare**: TM8 (riavvio con il PIN), TM16 (fuso orario), TM18 (pulizia finale). **Rimandati**: TM2 (serve un secondo telefono o un account mai usato), T33R e T65 (cancellano i dati dell'app).
 
 ## Casi automatici che sul telefono restano manuali (decisione del 13/10/2026)
 Non si lanciano da script sul Samsung perché cancellano i dati dell'app, richiedono lo sblocco con il PIN o cambiano impostazioni di sistema. Da fare a mano e spuntare:
