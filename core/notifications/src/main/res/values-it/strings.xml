@@ -21,8 +21,8 @@
     </plurals>
     <string name="now">Ora</string>
     <string name="intro_notifications">Servono per i promemoria e le sveglie.</string>
-    <string name="intro_overlay">Così la sveglia si apre da sola.</string>
-    <string name="intro_fullscreen">Così la sveglia si apre a schermo bloccato.</string>
+    <string name="intro_overlay">Così la sveglia si apre da sola sopra le altre app.</string>
+    <string name="intro_fullscreen">Così la sveglia si apre a telefono bloccato.</string>
     <string name="intro_battery">Così le sveglie suonano in orario.</string>
     <string name="intro_allow">Consenti</string>
     <string name="intro_skip">Non ora</string>
@@ -30,10 +30,10 @@
     <string name="perm_notifications_help">Servono per mostrare promemoria e sveglie.</string>
     <string name="perm_exact">Promemoria puntuali</string>
     <string name="perm_exact_help">Fa arrivare i promemoria al minuto esatto, anche a schermo spento.</string>
-    <string name="perm_fullscreen">Sveglia sopra il blocco schermo</string>
-    <string name="perm_fullscreen_help">Senza, la sveglia suona e mostra una notifica, ma non apre lo schermo intero.</string>
-    <string name="perm_overlay">Sveglia sopra le altre app</string>
-    <string name="perm_overlay_help">Fa aprire da sola la schermata della sveglia mentre usi il telefono, con Posticipa e Ferma, finché non rispondi.</string>
+    <string name="perm_fullscreen">Notifiche a schermo intero</string>
+    <string name="perm_fullscreen_help">Fa aprire la schermata della sveglia a telefono bloccato. Senza, compare solo una notifica.</string>
+    <string name="perm_overlay">Visualizza sopra altre app</string>
+    <string name="perm_overlay_help">Fa aprire da sola la schermata della sveglia sopra l\'app che stai usando, finché non rispondi.</string>
     <string name="perm_battery">Batteria: nessuna restrizione</string>
     <string name="perm_battery_help">Evita che il telefono ritardi i promemoria per risparmiare energia. Si cambia da Informazioni applicazione > Batteria.</string>
     <string name="samsung_sleeping">Sui Samsung controlla anche Impostazioni > Batteria > Limiti di utilizzo in background: GGCalendar non deve essere tra le app in sospensione o in sospensione profonda.</string>

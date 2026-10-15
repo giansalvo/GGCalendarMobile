@@ -21,8 +21,8 @@
     </plurals>
     <string name="now">Now</string>
     <string name="intro_notifications">For reminders and alarms.</string>
-    <string name="intro_overlay">So the alarm opens by itself.</string>
-    <string name="intro_fullscreen">So the alarm opens on the lock screen.</string>
+    <string name="intro_overlay">So the alarm opens by itself over other apps.</string>
+    <string name="intro_fullscreen">So the alarm opens when the phone is locked.</string>
     <string name="intro_battery">So alarms ring on time.</string>
     <string name="intro_allow">Allow</string>
     <string name="intro_skip">Not now</string>
@@ -30,10 +30,10 @@
     <string name="perm_notifications_help">Needed to show reminders and alarms.</string>
     <string name="perm_exact">Reminders on time</string>
     <string name="perm_exact_help">Lets reminders arrive at the exact minute, also with the screen off.</string>
-    <string name="perm_fullscreen">Alarm over the lock screen</string>
-    <string name="perm_fullscreen_help">Without it an alarm rings and shows a notification, but does not open the full screen.</string>
-    <string name="perm_overlay">Alarm over other apps</string>
-    <string name="perm_overlay_help">Lets the alarm screen open by itself while you use the phone, with Snooze and Stop, until you answer.</string>
+    <string name="perm_fullscreen">Full screen notifications</string>
+    <string name="perm_fullscreen_help">Lets the alarm open its screen when the phone is locked. Without it only a notification shows.</string>
+    <string name="perm_overlay">Display over other apps</string>
+    <string name="perm_overlay_help">Lets the alarm screen open by itself over the app you are using, until you answer.</string>
     <string name="perm_battery">Battery: no restrictions</string>
     <string name="perm_battery_help">Keeps the phone from delaying reminders to save power. To change it: App info > Battery.</string>
     <string name="samsung_sleeping">On Samsung phones also check Settings > Battery > Background usage limits: GGCalendar must not be among the sleeping or deep sleeping apps.</string>
