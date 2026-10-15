@@ -1,8 +1,8 @@
 # Changelog
 
-Le modifiche di GGCalendar Mobile da una versione alla successiva, dalla più recente. Il dettaglio dei test è in `app_planning/test_emulator_e_device.md`, il piano in `app_planning/plan.md`.
+Le modifiche di GGCalendar Mobile da una versione alla successiva, dalla più recente.
 
-## 1.0.1 (15/10/2026, in preparazione)
+## 1.0.1 (15/10/2026)
 
 - Visualizza sveglia sopra le altre app
 - Visualizza splash screen

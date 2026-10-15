@@ -1,46 +1,39 @@
 package io.github.giansalvo.ggcalendar.core.notifications
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.giansalvo.ggcalendar.core.data.AppPreferences
@@ -63,17 +56,24 @@ class PermissionsIntroViewModel @Inject constructor(private val prefs: AppPrefer
 
 private const val SPLASH_MILLIS = 5_000L
 
+/** TEST ONLY: show the splash and the questions at every start, whatever was answered before. Must be false in a release. */
+private const val ALWAYS_SHOW_FOR_TESTING = false
+
+/** What the first start can ask for. Each one is a small window of its own, only if Android does not allow it yet. */
+private enum class Ask { NOTIFICATIONS, OVERLAY, BATTERY }
+
 /**
- * Shown once, at the first start: the logo for five seconds, then the three permissions that alarms need and that Android does not ask for
- * with a dialog (the alarm screen over other apps, the battery, the notifications). Each row opens Android's own screen;
- * the same rows stay in Settings > Notifications and alarms. Closing it in any way counts as seen.
+ * First start: the logo for five seconds, then one small window for each permission that alarms need and that is still
+ * missing (the notifications, the alarm screen over other apps, the battery), each with one short line and two answers.
+ * "Allow" opens Android's own screen (or its question); "Not now" goes on. Whatever the answers, it is not shown again;
+ * the same options stay in Settings > Notifications and alarms.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PermissionsIntro(viewModel: PermissionsIntroViewModel = hiltViewModel()) {
     val seen by viewModel.seen.collectAsState()
-    if (seen) return
-    // First start: the logo for five seconds, then the permissions window over the calendar.
+    var closed by rememberSaveable { mutableStateOf(false) }
+    if (closed || (seen && !ALWAYS_SHOW_FOR_TESTING)) return
+
     var splash by rememberSaveable { mutableStateOf(true) }
     LaunchedEffect(Unit) {
         delay(SPLASH_MILLIS)
@@ -91,31 +91,53 @@ fun PermissionsIntro(viewModel: PermissionsIntroViewModel = hiltViewModel()) {
         }
         return
     }
+
     val context = LocalContext.current
     val checks = remember { NotificationChecks(context) }
-    var status by remember { mutableStateOf(checks.status()) }
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { status = checks.status() }
-
-    ModalBottomSheet(onDismissRequest = viewModel::done, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        Column(Modifier.exposeTestTags().testTag("sheet_permissions_intro").fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(horizontal = 20.dp).padding(bottom = 16.dp)) {
-            Text(stringResource(R.string.intro_title), style = MaterialTheme.typography.titleLarge)
-            Spacer(Modifier.height(8.dp))
-            Text(stringResource(R.string.intro_text), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(12.dp))
-            PermissionRow(stringResource(R.string.perm_notifications), stringResource(R.string.perm_notifications_help), status.notifications) {
-                context.open(checks.notificationSettings())
-            }
-            PermissionRow(stringResource(R.string.perm_overlay), stringResource(R.string.perm_overlay_help), status.overlay) {
-                context.open(checks.overlaySettings())
-            }
-            PermissionRow(stringResource(R.string.perm_battery), stringResource(R.string.perm_battery_help), status.batteryUnrestricted) {
-                context.open(if (status.batteryUnrestricted) checks.batteryList() else checks.batterySettings())
-            }
-            Text(stringResource(R.string.samsung_sleeping), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
-            Spacer(Modifier.height(8.dp))
-            Text(stringResource(R.string.intro_later), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(12.dp))
-            Button(onClick = viewModel::done, modifier = Modifier.testTag("intro_done").fillMaxWidth()) { Text(stringResource(R.string.intro_done)) }
+    // The questions are decided once, when the splash ends: a permission granted in between does not change the list.
+    val asks: List<Ask> = rememberSaveable(saver = listSaver<List<Ask>, String>(save = { l -> l.map { it.name } }, restore = { l -> l.map { Ask.valueOf(it) } })) {
+        val status = checks.status()
+        buildList {
+            if (!status.notifications) add(Ask.NOTIFICATIONS)
+            if (!status.overlay) add(Ask.OVERLAY)
+            if (!status.batteryUnrestricted) add(Ask.BATTERY)
         }
     }
+    var index by rememberSaveable { mutableIntStateOf(0) }
+    val notificationQuestion = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+
+    val ask = asks.getOrNull(index)
+    if (ask == null) {
+        // Nothing (more) to ask: the first start is over.
+        LaunchedEffect(Unit) {
+            closed = true
+            viewModel.done()
+        }
+        return
+    }
+    val next = { index += 1 }
+    val (title, text) = when (ask) {
+        Ask.NOTIFICATIONS -> R.string.perm_notifications to R.string.intro_notifications
+        Ask.OVERLAY -> R.string.perm_overlay to R.string.intro_overlay
+        Ask.BATTERY -> R.string.perm_battery to R.string.intro_battery
+    }
+    AlertDialog(
+        modifier = Modifier.exposeTestTags().testTag("intro_" + ask.name.lowercase()),
+        onDismissRequest = next,
+        title = { Text(stringResource(title)) },
+        text = { Text(stringResource(text)) },
+        confirmButton = {
+            TextButton(modifier = Modifier.testTag("intro_allow"), onClick = {
+                when (ask) {
+                    Ask.NOTIFICATIONS ->
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) notificationQuestion.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        else context.open(checks.notificationSettings())
+                    Ask.OVERLAY -> context.open(checks.overlaySettings())
+                    Ask.BATTERY -> context.open(checks.batterySettings())
+                }
+                next()
+            }) { Text(stringResource(R.string.intro_allow)) }
+        },
+        dismissButton = { TextButton(modifier = Modifier.testTag("intro_skip"), onClick = next) { Text(stringResource(R.string.intro_skip)) } },
+    )
 }
