@@ -29,12 +29,6 @@
     <string name="perm_fullscreen_help">Without it an alarm rings and shows a notification, but does not open the full screen.</string>
     <string name="perm_overlay">Alarm over other apps</string>
     <string name="perm_overlay_help">Lets the alarm screen open by itself while you use the phone, with Snooze and Stop, until you answer.</string>
-    <string name="overlay_prompt_title">Open the alarm over other apps?</string>
-    <string name="overlay_prompt_text">An alarm can open its screen by itself, over whatever app you are using, and stay there until you answer. Android needs your permission for it ("Display over other apps"). Without it, only a notification slides in for a short time.</string>
-    <string name="overlay_prompt_allow">Allow</string>
-    <string name="overlay_prompt_later">Not now</string>
-    <string name="overlay_prompt_never">Don\'t ask again</string>
-    <string name="warning_overlay_off">The alarm screen cannot open over other apps: only a notification will show.</string>
     <string name="perm_battery">Battery: no restrictions</string>
     <string name="perm_battery_help">Keeps the phone from delaying reminders to save power.</string>
     <string name="samsung_sleeping">On Samsung phones also check Settings > Battery > Background usage limits: GGCalendar must not be among the sleeping or deep sleeping apps.</string>

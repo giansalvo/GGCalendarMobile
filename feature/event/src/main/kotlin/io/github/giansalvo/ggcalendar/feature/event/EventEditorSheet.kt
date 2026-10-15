@@ -1,7 +1,5 @@
 package io.github.giansalvo.ggcalendar.feature.event
 
-import io.github.giansalvo.ggcalendar.core.notifications.NotificationChecks
-import io.github.giansalvo.ggcalendar.core.notifications.OverlayPermissionDialog
 import io.github.giansalvo.ggcalendar.core.notifications.exposeTestTags
 import androidx.compose.ui.platform.testTag
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -269,12 +267,9 @@ private fun EditorFields(
     update: ((Draft) -> Draft) -> Unit,
     onGuestsFocused: () -> Unit,
 ) {
-    val context = LocalContext.current
-    val res = context.resources
+    val res = LocalContext.current.resources
     val locale = Locale.getDefault()
     var picking by remember { mutableStateOf<Picker?>(null) }
-    var askOverlay by remember { mutableStateOf(false) }
-    if (askOverlay) OverlayPermissionDialog { askOverlay = false }
 
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
         TextField(
@@ -365,10 +360,7 @@ private fun EditorFields(
         Picker.EndTime -> TimeDialog(draft.endTime, { picking = null }) { t -> update { it.withEnd(time = t) } }
         Picker.Zone -> ZoneDialog(draft.zone, { picking = null }) { z -> update { it.copy(zoneId = z.id) } }
         Picker.Recurrence -> RecurrenceDialog(draft, { picking = null }) { r -> update { it.copy(rrule = r) } }
-        Picker.Reminder -> ReminderDialog({ picking = null }) { r ->
-            update { it.copy(reminders = (it.reminders.orEmpty() + r).distinct()) }
-            if (r.method == ReminderMethod.ALARM && NotificationChecks(context).shouldAskOverlay()) askOverlay = true
-        }
+        Picker.Reminder -> ReminderDialog({ picking = null }) { r -> update { it.copy(reminders = (it.reminders.orEmpty() + r).distinct()) } }
         Picker.Color -> ColorDialog(draft.color, { picking = null }) { c -> update { it.copy(color = c) } }
         Picker.Visibility -> ChoiceDialog(
             listOf("DEFAULT" to R.string.visibility_default, "PUBLIC" to R.string.visibility_public, "PRIVATE" to R.string.visibility_private),

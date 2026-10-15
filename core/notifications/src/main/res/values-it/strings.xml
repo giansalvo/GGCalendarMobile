@@ -29,12 +29,6 @@
     <string name="perm_fullscreen_help">Senza, la sveglia suona e mostra una notifica, ma non apre lo schermo intero.</string>
     <string name="perm_overlay">Sveglia sopra le altre app</string>
     <string name="perm_overlay_help">Fa aprire da sola la schermata della sveglia mentre usi il telefono, con Posticipa e Ferma, finché non rispondi.</string>
-    <string name="overlay_prompt_title">Aprire la sveglia sopra le altre app?</string>
-    <string name="overlay_prompt_text">Una sveglia può aprire da sola la sua schermata, sopra qualunque app tu stia usando, e restare lì finché non rispondi. Android chiede il tuo permesso ("Visualizza sopra altre app"). Senza, compare solo una notifica per poco tempo.</string>
-    <string name="overlay_prompt_allow">Consenti</string>
-    <string name="overlay_prompt_later">Non ora</string>
-    <string name="overlay_prompt_never">Non chiedere più</string>
-    <string name="warning_overlay_off">La schermata della sveglia non può aprirsi sopra le altre app: comparirà solo una notifica.</string>
     <string name="perm_battery">Batteria: nessuna restrizione</string>
     <string name="perm_battery_help">Evita che il telefono ritardi i promemoria per risparmiare energia.</string>
     <string name="samsung_sleeping">Sui Samsung controlla anche Impostazioni > Batteria > Limiti di utilizzo in background: GGCalendar non deve essere tra le app in sospensione o in sospensione profonda.</string>

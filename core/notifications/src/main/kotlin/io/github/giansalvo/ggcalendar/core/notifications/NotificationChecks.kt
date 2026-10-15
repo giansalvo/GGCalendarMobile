@@ -45,16 +45,6 @@ class NotificationChecks(private val context: Context) {
     fun fullScreenSettings() =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, appUri()) else appDetails()
 
-    private val prefs get() = context.getSharedPreferences("alarm_permission", Context.MODE_PRIVATE)
-
-    /** The user said "don't ask again" to the question about displaying the alarm over other apps. */
-    var overlayPromptDisabled: Boolean
-        get() = prefs.getBoolean("overlay_prompt_disabled", false)
-        set(value) = prefs.edit().putBoolean("overlay_prompt_disabled", value).apply()
-
-    /** An alarm is being set and the alarm screen could not open over other apps: time to ask. */
-    fun shouldAskOverlay() = !overlayPromptDisabled && !status().overlay
-
     fun overlaySettings() = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, appUri())
 
     fun batterySettings() = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, appUri())
