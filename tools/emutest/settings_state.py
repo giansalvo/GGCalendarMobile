@@ -3,7 +3,7 @@
 The settings live in the app's DataStore (not readable with adb on a release build), but every one of them is visible on the
 Settings screen, so the run reads them there. The tests change them (theme, first day of the week, start of the day, ...) and
 leave their own values; on a real phone those would replace the user's choices, hence snapshot() / restore().
-Covers: theme, dynamic colours, first day of the week, start of the day, dim past events. The alarm duration is handled by
+Covers: theme, dynamic colours, first day of the week, start of the day, dim past events. The alarm duration (also in the settings) is handled by
 cases_g.set_alarm_duration (same idea). The birthdays switch is never changed by the tests.
 """
 import re

@@ -146,14 +146,13 @@ def alarm_rows(ctx, title=None):
 
 
 def set_alarm_duration(ctx, minutes):
-    """Sets the duration of the alarm (1-10 minutes) with the slider of the notifications sheet."""
+    """Sets the duration of the alarm (1-10 minutes) with the slider in the settings, then saves them."""
     d = ctx.d
     F.home(ctx)
     d.click(tag="btn_settings")
-    d.wait(timeout=10, tag="settings_notifications")
-    d.tap(*F.scroll_to(ctx, "settings_notifications").center)
-    sl = d.wait(timeout=8, tag="notif_alarm_slider")
-    ctx.check(sl, "the notifications sheet did not open")
+    d.wait(timeout=10, tag="settings_save")
+    sl = F.scroll_to(ctx, "notif_alarm_slider")
+    ctx.check(sl, "the notifications and alarms options are not in the settings")
     if "orig_duration" not in ctx.state:
         cur = [m.group(1) for n in d.dump() for m in [re.match(r"^(\d+)\s*(?:minut|min)", n.text or "", re.I)] if m]
         ctx.state["orig_duration"] = int(cur[0]) if cur else None
@@ -163,7 +162,10 @@ def set_alarm_duration(ctx, minutes):
     d.swipe(sl.center[0], sl.center[1], x if minutes > 1 else max(sl.l - 120, 2), sl.center[1], 500)
     time.sleep(1.0)
     ctx.check(d.find(text=re.compile(rf"^{minutes} ", re.I)), f"the slider did not reach {minutes} minute(s)")
-    d.back()
+    btn = d.find(tag="settings_save")
+    # Save is off when the slider stayed where it was: then just leave
+    d.click(tag="settings_save" if btn and btn[0].enabled else "settings_back")
+    ctx.check(d.gone(timeout=8, tag="settings_save"), "the settings stayed open after Save")
     time.sleep(0.6)
     F.home(ctx)
 

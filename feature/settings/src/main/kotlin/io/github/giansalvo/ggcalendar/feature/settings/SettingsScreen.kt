@@ -1,5 +1,6 @@
 package io.github.giansalvo.ggcalendar.feature.settings
 
+import io.github.giansalvo.ggcalendar.core.notifications.NotificationSettingsSection
 import io.github.giansalvo.ggcalendar.core.notifications.exposeTestTags
 import androidx.compose.ui.platform.testTag
 import android.Manifest
@@ -22,7 +23,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
@@ -65,12 +65,12 @@ import java.util.Locale
 
 /**
  * Settings, in sections: appearance (theme, wallpaper colors), calendar (first day of the week, start of the day, past
- * events) and a way to the notification screen. The choices are made on a copy and apply only with Save; leaving with
+ * events) and the notifications and alarms (permissions, how long an alarm rings). The choices are made on a copy and apply only with Save; leaving with
  * unsaved choices asks first.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onClose: () -> Unit, onOpenNotifications: () -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
+fun SettingsScreen(onClose: () -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
     val saved by produceState<SettingsDraft?>(null) { value = viewModel.load() }
     saved?.let { original ->
         var draft by remember { mutableStateOf(original) }
@@ -126,16 +126,7 @@ fun SettingsScreen(onClose: () -> Unit, onOpenNotifications: () -> Unit, viewMod
                         }
 
                         Section(stringResource(R.string.settings_notifications))
-                        Row(
-                            Modifier.testTag("settings_notifications").fillMaxWidth().clickable(onClick = onOpenNotifications).padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(Icons.Outlined.Notifications, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Column(Modifier.padding(start = 16.dp)) {
-                                Text(stringResource(R.string.settings_notifications_alarms), style = MaterialTheme.typography.bodyLarge)
-                                Text(stringResource(R.string.settings_notifications_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
+                        NotificationSettingsSection(draft.alarmMinutes) { draft = draft.copy(alarmMinutes = it) }
                         Spacer(Modifier.height(24.dp))
                     }
                 }

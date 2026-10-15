@@ -13,9 +13,7 @@
     <string name="settings_day_start_hint">Da dove si aprono le viste giorno e settimana quando non mostrano oggi</string>
     <string name="settings_dim_past">Attenua gli eventi passati</string>
     <string name="settings_dim_past_hint">Gli eventi già finiti appaiono più chiari</string>
-    <string name="settings_notifications">Notifiche</string>
-    <string name="settings_notifications_alarms">Notifiche e sveglie</string>
-    <string name="settings_notifications_hint">Permessi e durata della sveglia</string>
+    <string name="settings_notifications">Notifiche e sveglie</string>
     <string name="settings_week_start">Inizio della settimana</string>
     <string name="settings_week_start_hint">Vale per la vista settimana, il mese e il mini-calendario</string>
     <string name="settings_save">Salva</string>

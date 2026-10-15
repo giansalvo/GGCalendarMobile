@@ -57,6 +57,14 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         val birthdays = booleanPreferencesKey("birthdays_from_contacts")
         val weekStart = stringPreferencesKey("week_start")
         val dynamicColor = booleanPreferencesKey("dynamic_color")
+        val permissionsIntroSeen = booleanPreferencesKey("permissions_intro_seen")
+    }
+
+    /** The "before you start" screen about the permissions of alarms has been shown (or closed) once. */
+    val permissionsIntroSeen: Flow<Boolean> = context.dataStore.data.map { it[Keys.permissionsIntroSeen] == true }
+
+    suspend fun setPermissionsIntroSeen() {
+        context.dataStore.edit { it[Keys.permissionsIntroSeen] = true }
     }
 
     /** How long an alarm rings before it stops by itself and becomes a "missed alarm", in minutes (1 to 10). */

@@ -20,7 +20,10 @@
         <item quantity="other">%d minutes</item>
     </plurals>
     <string name="now">Now</string>
-    <string name="notifications_title">Notifications and alarms</string>
+    <string name="intro_title">Before you start</string>
+    <string name="intro_text">For alarms to ring on time and open over the app you are using, Android needs a few permissions that it does not ask for by itself.</string>
+    <string name="intro_later">You can do this later: the same options are in Settings, under Notifications and alarms.</string>
+    <string name="intro_done">Done</string>
     <string name="perm_notifications">Notifications</string>
     <string name="perm_notifications_help">Needed to show reminders and alarms.</string>
     <string name="perm_exact">Reminders on time</string>

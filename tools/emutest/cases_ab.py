@@ -338,23 +338,21 @@ def t17(ctx):
     d.click(tag="settings_back")
 
 
-@case("T19", "B", "Notifications and alarms sheet: duration slider is kept")
+@case("T19", "B", "Settings, notifications and alarms: duration slider is kept after Save")
 def t19(ctx):
     d = ctx.d
     open_settings(ctx)
-    d.tap(*F.scroll_to(ctx, "settings_notifications").center)
-    sl = d.wait(timeout=8, tag="notif_alarm_slider")
-    ctx.check(sl, "the notifications sheet did not open")
-    ctx.step("notifications_sheet")
+    sl = F.scroll_to(ctx, "notif_alarm_slider")
+    ctx.check(sl, "the notifications and alarms options are not in the settings")
+    ctx.step("notification_options")
     d.swipe(sl.center[0], sl.center[1], max(sl.l - 120, 2), sl.center[1], 500)  # drag to the minimum
     time.sleep(1.0)
     ctx.check(d.find(text=re.compile(r"^1 (minut)", re.I)), "the slider did not reach 1 minute")
-    d.back()
-    time.sleep(0.6)
-    d.tap(*F.scroll_to(ctx, "settings_notifications").center)
-    sl = d.wait(timeout=8, tag="notif_alarm_slider")
+    save_settings(ctx)
+    open_settings(ctx)
+    sl = F.scroll_to(ctx, "notif_alarm_slider")
     ctx.check(d.find(text=re.compile(r"^1 (minut)", re.I)), "1 minute was not kept")
-    d.swipe(sl.l + 20, sl.center[1], sl.l + int(sl.width * 0.13), sl.center[1], 500)  # about 2 minutes again
-    d.back()
+    d.swipe(sl.center[0], sl.center[1], sl.l + int(sl.width * 1 / 9.0), sl.center[1], 500)  # 2 minutes again (not from the screen edge: that is the back gesture)
+    save_settings(ctx)
     F.home(ctx)
     ctx.note("the duration is left as set by the last swipe; T55 sets it again")

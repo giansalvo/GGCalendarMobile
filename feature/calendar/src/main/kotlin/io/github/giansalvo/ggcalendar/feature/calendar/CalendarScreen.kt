@@ -41,7 +41,7 @@ import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Refresh
 import io.github.giansalvo.ggcalendar.core.notifications.ActiveAlarmsSheet
-import io.github.giansalvo.ggcalendar.core.notifications.NotificationsSheet
+import io.github.giansalvo.ggcalendar.core.notifications.PermissionsIntro
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DrawerValue
@@ -119,7 +119,6 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
     val snackbar = remember { SnackbarHostState() }
     var miniOpen by rememberSaveable { mutableStateOf(false) }
     var yearPickerOpen by rememberSaveable { mutableStateOf(false) }
-    var notificationsOpen by rememberSaveable { mutableStateOf(false) }
     var alarmsOpen by rememberSaveable { mutableStateOf(false) }
     var aboutOpen by rememberSaveable { mutableStateOf(false) }
     var exportOpen by rememberSaveable { mutableStateOf(false) }
@@ -337,9 +336,9 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
             onOpenEvent = { eventId, beginUtc -> viewModel.openLink(EventLink(eventId, beginUtc)) },
         )
     }
-    if (notificationsOpen) NotificationsSheet(onDismiss = { notificationsOpen = false })
+    PermissionsIntro(hasAccount = state.accounts.isNotEmpty())
     if (settingsOpen) {
-        SettingsScreen(onClose = { settingsOpen = false }, onOpenNotifications = { notificationsOpen = true })
+        SettingsScreen(onClose = { settingsOpen = false })
     }
     if (exportOpen) ExportDialog(accounts = state.accounts, onDismiss = { exportOpen = false })
     removing?.let { email ->

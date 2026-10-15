@@ -6,6 +6,7 @@ import io.github.giansalvo.ggcalendar.core.data.AppPreferences
 import io.github.giansalvo.ggcalendar.core.data.BirthdaySync
 import io.github.giansalvo.ggcalendar.core.data.ContactsSource
 import io.github.giansalvo.ggcalendar.core.data.ThemeMode
+import io.github.giansalvo.ggcalendar.core.notifications.DirectBootStore
 import io.github.giansalvo.ggcalendar.feature.event.WeekSettings
 import kotlinx.coroutines.flow.first
 import java.time.DayOfWeek
@@ -19,6 +20,8 @@ data class SettingsDraft(
     val dayStartHour: Int,
     val dimPast: Boolean,
     val birthdays: Boolean,
+    /** How long an alarm rings before it stops by itself (1 to 10 minutes). */
+    val alarmMinutes: Int,
 )
 
 @HiltViewModel
@@ -26,6 +29,7 @@ class SettingsViewModel @Inject constructor(
     private val prefs: AppPreferences,
     private val birthdays: BirthdaySync,
     private val contacts: ContactsSource,
+    private val alarmStore: DirectBootStore,
 ) : ViewModel() {
     val contactsGranted: Boolean get() = contacts.granted
 
@@ -39,6 +43,7 @@ class SettingsViewModel @Inject constructor(
             dayStartHour = view.dayStartHour,
             dimPast = view.dimPast,
             birthdays = prefs.birthdaysEnabled.first() && contacts.granted,
+            alarmMinutes = prefs.alarmMinutes.first(),
         )
     }
 
@@ -49,6 +54,9 @@ class SettingsViewModel @Inject constructor(
         prefs.setDayStartHour(draft.dayStartHour)
         prefs.setDimPast(draft.dimPast)
         prefs.setBirthdaysEnabled(draft.birthdays)
+        // The copy in the device protected storage is what the alarm uses while the phone is locked after a reboot.
+        alarmStore.setAlarmMinutes(draft.alarmMinutes)
+        prefs.setAlarmMinutes(draft.alarmMinutes)
         // The calendar appears (or goes away) as soon as the choice is saved.
         birthdays.sync()
     }

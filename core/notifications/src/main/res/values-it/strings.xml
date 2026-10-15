@@ -20,7 +20,10 @@
         <item quantity="other">%d minuti</item>
     </plurals>
     <string name="now">Ora</string>
-    <string name="notifications_title">Notifiche e sveglie</string>
+    <string name="intro_title">Prima di iniziare</string>
+    <string name="intro_text">Perché le sveglie suonino in orario e si aprano sopra l\'app che stai usando, Android chiede alcuni permessi che non propone da solo.</string>
+    <string name="intro_later">Puoi farlo anche dopo: le stesse opzioni sono in Impostazioni, sotto Notifiche e sveglie.</string>
+    <string name="intro_done">Fatto</string>
     <string name="perm_notifications">Notifiche</string>
     <string name="perm_notifications_help">Servono per mostrare promemoria e sveglie.</string>
     <string name="perm_exact">Promemoria puntuali</string>

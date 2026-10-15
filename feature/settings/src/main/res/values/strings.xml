@@ -13,9 +13,7 @@
     <string name="settings_day_start_hint">Where the day and week views open when they do not show today</string>
     <string name="settings_dim_past">Dim past events</string>
     <string name="settings_dim_past_hint">Events that are over look lighter</string>
-    <string name="settings_notifications">Notifications</string>
-    <string name="settings_notifications_alarms">Notifications and alarms</string>
-    <string name="settings_notifications_hint">Permissions and the length of the alarm</string>
+    <string name="settings_notifications">Notifications and alarms</string>
     <string name="settings_week_start">First day of the week</string>
     <string name="settings_week_start_hint">Used by the week view, the month and the mini calendar</string>
     <string name="settings_save">Save</string>
