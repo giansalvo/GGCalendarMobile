@@ -61,10 +61,10 @@ class PermissionsIntroViewModel @Inject constructor(private val prefs: AppPrefer
     }
 }
 
-private const val SPLASH_MILLIS = 3_000L
+private const val SPLASH_MILLIS = 5_000L
 
 /**
- * Shown once, at the first start: the logo for three seconds, then the three permissions that alarms need and that Android does not ask for
+ * Shown once, at the first start: the logo for five seconds, then the three permissions that alarms need and that Android does not ask for
  * with a dialog (the alarm screen over other apps, the battery, the notifications). Each row opens Android's own screen;
  * the same rows stay in Settings > Notifications and alarms. Closing it in any way counts as seen.
  */
@@ -73,7 +73,7 @@ private const val SPLASH_MILLIS = 3_000L
 fun PermissionsIntro(viewModel: PermissionsIntroViewModel = hiltViewModel()) {
     val seen by viewModel.seen.collectAsState()
     if (seen) return
-    // First start: the logo for three seconds, then the permissions window over the calendar.
+    // First start: the logo for five seconds, then the permissions window over the calendar.
     var splash by rememberSaveable { mutableStateOf(true) }
     LaunchedEffect(Unit) {
         delay(SPLASH_MILLIS)
