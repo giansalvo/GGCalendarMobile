@@ -240,8 +240,9 @@ private fun DetailContent(instance: EventInstance, detail: EventDetail, onClose:
             }
         }
 
-        val rings = (event.reminders ?: detail.calendar.defaultReminders).any { it.method != ReminderMethod.EMAIL }
-        if (rings) ReminderPermissionWarning(Modifier.padding(start = 56.dp, end = 20.dp))
+        val shown = event.reminders ?: detail.calendar.defaultReminders
+        val rings = shown.any { it.method != ReminderMethod.EMAIL }
+        if (rings) ReminderPermissionWarning(Modifier.padding(start = 56.dp, end = 20.dp), hasAlarm = shown.any { it.method == ReminderMethod.ALARM })
 
         if (event.attendees.isNotEmpty()) {
             val recipients = remember(detail) { EventShare.mailRecipients(detail) }

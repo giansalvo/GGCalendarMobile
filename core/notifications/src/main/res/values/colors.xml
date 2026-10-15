@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Alarm banner: the system draws it light or dark with the phone's theme, and the app's theme attributes do not follow it. -->
+    <color name="hun_primary">#1C1B1F</color>
+    <color name="hun_secondary">#49454F</color>
+    <color name="hun_accent">#0B57D0</color>
+</resources>

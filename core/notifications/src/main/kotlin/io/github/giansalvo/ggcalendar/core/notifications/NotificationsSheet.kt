@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -97,6 +98,9 @@ fun NotificationsSheet(onDismiss: () -> Unit, viewModel: NotificationsViewModel 
             PermissionRow(stringResource(R.string.perm_fullscreen), stringResource(R.string.perm_fullscreen_help), status.fullScreen) {
                 context.open(checks.fullScreenSettings())
             }
+            PermissionRow(stringResource(R.string.perm_overlay), stringResource(R.string.perm_overlay_help), status.overlay) {
+                context.open(checks.overlaySettings())
+            }
             PermissionRow(stringResource(R.string.perm_battery), stringResource(R.string.perm_battery_help), status.batteryUnrestricted) {
                 context.open(checks.batterySettings())
             }
@@ -139,14 +143,54 @@ private fun PermissionRow(title: String, help: String, granted: Boolean, onFix: 
     }
 }
 
+/**
+ * Asked when the user sets an alarm: with "display over other apps" the alarm screen opens by itself, over whatever app is
+ * on show, and stays until the user answers or the alarm time is over; without it only a banner slides in for a while.
+ */
+@Composable
+fun OverlayPermissionDialog(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val checks = remember { NotificationChecks(context) }
+    AlertDialog(
+        modifier = Modifier.exposeTestTags(),
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.overlay_prompt_title)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.overlay_prompt_text))
+                TextButton(modifier = Modifier.testTag("overlay_never"), onClick = {
+                    checks.overlayPromptDisabled = true
+                    onDismiss()
+                }) { Text(stringResource(R.string.overlay_prompt_never)) }
+            }
+        },
+        confirmButton = {
+            TextButton(modifier = Modifier.testTag("overlay_allow"), onClick = {
+                context.open(checks.overlaySettings())
+                onDismiss()
+            }) { Text(stringResource(R.string.overlay_prompt_allow)) }
+        },
+        dismissButton = { TextButton(modifier = Modifier.testTag("overlay_later"), onClick = onDismiss) { Text(stringResource(R.string.overlay_prompt_later)) } },
+    )
+}
+
 /** Under an event's reminders (mockup 5): shown when Android blocks them, with a link to fix it. */
 @Composable
-fun ReminderPermissionWarning(modifier: Modifier = Modifier) {
+fun ReminderPermissionWarning(modifier: Modifier = Modifier, hasAlarm: Boolean = false) {
     val context = LocalContext.current
     val checks = remember { NotificationChecks(context) }
     var status by remember { mutableStateOf(checks.status()) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { status = checks.status() }
-    if (!status.blocksReminders) return
+    if (!status.blocksReminders) {
+        // The reminders arrive; an alarm would still only show a banner, not its screen, while another app is on show.
+        if (hasAlarm && !status.overlay) {
+            Column(modifier) {
+                Text(stringResource(R.string.warning_overlay_off), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TextButton(onClick = { context.open(checks.overlaySettings()) }) { Text(stringResource(R.string.fix)) }
+            }
+        }
+        return
+    }
     Column(modifier) {
         Text(
             stringResource(if (!status.notifications) R.string.warning_notifications_off else R.string.warning_exact_off),

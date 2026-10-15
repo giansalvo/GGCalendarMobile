@@ -57,6 +57,22 @@ import java.util.Date
 class AlarmActivity : ComponentActivity() {
     private val alert = MutableStateFlow<ReminderAlert?>(null)
 
+    override fun onStart() {
+        super.onStart()
+        visible = true
+    }
+
+    override fun onStop() {
+        visible = false
+        super.onStop()
+    }
+
+    companion object {
+        /** The alarm screen is on show: the service then keeps the alarm notification quiet, so it does not cover the screen. */
+        @Volatile
+        var visible = false
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val first = ReminderAlert.from(intent)

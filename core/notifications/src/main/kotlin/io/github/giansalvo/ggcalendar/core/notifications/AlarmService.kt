@@ -13,6 +13,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.provider.Settings
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
@@ -72,10 +73,15 @@ class AlarmService : Service() {
         return START_NOT_STICKY
     }
 
-    private fun foreground(alert: ReminderAlert) {
+    /**
+     * With "display over other apps" the alarm screen opens by itself, even over another app: then the notification stays
+     * quiet (a banner would cover the top of the screen). Without it, or if the screen did not open, the notification is
+     * the loud one with the banner, which carries the two answers.
+     */
+    private fun foreground(alert: ReminderAlert, quiet: Boolean = Settings.canDrawOverlays(this)) {
         // The "system exempted" type exists from Android 14; before, the service has no type.
         val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) ServiceInfo.FOREGROUND_SERVICE_TYPE_SYSTEM_EXEMPTED else 0
-        ServiceCompat.startForeground(this, alert.notificationId, notifier.alarmNotification(alert), type)
+        ServiceCompat.startForeground(this, alert.notificationId, notifier.alarmNotification(alert, quiet = quiet), type)
     }
 
     private fun ring() {
@@ -90,6 +96,13 @@ class AlarmService : Service() {
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_USER_ACTION)
                     .setData(android.net.Uri.parse("ggcalendar://alarm/" + android.net.Uri.encode(alert.key))),
             )
+        }
+        // With "display over other apps" the screen should be up in a moment; if Android refused it, the banner takes its place.
+        if (Settings.canDrawOverlays(this)) {
+            scope.launch {
+                delay(1_500)
+                if (current?.key == alert.key && !AlarmActivity.visible) foreground(alert, quiet = false)
+            }
         }
         // The system ringtone is a media provider content: before the first unlock it does not exist, and the alarm
         // rings with the sound bundled in the app instead.

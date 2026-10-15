@@ -9,6 +9,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.text.format.DateUtils
+import android.view.View
+import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -33,6 +35,8 @@ class ReminderNotifier @Inject constructor(@ApplicationContext private val conte
             }
         manager.createNotificationChannel(channel(CHANNEL_REMINDERS, R.string.channel_reminders, NotificationManager.IMPORTANCE_HIGH))
         manager.createNotificationChannel(channel(CHANNEL_ALARMS, R.string.channel_alarms, NotificationManager.IMPORTANCE_HIGH, silent = true))
+        // The same alarm while its own screen is open: the banner would cover the top of that screen.
+        manager.createNotificationChannel(channel(CHANNEL_ALARMS_QUIET, R.string.channel_alarms_screen, NotificationManager.IMPORTANCE_LOW, silent = true))
         manager.createNotificationChannel(channel(CHANNEL_MISSED, R.string.channel_missed, NotificationManager.IMPORTANCE_DEFAULT))
     }
 
@@ -50,22 +54,38 @@ class ReminderNotifier @Inject constructor(@ApplicationContext private val conte
     }
 
     /** The alarm notification: full screen over the lock screen, a heads-up notification when the phone is in use. */
-    fun alarmNotification(alert: ReminderAlert, fullScreen: Boolean = true): Notification {
+    fun alarmNotification(alert: ReminderAlert, fullScreen: Boolean = true, quiet: Boolean = false): Notification {
         val screen = alarmScreen(alert)
-        val builder = base(alert, CHANNEL_ALARMS)
-            .setPriority(NotificationCompat.PRIORITY_MAX)
+        val builder = base(alert, if (quiet) CHANNEL_ALARMS_QUIET else CHANNEL_ALARMS)
+            .setPriority(if (quiet) NotificationCompat.PRIORITY_LOW else NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setOngoing(true)
             .setContentIntent(screen)
             .addAction(0, context.getString(R.string.snooze_minutes, AppPreferences.DEFAULT_SNOOZE_MINUTES), snoozeIntent(alert, AppPreferences.DEFAULT_SNOOZE_MINUTES))
             .addAction(0, context.getString(R.string.dismiss), dismissIntent(alert))
+        if (quiet) return builder.build() // the alarm screen is open: no banner over it
         if (fullScreen) builder.setFullScreenIntent(screen, true)
+        builder.setCustomHeadsUpContentView(headsUp(alert))
         return builder.build()
+    }
+
+    /** The alarm banner that slides in while the phone is in use: bigger than the system one, with both answers on it. */
+    private fun headsUp(alert: ReminderAlert): RemoteViews {
+        val view = RemoteViews(context.packageName, R.layout.notification_alarm_heads_up)
+        view.setTextViewText(R.id.hun_title, alert.title.ifBlank { context.getString(R.string.alarm_title) })
+        view.setTextViewText(R.id.hun_when, whenText(context, alert))
+        if (alert.location.isBlank()) view.setViewVisibility(R.id.hun_where, View.GONE) else view.setTextViewText(R.id.hun_where, alert.location)
+        view.setTextViewText(R.id.hun_snooze, context.getString(R.string.snooze_minutes, AppPreferences.DEFAULT_SNOOZE_MINUTES))
+        view.setTextViewText(R.id.hun_stop, context.getString(R.string.dismiss))
+        view.setOnClickPendingIntent(R.id.hun_snooze, snoozeIntent(alert, AppPreferences.DEFAULT_SNOOZE_MINUTES))
+        view.setOnClickPendingIntent(R.id.hun_stop, dismissIntent(alert))
+        return view
     }
 
     @SuppressLint("MissingPermission")
     fun showQueuedAlarm(alert: ReminderAlert) {
-        if (manager.areNotificationsEnabled()) manager.notify(alert.notificationId, alarmNotification(alert, fullScreen = false))
+        // An alarm waiting behind the one on screen: no banner over the alarm screen that is open.
+        if (manager.areNotificationsEnabled()) manager.notify(alert.notificationId, alarmNotification(alert, fullScreen = false, quiet = AlarmActivity.visible))
     }
 
     @SuppressLint("MissingPermission")
@@ -131,6 +151,7 @@ class ReminderNotifier @Inject constructor(@ApplicationContext private val conte
     companion object {
         const val CHANNEL_REMINDERS = "reminders"
         const val CHANNEL_ALARMS = "alarms"
+        const val CHANNEL_ALARMS_QUIET = "alarms_quiet"
         const val CHANNEL_MISSED = "missed"
         private const val FLAGS = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
 
