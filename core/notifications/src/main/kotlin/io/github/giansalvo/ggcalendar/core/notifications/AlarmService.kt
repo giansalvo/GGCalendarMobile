@@ -97,12 +97,20 @@ class AlarmService : Service() {
                     .setData(android.net.Uri.parse("ggcalendar://alarm/" + android.net.Uri.encode(alert.key))),
             )
         }
-        // With "display over other apps" the screen should be up in a moment; if Android refused it, the banner takes its place.
-        if (Settings.canDrawOverlays(this)) {
-            scope.launch {
-                delay(1_500)
-                if (current?.key == alert.key && !AlarmActivity.visible) foreground(alert, quiet = false)
+        // The alarm screen and the banner must not both be on show: the banner would cover the top of the screen. Whenever the
+        // screen comes up (with "display over other apps", or because the app itself was on show) the notification goes quiet;
+        // if it does not come up and the permission was counted on, the banner takes its place.
+        val overlay = Settings.canDrawOverlays(this)
+        scope.launch {
+            repeat(8) {
+                delay(200)
+                if (current?.key != alert.key) return@launch
+                if (AlarmActivity.visible) {
+                    foreground(alert, quiet = true)
+                    return@launch
+                }
             }
+            if (overlay && current?.key == alert.key) foreground(alert, quiet = false)
         }
         // The system ringtone is a media provider content: before the first unlock it does not exist, and the alarm
         // rings with the sound bundled in the app instead.
