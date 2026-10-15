@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -52,6 +53,11 @@ class PermissionsIntroViewModel @Inject constructor(private val prefs: AppPrefer
     fun done() {
         viewModelScope.launch { prefs.setPermissionsIntroSeen() }
     }
+
+    /** Android shows its own question about the notifications only once; after a refusal only the settings can change it. */
+    suspend fun askedNotifications(): Boolean = prefs.askedNotifications()
+
+    suspend fun setAskedNotifications() = prefs.setAskedNotifications()
 }
 
 private const val SPLASH_MILLIS = 5_000L
@@ -106,6 +112,7 @@ fun PermissionsIntro(viewModel: PermissionsIntroViewModel = hiltViewModel()) {
     }
     var index by rememberSaveable { mutableIntStateOf(0) }
     val notificationQuestion = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    val scope = rememberCoroutineScope()
 
     val ask = asks.getOrNull(index)
     if (ask == null) {
@@ -131,9 +138,16 @@ fun PermissionsIntro(viewModel: PermissionsIntroViewModel = hiltViewModel()) {
         confirmButton = {
             TextButton(modifier = Modifier.testTag("intro_allow"), onClick = {
                 when (ask) {
-                    Ask.NOTIFICATIONS ->
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) notificationQuestion.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        else context.open(checks.notificationSettings())
+                    Ask.NOTIFICATIONS -> scope.launch {
+                        // The first time Android asks by itself; once it was asked (and refused, or revoked later) it does not
+                        // show the question again and the permission can only be changed in the notification settings.
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !viewModel.askedNotifications()) {
+                            viewModel.setAskedNotifications()
+                            notificationQuestion.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        } else {
+                            context.open(checks.notificationSettings())
+                        }
+                    }
                     Ask.OVERLAY -> context.open(checks.overlaySettings())
                     Ask.FULLSCREEN -> context.open(checks.fullScreenSettings())
                     Ask.BATTERY -> context.open(checks.batterySettings())
