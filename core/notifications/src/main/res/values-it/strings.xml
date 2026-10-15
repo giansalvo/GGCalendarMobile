@@ -22,6 +22,7 @@
     <string name="now">Ora</string>
     <string name="intro_notifications">Servono per i promemoria e le sveglie.</string>
     <string name="intro_overlay">Così la sveglia si apre da sola.</string>
+    <string name="intro_fullscreen">Così la sveglia si apre a schermo bloccato.</string>
     <string name="intro_battery">Così le sveglie suonano in orario.</string>
     <string name="intro_allow">Consenti</string>
     <string name="intro_skip">Non ora</string>

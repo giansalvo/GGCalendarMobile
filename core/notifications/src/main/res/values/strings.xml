@@ -22,6 +22,7 @@
     <string name="now">Now</string>
     <string name="intro_notifications">For reminders and alarms.</string>
     <string name="intro_overlay">So the alarm opens by itself.</string>
+    <string name="intro_fullscreen">So the alarm opens on the lock screen.</string>
     <string name="intro_battery">So alarms ring on time.</string>
     <string name="intro_allow">Allow</string>
     <string name="intro_skip">Not now</string>

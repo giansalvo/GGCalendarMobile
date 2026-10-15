@@ -60,11 +60,11 @@ private const val SPLASH_MILLIS = 5_000L
 private const val ALWAYS_SHOW_FOR_TESTING = false
 
 /** What the first start can ask for. Each one is a small window of its own, only if Android does not allow it yet. */
-private enum class Ask { NOTIFICATIONS, OVERLAY, BATTERY }
+private enum class Ask { NOTIFICATIONS, OVERLAY, FULLSCREEN, BATTERY }
 
 /**
  * First start: the logo for five seconds, then one small window for each permission that alarms need and that is still
- * missing (the notifications, the alarm screen over other apps, the battery), each with one short line and two answers.
+ * missing (the notifications, the alarm screen over other apps and over the lock screen, the battery), each with one short line and two answers.
  * "Allow" opens Android's own screen (or its question); "Not now" goes on. Whatever the answers, it is not shown again;
  * the same options stay in Settings > Notifications and alarms.
  */
@@ -100,6 +100,7 @@ fun PermissionsIntro(viewModel: PermissionsIntroViewModel = hiltViewModel()) {
         buildList {
             if (!status.notifications) add(Ask.NOTIFICATIONS)
             if (!status.overlay) add(Ask.OVERLAY)
+            if (!status.fullScreen) add(Ask.FULLSCREEN)
             if (!status.batteryUnrestricted) add(Ask.BATTERY)
         }
     }
@@ -119,6 +120,7 @@ fun PermissionsIntro(viewModel: PermissionsIntroViewModel = hiltViewModel()) {
     val (title, text) = when (ask) {
         Ask.NOTIFICATIONS -> R.string.perm_notifications to R.string.intro_notifications
         Ask.OVERLAY -> R.string.perm_overlay to R.string.intro_overlay
+        Ask.FULLSCREEN -> R.string.perm_fullscreen to R.string.intro_fullscreen
         Ask.BATTERY -> R.string.perm_battery to R.string.intro_battery
     }
     AlertDialog(
@@ -133,6 +135,7 @@ fun PermissionsIntro(viewModel: PermissionsIntroViewModel = hiltViewModel()) {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) notificationQuestion.launch(Manifest.permission.POST_NOTIFICATIONS)
                         else context.open(checks.notificationSettings())
                     Ask.OVERLAY -> context.open(checks.overlaySettings())
+                    Ask.FULLSCREEN -> context.open(checks.fullScreenSettings())
                     Ask.BATTERY -> context.open(checks.batterySettings())
                 }
                 next()
