@@ -61,7 +61,7 @@ fun NotificationSettingsSection(alarmMinutes: Int, onAlarmMinutesChange: (Int) -
             context.open(checks.notificationSettings())
         }
         PermissionRow(stringResource(R.string.perm_exact), stringResource(R.string.perm_exact_help), status.exactAlarms) {
-            context.open(if (status.exactAlarms) checks.appDetails() else checks.exactAlarmSettings())
+            context.open(checks.exactAlarmSettings())
         }
         PermissionRow(stringResource(R.string.perm_fullscreen), stringResource(R.string.perm_fullscreen_help), status.fullScreen) {
             context.open(checks.fullScreenSettings())
@@ -70,7 +70,8 @@ fun NotificationSettingsSection(alarmMinutes: Int, onAlarmMinutesChange: (Int) -
             context.open(checks.overlaySettings())
         }
         PermissionRow(stringResource(R.string.perm_battery), stringResource(R.string.perm_battery_help), status.batteryUnrestricted) {
-            context.open(if (status.batteryUnrestricted) checks.batteryList() else checks.batterySettings())
+            // Already allowed: the choice (unrestricted, optimized, limited) is on the app's battery page, one tap from the app info
+            context.open(if (status.batteryUnrestricted) checks.appDetails() else checks.batterySettings())
         }
         Text(stringResource(R.string.samsung_sleeping), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
         TextButton(onClick = { context.open(checks.batteryList()) }) { Text(stringResource(R.string.open_battery_settings)) }

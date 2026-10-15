@@ -34,7 +34,7 @@
     <string name="perm_overlay">Alarm over other apps</string>
     <string name="perm_overlay_help">Lets the alarm screen open by itself while you use the phone, with Snooze and Stop, until you answer.</string>
     <string name="perm_battery">Battery: no restrictions</string>
-    <string name="perm_battery_help">Keeps the phone from delaying reminders to save power.</string>
+    <string name="perm_battery_help">Keeps the phone from delaying reminders to save power. To change it: App info > Battery.</string>
     <string name="samsung_sleeping">On Samsung phones also check Settings > Battery > Background usage limits: GGCalendar must not be among the sleeping or deep sleeping apps.</string>
     <string name="open_battery_settings">Open battery settings</string>
     <string name="perm_change">Change</string>
