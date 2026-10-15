@@ -18,6 +18,8 @@ import io.github.giansalvo.ggcalendar.core.data.EventRepository
 import io.github.giansalvo.ggcalendar.core.data.SeriesScope
 import java.time.Instant
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -62,6 +64,10 @@ data class CalendarUiState(
     /** A dragged occurrence of a series, waiting for the scope. */
     val pendingMove: PendingMove? = null,
     val busy: Boolean = false,
+    /** The account whose access is being asked of Google: the screen says so until it is in. */
+    val addingAccount: String? = null,
+    /** An account for which Google did not answer in time: the screen offers to try again. */
+    val accountTimeout: String? = null,
     /** Set when Google needs the user's consent; the screen launches it and calls [CalendarViewModel.onConsentResult]. */
     val consent: AuthorizationOutcome.NeedsConsent? = null,
     val error: String? = null,
@@ -99,6 +105,8 @@ private data class Transient(
     val editing: EditorRequest? = null,
     val pendingMove: PendingMove? = null,
     val busy: Boolean = false,
+    val addingAccount: String? = null,
+    val accountTimeout: String? = null,
     val consent: AuthorizationOutcome.NeedsConsent? = null,
     val error: String? = null,
     val noCalendar: Boolean = false,
@@ -144,7 +152,7 @@ class CalendarViewModel @Inject constructor(
         CalendarUiState(
             view = nav.view, date = nav.date, scheduleFrom = nav.scheduleFrom, scheduleTo = nav.scheduleTo, accounts = accounts, birthdays = birthdays, instances = list, syncing = syncing,
             hourHeight = g.hourHeight, dayStartHour = g.dayStartHour, dimPast = g.dimPast, firstDay = WeekSettings.firstDay, eventDays = days, pending = pending,
-            selected = t.selected, editing = t.editing, pendingMove = t.pendingMove, busy = t.busy, consent = t.consent, error = t.error, noCalendar = t.noCalendar, message = message,
+            selected = t.selected, editing = t.editing, pendingMove = t.pendingMove, busy = t.busy, addingAccount = t.addingAccount, accountTimeout = t.accountTimeout, consent = t.consent, error = t.error, noCalendar = t.noCalendar, message = message,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CalendarUiState())
 
@@ -286,8 +294,13 @@ class CalendarViewModel @Inject constructor(
         consentEmail = null
         if (resultCode != Activity.RESULT_OK) return
         launchAction {
-            authorizer.tokenFromConsent(data)
-            repository.addAccount(email)
+            transient.update { it.copy(addingAccount = email) }
+            try {
+                authorizer.tokenFromConsent(data)
+                repository.addAccount(email)
+            } finally {
+                transient.update { it.copy(addingAccount = null) }
+            }
         }
     }
 
@@ -304,14 +317,29 @@ class CalendarViewModel @Inject constructor(
     fun dismissMessage(id: Long) = viewModelScope.launch { repository.markMessageRead(id) }
 
     private suspend fun authorize(email: String) {
-        when (val outcome = authorizer.authorize(email)) {
-            is AuthorizationOutcome.Authorized -> repository.addAccount(outcome.email)
-            is AuthorizationOutcome.NeedsConsent -> {
-                consentEmail = outcome.email
-                transient.update { it.copy(consent = outcome) }
+        // Google can be slow to answer for an account that has just been created: the screen says that the account is being
+        // added, and after a while it gives up and offers to try again, instead of staying silent.
+        transient.update { it.copy(addingAccount = email, accountTimeout = null) }
+        try {
+            val outcome = try {
+                withTimeout(AUTHORIZATION_TIMEOUT_MILLIS) { authorizer.authorize(email) }
+            } catch (e: TimeoutCancellationException) {
+                transient.update { it.copy(accountTimeout = email) }
+                return
             }
+            when (outcome) {
+                is AuthorizationOutcome.Authorized -> repository.addAccount(outcome.email)
+                is AuthorizationOutcome.NeedsConsent -> {
+                    consentEmail = outcome.email
+                    transient.update { it.copy(consent = outcome) }
+                }
+            }
+        } finally {
+            transient.update { it.copy(addingAccount = null) }
         }
     }
+
+    fun dismissAccountTimeout() = transient.update { it.copy(accountTimeout = null) }
 
     private fun launchAction(block: suspend () -> Unit) {
         viewModelScope.launch {
@@ -327,6 +355,9 @@ class CalendarViewModel @Inject constructor(
     }
 
     private companion object {
+        /** How long Google may take to answer an authorization before the screen offers to try again. */
+        const val AUTHORIZATION_TIMEOUT_MILLIS = 30_000L
+
         /** Days loaded for the month view (three grids) and the time grids; the schedule has its own months. */
         fun range(view: CalendarView, date: LocalDate): Pair<LocalDate, LocalDate> = when (view) {
             CalendarView.MONTH, CalendarView.MONTH_LIST -> YearMonth.from(date).minusMonths(1).atDay(1).minusDays(7) to

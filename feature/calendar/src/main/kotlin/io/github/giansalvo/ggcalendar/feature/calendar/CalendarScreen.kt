@@ -145,6 +145,22 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
             viewModel.dismissError()
         }
     }
+    // While Google is asked about a new account: a line that says so; it goes away by itself when the account is in.
+    val addingEmail = state.addingAccount
+    val addingText = stringResource(R.string.adding_account, addingEmail.orEmpty())
+    LaunchedEffect(addingEmail) {
+        if (addingEmail != null) snackbar.showSnackbar(addingText, duration = SnackbarDuration.Indefinite)
+    }
+    val timeoutEmail = state.accountTimeout
+    val timeoutText = stringResource(R.string.account_timeout, timeoutEmail.orEmpty())
+    val retryText = stringResource(R.string.retry)
+    LaunchedEffect(timeoutEmail) {
+        if (timeoutEmail != null) {
+            val result = snackbar.showSnackbar(timeoutText, actionLabel = retryText, withDismissAction = true, duration = SnackbarDuration.Indefinite)
+            viewModel.dismissAccountTimeout()
+            if (result == SnackbarResult.ActionPerformed) viewModel.reauthorize(timeoutEmail)
+        }
+    }
     val noCalendarText = stringResource(R.string.message_no_calendar)
     LaunchedEffect(state.noCalendar) {
         if (state.noCalendar) {
@@ -185,6 +201,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                 },
                 onToggleCalendar = viewModel::toggleCalendar,
                 onAddAccount = { pickAccount.launch(viewModel.chooseAccountIntent()) },
+                onRetryAccount = viewModel::reauthorize,
                 onRemoveAccount = { removing = it },
                 onActiveAlarms = {
                     alarmsOpen = true
@@ -447,6 +464,7 @@ private fun CalendarDrawer(
     onRefresh: () -> Unit,
     onToggleCalendar: (String, Boolean) -> Unit,
     onAddAccount: () -> Unit,
+    onRetryAccount: (String) -> Unit,
     onRemoveAccount: (String) -> Unit,
     onActiveAlarms: () -> Unit,
     onSettings: () -> Unit,
@@ -504,6 +522,19 @@ private fun CalendarDrawer(
                     Text(stringResource(R.string.contacts), Modifier.padding(start = 16.dp), style = MaterialTheme.typography.bodyLarge)
                 }
                 CalendarRow(birthdays, onToggleCalendar)
+            }
+            // The snackbar below the drawer would be hidden by it: the same news is told here, where the user is looking.
+            state.addingAccount?.let { email ->
+                Row(Modifier.testTag("drawer_adding").padding(16.dp, 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                    Text(stringResource(R.string.adding_account, email), Modifier.padding(start = 16.dp), style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+            state.accountTimeout?.let { email ->
+                Row(Modifier.testTag("drawer_timeout").padding(16.dp, 4.dp, 4.dp, 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.account_timeout, email), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    TextButton(modifier = Modifier.testTag("drawer_timeout_retry"), onClick = { onRetryAccount(email) }) { Text(stringResource(R.string.retry)) }
+                }
             }
             NavigationDrawerItem(
                 icon = { Icon(Icons.Outlined.PersonAdd, contentDescription = null) },

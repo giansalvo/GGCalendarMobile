@@ -63,5 +63,8 @@
     <string name="remove_account_text">%1$s verrà tolto da questo telefono: i suoi calendari e i suoi eventi spariscono dall\'app e le modifiche non ancora inviate a Google si perdono. Su Google non si cancella nulla e puoi aggiungere di nuovo l\'account.</string>
     <string name="remove_account_confirm">Rimuovi</string>
     <string name="remove_account_cancel">Annulla</string>
+    <string name="adding_account">Aggiunta di %1$s in corso…</string>
+    <string name="account_timeout">Google non ha risposto per %1$s.</string>
+    <string name="retry">Riprova</string>
     <string name="remove_account_cd">Rimuovi l\'account %1$s</string>
 </resources>
