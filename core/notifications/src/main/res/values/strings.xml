@@ -36,6 +36,7 @@
     <string name="perm_battery_help">Keeps the phone from delaying reminders to save power.</string>
     <string name="samsung_sleeping">On Samsung phones also check Settings > Battery > Background usage limits: GGCalendar must not be among the sleeping or deep sleeping apps.</string>
     <string name="open_battery_settings">Open battery settings</string>
+    <string name="perm_change">Change</string>
     <string name="fix">Fix</string>
     <string name="alarm_duration">Alarm duration</string>
     <string name="alarm_duration_help">An alarm that nobody closes stops by itself after this time and leaves a "missed alarm" notification.</string>

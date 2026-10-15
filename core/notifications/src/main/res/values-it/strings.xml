@@ -36,6 +36,7 @@
     <string name="perm_battery_help">Evita che il telefono ritardi i promemoria per risparmiare energia.</string>
     <string name="samsung_sleeping">Sui Samsung controlla anche Impostazioni > Batteria > Limiti di utilizzo in background: GGCalendar non deve essere tra le app in sospensione o in sospensione profonda.</string>
     <string name="open_battery_settings">Apri le impostazioni della batteria</string>
+    <string name="perm_change">Modifica</string>
     <string name="fix">Sistema</string>
     <string name="alarm_duration">Durata della sveglia</string>
     <string name="alarm_duration_help">Una sveglia che nessuno chiude si ferma da sola dopo questo tempo e lascia una notifica di "sveglia persa".</string>

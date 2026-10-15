@@ -4,6 +4,7 @@ import androidx.compose.ui.platform.testTag
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -60,7 +61,7 @@ fun NotificationSettingsSection(alarmMinutes: Int, onAlarmMinutesChange: (Int) -
             context.open(checks.notificationSettings())
         }
         PermissionRow(stringResource(R.string.perm_exact), stringResource(R.string.perm_exact_help), status.exactAlarms) {
-            context.open(checks.exactAlarmSettings())
+            context.open(if (status.exactAlarms) checks.appDetails() else checks.exactAlarmSettings())
         }
         PermissionRow(stringResource(R.string.perm_fullscreen), stringResource(R.string.perm_fullscreen_help), status.fullScreen) {
             context.open(checks.fullScreenSettings())
@@ -69,7 +70,7 @@ fun NotificationSettingsSection(alarmMinutes: Int, onAlarmMinutesChange: (Int) -
             context.open(checks.overlaySettings())
         }
         PermissionRow(stringResource(R.string.perm_battery), stringResource(R.string.perm_battery_help), status.batteryUnrestricted) {
-            context.open(checks.batterySettings())
+            context.open(if (status.batteryUnrestricted) checks.batteryList() else checks.batterySettings())
         }
         Text(stringResource(R.string.samsung_sleeping), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
         TextButton(onClick = { context.open(checks.batteryList()) }) { Text(stringResource(R.string.open_battery_settings)) }
@@ -95,7 +96,12 @@ fun NotificationSettingsSection(alarmMinutes: Int, onAlarmMinutesChange: (Int) -
 
 @Composable
 internal fun PermissionRow(title: String, help: String, granted: Boolean, onFix: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    // Granted or not, the row opens Android's own screen for that permission: that is also where it is taken away.
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onFix).padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         Icon(
             if (granted) Icons.Filled.CheckCircle else Icons.Filled.Warning,
             contentDescription = null,
@@ -105,7 +111,7 @@ internal fun PermissionRow(title: String, help: String, granted: Boolean, onFix:
             Text(title, style = MaterialTheme.typography.bodyLarge)
             Text(help, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        if (!granted) TextButton(onClick = onFix) { Text(stringResource(R.string.fix)) }
+        TextButton(onClick = onFix) { Text(stringResource(if (granted) R.string.perm_change else R.string.fix)) }
     }
 }
 

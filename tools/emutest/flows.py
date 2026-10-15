@@ -12,7 +12,7 @@ from strings import CANCEL, OK, S, has
 
 # Controls that exist only while something covers the calendar screen (a sheet, a dialog, the drawer, a full screen).
 COVERS = {"editor_title", "detail_close", "settings_back", "search_back", "drawer_view_SCHEDULE", "alarm_stop", "scope_confirm",
-          "notify_send", "delete_confirm", "sheet_about", "sheet_alarms", "sheet_permissions_intro", "intro_done", "export_confirm",
+          "notify_send", "delete_confirm", "sheet_about", "sheet_alarms", "sheet_permissions_intro", "splash_logo", "intro_done", "export_confirm",
           "export_summary_ok", "share_text", "reminder_ok", "discard_keep", "alarm_close_confirm",
           "drawer_refresh", "drawer_alarms", "drawer_add_account", "drawer_settings", "drawer_export", "drawer_about", "calendar_row"}
 DRAWER_ANY = ["drawer_view_SCHEDULE", "drawer_refresh", "drawer_alarms", "drawer_add_account", "drawer_settings", "drawer_export", "drawer_about", "calendar_row"]

@@ -6,8 +6,8 @@ Le modifiche di GGCalendar Mobile da una versione alla successiva, dalla più re
 
 - Sveglia sopra le altre app: schermata fissa, permesso opzionale
 - Banner più grande con Posticipa e Chiudi, silenzioso a schermata aperta
-- Notifiche e sveglie nelle Impostazioni: permessi e durata della sveglia
-- Schermata iniziale con i permessi delle sveglie al primo accesso
+- Impostazioni: permessi di notifiche e sveglie (anche da revocare), durata
+- Primo avvio: logo per 3 secondi, poi la finestra dei permessi
 
 ## 1.0.0 (14/10/2026)
 

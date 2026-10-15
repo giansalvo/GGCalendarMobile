@@ -336,7 +336,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
             onOpenEvent = { eventId, beginUtc -> viewModel.openLink(EventLink(eventId, beginUtc)) },
         )
     }
-    PermissionsIntro(hasAccount = state.accounts.isNotEmpty())
+    PermissionsIntro()
     if (settingsOpen) {
         SettingsScreen(onClose = { settingsOpen = false })
     }
