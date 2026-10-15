@@ -359,15 +359,35 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
     }
     if (exportOpen) ExportDialog(accounts = state.accounts, onDismiss = { exportOpen = false })
     removing?.let { email ->
+        // Off by default: the account leaves this app only. On, the access of the app is also taken away from the Google account.
+        var revokeEverywhere by remember(email) { mutableStateOf(false) }
         AlertDialog(
             modifier = Modifier.exposeTestTags(),
             onDismissRequest = { removing = null },
             title = { Text(stringResource(R.string.remove_account_title)) },
-            text = { Text(stringResource(R.string.remove_account_text, email)) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.remove_account_text, email))
+                    Row(
+                        Modifier.testTag("account_remove_revoke").fillMaxWidth().padding(top = 12.dp).clickable { revokeEverywhere = !revokeEverywhere },
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        Checkbox(checked = revokeEverywhere, onCheckedChange = { revokeEverywhere = it })
+                        Column(Modifier.padding(start = 4.dp, top = 12.dp)) {
+                            Text(stringResource(R.string.remove_account_revoke), style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                stringResource(R.string.remove_account_revoke_hint, email),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            },
             confirmButton = {
                 TextButton(modifier = Modifier.testTag("account_remove_confirm"), onClick = {
                     removing = null
-                    viewModel.removeAccount(email)
+                    viewModel.removeAccount(email, revokeEverywhere)
                 }) { Text(stringResource(R.string.remove_account_confirm)) }
             },
             dismissButton = { TextButton(modifier = Modifier.testTag("account_remove_cancel"), onClick = { removing = null }) { Text(stringResource(R.string.remove_account_cancel)) } },

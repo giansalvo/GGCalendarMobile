@@ -62,6 +62,8 @@
     <string name="contacts">Phone contacts</string>
     <string name="remove_account_title">Remove account?</string>
     <string name="remove_account_text">%1$s will be removed from this phone: its calendars and events disappear from the app, and the changes not yet sent to Google are lost. Nothing is deleted on Google, and you can add the account again.</string>
+    <string name="remove_account_revoke">Revoke access on all devices</string>
+    <string name="remove_account_revoke_hint">Other devices that use %1$s will have to authorize the app again.</string>
     <string name="remove_account_confirm">Remove</string>
     <string name="remove_account_cancel">Cancel</string>
     <string name="adding_account">Adding %1$s…</string>
