@@ -4,6 +4,7 @@ import androidx.compose.ui.platform.testTag
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -60,8 +61,12 @@ fun NotificationSettingsSection(alarmMinutes: Int, onAlarmMinutesChange: (Int) -
         PermissionRow(stringResource(R.string.perm_notifications), stringResource(R.string.perm_notifications_help), status.notifications) {
             context.open(checks.notificationSettings())
         }
-        PermissionRow(stringResource(R.string.perm_exact), stringResource(R.string.perm_exact_help), status.exactAlarms) {
-            context.open(checks.exactAlarmSettings())
+        // From Android 13 calendars hold USE_EXACT_ALARM from the install and Android does not let it be taken away: the row
+        // is only for Android 12 and earlier, where the user decides, or for a phone that denies it all the same.
+        if (!status.exactAlarms || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            PermissionRow(stringResource(R.string.perm_exact), stringResource(R.string.perm_exact_help), status.exactAlarms) {
+                context.open(checks.exactAlarmSettings())
+            }
         }
         PermissionRow(stringResource(R.string.perm_fullscreen), stringResource(R.string.perm_fullscreen_help), status.fullScreen) {
             context.open(checks.fullScreenSettings())

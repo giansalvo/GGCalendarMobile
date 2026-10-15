@@ -57,7 +57,7 @@ class PermissionsIntroViewModel @Inject constructor(private val prefs: AppPrefer
 private const val SPLASH_MILLIS = 5_000L
 
 /** TEST ONLY: show the splash and the questions at every start, whatever was answered before. Must be false in a release. */
-private const val ALWAYS_SHOW_FOR_TESTING = false
+private const val ALWAYS_SHOW_FOR_TESTING = true
 
 /** What the first start can ask for. Each one is a small window of its own, only if Android does not allow it yet. */
 private enum class Ask { NOTIFICATIONS, OVERLAY, BATTERY }
