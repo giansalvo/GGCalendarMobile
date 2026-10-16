@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="channel_reminders">Erinnerungen</string>
+    <string name="channel_alarms">Wecker</string>
+    <string name="channel_alarms_screen">Wecker (Bildschirm offen)</string>
+    <string name="channel_missed">Verpasste Wecker</string>
+    <string name="all_day">Ganztägig</string>
+    <string name="snooze">Schlummern</string>
+    <string name="snooze_minutes">%d Min. schlummern</string>
+    <string name="dismiss">Verwerfen</string>
+    <string name="join_meet">Mit Meet beitreten</string>
+    <string name="missed_alarm">Verpasster Wecker</string>
+    <plurals name="alarm_stops_in">
+        <item quantity="one">Endet von selbst nach %d Minute</item>
+        <item quantity="other">Endet von selbst nach %d Minuten</item>
+    </plurals>
+    <string name="alarm_title">Wecker</string>
+    <plurals name="minutes">
+        <item quantity="one">%d Minute</item>
+        <item quantity="other">%d Minuten</item>
+    </plurals>
+    <string name="now">Jetzt</string>
+    <string name="intro_notifications">Für Erinnerungen und Wecker.</string>
+    <string name="intro_overlay">Damit sich der Wecker von selbst über anderen Apps öffnet.</string>
+    <string name="intro_fullscreen">Damit sich der Wecker bei gesperrtem Telefon öffnet.</string>
+    <string name="intro_battery">Damit die Wecker pünktlich klingeln.</string>
+    <string name="intro_allow">Erlauben</string>
+    <string name="intro_skip">Nicht jetzt</string>
+    <string name="perm_notifications">Benachrichtigungen</string>
+    <string name="perm_notifications_help">Nötig, um Erinnerungen und Wecker anzuzeigen.</string>
+    <string name="perm_exact">Pünktliche Erinnerungen</string>
+    <string name="perm_exact_help">Erinnerungen kommen auf die Minute genau, auch bei ausgeschaltetem Bildschirm.</string>
+    <string name="perm_fullscreen">Benachrichtigungen im Vollbild</string>
+    <string name="perm_fullscreen_help">Der Wecker kann bei gesperrtem Telefon seinen Bildschirm öffnen. Ohne dies erscheint nur eine Benachrichtigung.</string>
+    <string name="perm_overlay">Über anderen Apps einblenden</string>
+    <string name="perm_overlay_help">Der Weckerbildschirm öffnet sich von selbst über der gerade genutzten App, bis du antwortest.</string>
+    <string name="perm_battery">Akku: keine Einschränkungen</string>
+    <string name="perm_battery_help">Verhindert, dass das Telefon Erinnerungen zum Stromsparen verzögert. Ändern unter App-Info > Akku.</string>
+    <string name="samsung_sleeping">Prüfe bei Samsung-Telefonen auch Einstellungen > Akku > Hintergrundnutzungsbeschränkungen: GGCalendar darf nicht zu den schlafenden oder tief schlafenden Apps gehören.</string>
+    <string name="open_battery_settings">Akku-Einstellungen öffnen</string>
+    <string name="perm_change">Ändern</string>
+    <string name="fix">Beheben</string>
+    <string name="alarm_duration">Dauer des Weckers</string>
+    <string name="alarm_duration_help">Ein Wecker, den niemand schließt, endet nach dieser Zeit von selbst und hinterlässt eine Benachrichtigung \"Verpasster Wecker\".</string>
+    <string name="warning_notifications_off">Benachrichtigungen sind ausgeschaltet: Diese Erinnerung wird nicht angezeigt.</string>
+    <string name="warning_exact_off">Exakte Wecker sind nicht erlaubt: Diese Erinnerung kann verspätet kommen.</string>
+    <string name="stop_alarm">Wecker stoppen</string>
+    <string name="alarm_help">Stoppen schaltet den Ton aus und schließt den Wecker. Schlummern klingelt nach der gewählten Zeit erneut.</string>
+    <string name="snooze_for">Schlummern für</string>
+    <string name="snooze_choice">%d Min.</string>
+    <string name="active_alarms_title">Aktive Wecker</string>
+    <string name="active_alarms_empty">Es sind keine Wecker geplant.</string>
+    <string name="snoozed">Geschlummert</string>
+    <plurals name="minutes_before">
+        <item quantity="one">%d Minute vorher</item>
+        <item quantity="other">%d Minuten vorher</item>
+    </plurals>
+    <plurals name="minutes_before_time">
+        <item quantity="one">%1$d Minute vor %2$s</item>
+        <item quantity="other">%1$d Minuten vor %2$s</item>
+    </plurals>
+    <string name="remaining_less_than_minute">&lt; 1 Min.</string>
+    <string name="remaining_minutes">%d Min.</string>
+    <string name="remaining_hours_minutes">%d Std. %d Min.</string>
+    <string name="remaining_days_hours">%d T. %d Std.</string>
+    <string name="close_alarm_title">Diesen Wecker abbrechen?</string>
+    <string name="close_alarm_text">Der Wecker für \"%s\" klingelt nicht. Der Termin bleibt im Kalender.</string>
+    <string name="close_alarm">Wecker abbrechen</string>
+    <string name="keep_alarm">Behalten</string>
+</resources>

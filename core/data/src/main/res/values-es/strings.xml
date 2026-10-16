@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="untitled">(Sin título)</string>
+    <string name="conflict_suffix">" (conflicto)"</string>
+    <string name="message_conflict">\"%1$s\" se cambió aquí y en Google: se mantuvo la versión de Google y la tuya se guardó como \"%2$s\".</string>
+    <string name="message_rejected">Google no aceptó un cambio (%1$d): %2$s</string>
+    <string name="birthdays_calendar">Cumpleaños (contactos)</string>
+</resources>

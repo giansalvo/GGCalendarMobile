@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="view_schedule">Agenda</string>
+    <string name="view_day">Día</string>
+    <string name="view_six_days">6 días</string>
+    <string name="view_week">Semana</string>
+    <string name="view_month">Mes</string>
+    <string name="refresh">Actualizar</string>
+    <string name="add_google_account">Añadir cuenta de Google</string>
+    <string name="new_event">Nuevo evento</string>
+    <string name="open_menu">Abrir menú</string>
+    <string name="search">Buscar</string>
+    <string name="all_day">Todo el día</string>
+    <string name="untitled">(Sin título)</string>
+    <string name="alarm">Alarma</string>
+    <string name="no_events_today">No hay eventos hoy</string>
+    <string name="go_to_date">Ir a la fecha</string>
+    <string name="message_no_calendar">Primero añade una cuenta de Google: no hay ningún calendario donde poner el evento</string>
+    <string name="message_auth">Hay que volver a conceder el acceso a Google Calendar para %1$s</string>
+    <string name="authorize">Autorizar</string>
+    <string name="my_calendar">Mi calendario</string>
+    <string name="new_event_placeholder">(Nuevo evento)</string>
+    <string name="show_more">Mostrar más</string>
+    <string name="show_less">Mostrar menos</string>
+    <string name="birthday">Cumpleaños</string>
+    <string name="choose_year">Elige el año</string>
+    <plurals name="pending_changes">
+        <item quantity="one">%d cambio aún sin enviar a Google</item>
+        <item quantity="other">%d cambios aún sin enviar a Google</item>
+    </plurals>
+    <string name="notifications_alarms">Notificaciones y alarmas</string>
+    <string name="view_month_list">Mes + Agenda</string>
+    <string name="no_events_day">No hay eventos este día</string>
+    <string name="day_today">Hoy</string>
+    <string name="day_tomorrow">Mañana</string>
+    <string name="day_yesterday">Ayer</string>
+    <plurals name="days_from_now">
+        <item quantity="one">Dentro de %d día</item>
+        <item quantity="other">Dentro de %d días</item>
+    </plurals>
+    <plurals name="days_ago">
+        <item quantity="one">Hace %d día</item>
+        <item quantity="other">Hace %d días</item>
+    </plurals>
+    <string name="search_hint">Buscar eventos</string>
+    <string name="search_prompt">Escribe para buscar en el título, el lugar, la descripción o los invitados</string>
+    <string name="search_empty">No se encontraron eventos</string>
+    <string name="back">Atrás</string>
+    <string name="clear">Borrar</string>
+    <string name="about">Acerca de</string>
+    <string name="about_tagline">Un calendario para Android, sincronizado con Google Calendar</string>
+    <string name="about_author">Autor</string>
+    <string name="about_website">Sitio web</string>
+    <string name="about_version">Versión</string>
+    <string name="about_build_date">Fecha de compilación</string>
+    <string name="about_license">Licencia</string>
+    <string name="about_source">Código fuente</string>
+    <string name="active_alarms">Alarmas activas</string>
+    <string name="export_ics">Exportar (.ics, CSV)</string>
+    <string name="settings">Ajustes</string>
+    <string name="contacts">Contactos del teléfono</string>
+    <string name="remove_account_title">¿Quitar la cuenta?</string>
+    <string name="remove_account_text">%1$s se quitará de este teléfono: sus calendarios y eventos desaparecen de la app y se pierden los cambios aún sin enviar a Google. No se borra nada en Google y puedes volver a añadir la cuenta.</string>
+    <string name="remove_account_revoke">Revocar el acceso en todos los dispositivos</string>
+    <string name="remove_account_revoke_hint">Los demás dispositivos que usan %1$s tendrán que autorizar la app de nuevo.</string>
+    <string name="remove_account_confirm">Quitar</string>
+    <string name="remove_account_cancel">Cancelar</string>
+    <string name="adding_account">Añadiendo %1$s…</string>
+    <string name="account_timeout">Google no respondió para %1$s.</string>
+    <string name="retry">Reintentar</string>
+    <string name="remove_account_cd">Quitar la cuenta %1$s</string>
+</resources>

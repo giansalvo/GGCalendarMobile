@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_back">Atrás</string>
+    <string name="settings_appearance">Apariencia</string>
+    <string name="theme_system">Como el sistema</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">Oscuro</string>
+    <string name="settings_dynamic">Colores del fondo de pantalla</string>
+    <string name="settings_dynamic_hint">Usa los colores del fondo de pantalla del teléfono (Android 12 y posteriores)</string>
+    <string name="settings_calendar">Calendario</string>
+    <string name="settings_day_start">Inicio del día</string>
+    <string name="settings_day_start_hint">Desde dónde se abren las vistas de día y semana cuando no muestran hoy</string>
+    <string name="settings_dim_past">Atenuar eventos pasados</string>
+    <string name="settings_dim_past_hint">Los eventos que ya terminaron se ven más claros</string>
+    <string name="settings_notifications">Notificaciones y alarmas</string>
+    <string name="settings_week_start">Primer día de la semana</string>
+    <string name="settings_week_start_hint">Se usa en la vista de semana, el mes y el minicalendario</string>
+    <string name="settings_save">Guardar</string>
+    <string name="settings_discard_question">¿Descartar los cambios?</string>
+    <string name="settings_discard">Descartar</string>
+    <string name="settings_keep_editing">Seguir editando</string>
+    <string name="settings_birthdays">Cumpleaños de los contactos</string>
+    <string name="settings_birthdays_hint">Muestra los cumpleaños guardados en los contactos del teléfono, en un calendario aparte. Necesita el permiso para leer los contactos.</string>
+    <string name="settings_language">Idioma</string>
+    <string name="settings_language_hint">Abre la pantalla de idioma de Android para esta aplicación</string>
+</resources>

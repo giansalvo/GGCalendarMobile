@@ -32,12 +32,6 @@ object DateFormats {
             DateIntervalFormat.getInstance("MMMd", locale).also { it.timeZone = TimeZone.GMT_ZONE }
         }
         fun millis(day: LocalDate) = day.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-        val text = synchronized(format) { format.format(DateInterval(millis(first), millis(last))) }
-        // Some Android versions capitalize the month at the start of the line ("19–25 Ott"); the other formats here do not,
-        // so the month is put back as the formatter of the language writes it in the middle of a line.
-        val month = DateTimeFormatter.ofPattern("MMM", locale) // the month inside a line ("MMM", not the stand-alone "LLL")
-        return listOf(first, last).map { month.format(it) }.distinct().fold(text) { acc, m ->
-            acc.replace(Regex(Regex.escape(m), RegexOption.IGNORE_CASE), m)
-        }
+        return synchronized(format) { format.format(DateInterval(millis(first), millis(last))) }
     }
 }

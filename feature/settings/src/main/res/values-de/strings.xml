@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_back">Zurück</string>
+    <string name="settings_appearance">Darstellung</string>
+    <string name="theme_system">Wie das System</string>
+    <string name="theme_light">Hell</string>
+    <string name="theme_dark">Dunkel</string>
+    <string name="settings_dynamic">Farben des Hintergrundbilds</string>
+    <string name="settings_dynamic_hint">Verwendet die Farben des Hintergrundbilds des Telefons (Android 12 und neuer)</string>
+    <string name="settings_calendar">Kalender</string>
+    <string name="settings_day_start">Beginn des Tages</string>
+    <string name="settings_day_start_hint">Ab wann sich die Tages- und Wochenansicht öffnen, wenn sie nicht heute zeigen</string>
+    <string name="settings_dim_past">Vergangene Termine abdunkeln</string>
+    <string name="settings_dim_past_hint">Beendete Termine erscheinen heller</string>
+    <string name="settings_notifications">Benachrichtigungen und Wecker</string>
+    <string name="settings_week_start">Erster Tag der Woche</string>
+    <string name="settings_week_start_hint">Gilt für die Wochenansicht, den Monat und den Minikalender</string>
+    <string name="settings_save">Speichern</string>
+    <string name="settings_discard_question">Änderungen verwerfen?</string>
+    <string name="settings_discard">Verwerfen</string>
+    <string name="settings_keep_editing">Weiter bearbeiten</string>
+    <string name="settings_birthdays">Geburtstage aus den Kontakten</string>
+    <string name="settings_birthdays_hint">Zeigt die in den Kontakten des Telefons gespeicherten Geburtstage in einem eigenen Kalender. Benötigt die Berechtigung zum Lesen der Kontakte.</string>
+    <string name="settings_language">Sprache</string>
+    <string name="settings_language_hint">Öffnet den Sprachbildschirm von Android für diese App</string>
+</resources>

@@ -2,10 +2,12 @@
 
 Le modifiche di GGCalendar Mobile da una versione alla successiva, dalla più recente.
 
-## 1.0.1 (15/10/2026)
+## 1.0.1 (16/10/2026)
 
 - Visualizza sveglia sopra le altre app
 - Visualizza splash screen
+- Lingua selezionabile dall'app
+- Nuove lingue: spagnolo, tedesco
 
 ## 1.0.0 (14/10/2026)
 

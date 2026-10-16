@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="view_schedule">Terminübersicht</string>
+    <string name="view_day">Tag</string>
+    <string name="view_six_days">6 Tage</string>
+    <string name="view_week">Woche</string>
+    <string name="view_month">Monat</string>
+    <string name="refresh">Aktualisieren</string>
+    <string name="add_google_account">Google-Konto hinzufügen</string>
+    <string name="new_event">Neuer Termin</string>
+    <string name="open_menu">Menü öffnen</string>
+    <string name="search">Suchen</string>
+    <string name="all_day">Ganztägig</string>
+    <string name="untitled">(Ohne Titel)</string>
+    <string name="alarm">Wecker</string>
+    <string name="no_events_today">Heute keine Termine</string>
+    <string name="go_to_date">Zum Datum springen</string>
+    <string name="message_no_calendar">Füge zuerst ein Google-Konto hinzu: Es gibt keinen Kalender für den Termin</string>
+    <string name="message_auth">Der Zugriff auf Google Kalender für %1$s muss erneut erteilt werden</string>
+    <string name="authorize">Autorisieren</string>
+    <string name="my_calendar">Mein Kalender</string>
+    <string name="new_event_placeholder">(Neuer Termin)</string>
+    <string name="show_more">Mehr anzeigen</string>
+    <string name="show_less">Weniger anzeigen</string>
+    <string name="birthday">Geburtstag</string>
+    <string name="choose_year">Jahr wählen</string>
+    <plurals name="pending_changes">
+        <item quantity="one">%d Änderung noch nicht an Google gesendet</item>
+        <item quantity="other">%d Änderungen noch nicht an Google gesendet</item>
+    </plurals>
+    <string name="notifications_alarms">Benachrichtigungen und Wecker</string>
+    <string name="view_month_list">Monat + Terminübersicht</string>
+    <string name="no_events_day">An diesem Tag keine Termine</string>
+    <string name="day_today">Heute</string>
+    <string name="day_tomorrow">Morgen</string>
+    <string name="day_yesterday">Gestern</string>
+    <plurals name="days_from_now">
+        <item quantity="one">In %d Tag</item>
+        <item quantity="other">In %d Tagen</item>
+    </plurals>
+    <plurals name="days_ago">
+        <item quantity="one">Vor %d Tag</item>
+        <item quantity="other">Vor %d Tagen</item>
+    </plurals>
+    <string name="search_hint">Termine suchen</string>
+    <string name="search_prompt">Tippe, um nach Titel, Ort, Beschreibung oder Gästen zu suchen</string>
+    <string name="search_empty">Keine Termine gefunden</string>
+    <string name="back">Zurück</string>
+    <string name="clear">Löschen</string>
+    <string name="about">Info</string>
+    <string name="about_tagline">Ein Kalender für Android, synchron mit Google Kalender</string>
+    <string name="about_author">Autor</string>
+    <string name="about_website">Website</string>
+    <string name="about_version">Version</string>
+    <string name="about_build_date">Erstellungsdatum</string>
+    <string name="about_license">Lizenz</string>
+    <string name="about_source">Quellcode</string>
+    <string name="active_alarms">Aktive Wecker</string>
+    <string name="export_ics">Exportieren (.ics, CSV)</string>
+    <string name="settings">Einstellungen</string>
+    <string name="contacts">Kontakte des Telefons</string>
+    <string name="remove_account_title">Konto entfernen?</string>
+    <string name="remove_account_text">%1$s wird von diesem Telefon entfernt: Die Kalender und Termine verschwinden aus der App, und die noch nicht an Google gesendeten Änderungen gehen verloren. Bei Google wird nichts gelöscht, und du kannst das Konto wieder hinzufügen.</string>
+    <string name="remove_account_revoke">Zugriff auf allen Geräten widerrufen</string>
+    <string name="remove_account_revoke_hint">Andere Geräte, die %1$s verwenden, müssen die App erneut autorisieren.</string>
+    <string name="remove_account_confirm">Entfernen</string>
+    <string name="remove_account_cancel">Abbrechen</string>
+    <string name="adding_account">%1$s wird hinzugefügt…</string>
+    <string name="account_timeout">Google hat für %1$s nicht geantwortet.</string>
+    <string name="retry">Erneut versuchen</string>
+    <string name="remove_account_cd">Konto %1$s entfernen</string>
+</resources>

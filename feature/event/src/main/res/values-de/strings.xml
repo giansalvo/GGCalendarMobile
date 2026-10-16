@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="close">Schließen</string>
+    <string name="edit">Bearbeiten</string>
+    <string name="more_options">Weitere Optionen</string>
+    <string name="share">Teilen</string>
+    <string name="share_title">Termin teilen</string>
+    <string name="share_as_text">Als Text</string>
+    <string name="share_as_ics">Als .ics-Datei</string>
+    <string name="share_scope_all">Die ganze Serie</string>
+    <string name="share_scope_this">Nur dieser Termin der Serie</string>
+    <string name="share_repeats">Wiederholt sich: %1$s</string>
+    <string name="share_chooser">Teilen mit</string>
+    <string name="delete">Löschen</string>
+    <string name="duplicate">Duplizieren</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="untitled">(Ohne Titel)</string>
+    <string name="delete_event_question">Diesen Termin löschen?</string>
+    <string name="delete_series_question">Alle Termine dieser Serie löschen?</string>
+    <string name="join_meet">Mit Google Meet beitreten</string>
+    <string name="meet_pending">Google-Meet-Link wird erstellt…</string>
+    <string name="all_day">Ganztägig</string>
+    <string name="time_zone_of">Zeitzone: %1$s</string>
+    <string name="read_only">Schreibgeschützt</string>
+    <string name="calendar_defaults">Standarderinnerungen des Kalenders</string>
+
+    <!-- Recurrence, e.g. "Alle 2 Wochen am Montag, Donnerstag; 5-mal" -->
+    <plurals name="every_day">
+        <item quantity="one">Jeden Tag</item>
+        <item quantity="other">Alle %d Tage</item>
+    </plurals>
+    <plurals name="every_week">
+        <item quantity="one">Jede Woche</item>
+        <item quantity="other">Alle %d Wochen</item>
+    </plurals>
+    <plurals name="every_month">
+        <item quantity="one">Jeden Monat</item>
+        <item quantity="other">Alle %d Monate</item>
+    </plurals>
+    <plurals name="every_year">
+        <item quantity="one">Jedes Jahr</item>
+        <item quantity="other">Alle %d Jahre</item>
+    </plurals>
+    <string name="on_days">" am %1$s"</string>
+    <string name="on_month_day">" am %1$d. Tag"</string>
+    <string name="on_nth_weekday">" am %1$s %2$s"</string>
+    <string-array name="ordinals">
+        <item>letzten</item>
+        <item>ersten</item>
+        <item>zweiten</item>
+        <item>dritten</item>
+        <item>vierten</item>
+        <item>fünften</item>
+    </string-array>
+    <plurals name="times">
+        <item quantity="one">; einmal</item>
+        <item quantity="other">; %d-mal</item>
+    </plurals>
+    <string name="until_date">; bis %1$s</string>
+    <string name="custom_recurrence">Benutzerdefinierte Wiederholung</string>
+
+    <!-- Reminders -->
+    <plurals name="minutes_before">
+        <item quantity="one">%d Minute vorher</item>
+        <item quantity="other">%d Minuten vorher</item>
+    </plurals>
+    <plurals name="hours_before">
+        <item quantity="one">%d Stunde vorher</item>
+        <item quantity="other">%d Stunden vorher</item>
+    </plurals>
+    <plurals name="days_before">
+        <item quantity="one">%d Tag vorher</item>
+        <item quantity="other">%d Tage vorher</item>
+    </plurals>
+    <plurals name="weeks_before">
+        <item quantity="one">%d Woche vorher</item>
+        <item quantity="other">%d Wochen vorher</item>
+    </plurals>
+    <string name="at_start">Zu Beginn</string>
+    <string name="reminder_popup">Benachrichtigung</string>
+    <string name="reminder_alarm">Wecker</string>
+    <string name="reminder_email">E-Mail</string>
+
+    <!-- Guests -->
+    <plurals name="guests">
+        <item quantity="one">%d Gast</item>
+        <item quantity="other">%d Gäste</item>
+    </plurals>
+    <string name="guests_answers">%1$d Ja, %2$d Nein, %3$d Vielleicht, %4$d ausstehend</string>
+    <string name="organizer">Organisator</string>
+    <string name="optional">Optional</string>
+    <string name="save">Speichern</string>
+    <string name="add_title">Titel hinzufügen</string>
+    <string name="does_not_repeat">Wiederholt sich nicht</string>
+    <string name="weekly_on">Jede Woche am %1$s</string>
+    <string name="monthly_on_day">Jeden Monat am %1$d. Tag</string>
+    <string name="yearly_on">Jedes Jahr am %1$s</string>
+    <string name="weekdays">Jeden Werktag (Montag bis Freitag)</string>
+    <string name="add_guests">Personen hinzufügen</string>
+    <string name="invalid_email">Keine gültige E-Mail-Adresse</string>
+    <string name="remove">Entfernen</string>
+    <string name="send_invites">Einladungen senden</string>
+    <string name="guests_can_modify">Gäste können den Termin ändern</string>
+    <string name="guests_can_invite">Gäste können andere einladen</string>
+    <string name="guests_can_see_list">Gäste können die Gästeliste sehen</string>
+    <string name="add_meet">Google-Meet-Videokonferenz hinzufügen</string>
+    <string name="copy_link">Link kopieren</string>
+    <string name="add_location">Ort hinzufügen</string>
+    <string name="add_reminder">Benachrichtigung hinzufügen</string>
+    <string name="custom_minutes">Minuten vorher</string>
+    <string name="default_color">Standardfarbe</string>
+    <string name="busy">Beschäftigt</string>
+    <string name="free">Verfügbar</string>
+    <string name="visibility_default">Standardsichtbarkeit</string>
+    <string name="visibility_public">Öffentlich</string>
+    <string name="visibility_private">Privat</string>
+    <string name="add_description">Beschreibung hinzufügen</string>
+    <string name="discard_question">Änderungen verwerfen?</string>
+    <string name="discard">Verwerfen</string>
+    <string name="keep_editing">Weiter bearbeiten</string>
+    <string name="move_calendar_title">Diesen Termin verschieben?</string>
+    <string name="move_calendar_question">Von %1$s nach %2$s.</string>
+    <string name="move_calendar_other_account">Der Termin wird im anderen Konto neu erstellt und aus diesem entfernt.</string>
+    <string name="move_calendar_confirm">Verschieben</string>
+    <string name="search_time_zone">Zeitzone suchen</string>
+    <string name="color_lavender">Lavendel</string>
+    <string name="color_sage">Salbei</string>
+    <string name="color_grape">Traube</string>
+    <string name="color_flamingo">Flamingo</string>
+    <string name="color_banana">Banane</string>
+    <string name="color_tangerine">Mandarine</string>
+    <string name="color_peacock">Pfau</string>
+    <string name="color_graphite">Graphit</string>
+    <string name="color_blueberry">Heidelbeere</string>
+    <string name="color_basil">Basilikum</string>
+    <string name="color_tomato">Tomate</string>
+    <string name="calendar">Kalender</string>
+    <string name="my_calendar">Mein Kalender</string>
+    <string name="scope_edit_title">Wiederkehrenden Termin bearbeiten</string>
+    <string name="scope_delete_title">Wiederkehrenden Termin löschen</string>
+    <string name="scope_this">Dieser Termin</string>
+    <string name="scope_following">Dieser und folgende Termine</string>
+    <string name="scope_all">Alle Termine</string>
+    <string name="custom_ellipsis">Benutzerdefiniert…</string>
+    <string name="repeat_every">Alle</string>
+    <plurals name="unit_days"><item quantity="one">Tag</item><item quantity="other">Tage</item></plurals>
+    <plurals name="unit_weeks"><item quantity="one">Woche</item><item quantity="other">Wochen</item></plurals>
+    <plurals name="unit_months"><item quantity="one">Monat</item><item quantity="other">Monate</item></plurals>
+    <plurals name="unit_years"><item quantity="one">Jahr</item><item quantity="other">Jahre</item></plurals>
+    <string name="monthly_on_nth">Jeden Monat am %1$s %2$s</string>
+    <string name="ends">Endet</string>
+    <string name="ends_never">Nie</string>
+    <string name="ends_on">Am</string>
+    <string name="ends_after">Nach</string>
+    <plurals name="occurrences"><item quantity="one">Mal</item><item quantity="other">Mal</item></plurals>
+    <string name="browse_contacts">Kontakte</string>
+    <string name="search_contacts">Name oder E-Mail suchen</string>
+    <string name="no_contacts">Keine Kontakte gefunden</string>
+    <string name="write_to_guests">An die Gäste schreiben</string>
+    <string name="write_no_mail_app">Keine E-Mail-App gefunden</string>
+    <string name="export_title">Exportieren</string>
+    <string name="export_calendars">Kalender</string>
+    <string name="export_range">Tage</string>
+    <string name="export_range_invalid">Der letzte Tag liegt vor dem ersten</string>
+    <string name="export_note">Auch ausgeblendete Kalender können exportiert werden. Eine Serie wird einmal exportiert, mit ihren Änderungen.</string>
+    <string name="export_action">Exportieren</string>
+    <string name="export_nothing">An diesen Tagen keine Termine</string>
+    <string name="export_failed">Die Datei konnte nicht gespeichert werden</string>
+    <plurals name="export_skipped_private">
+        <item quantity="one">%d Termin nicht exportiert: Er ist privat.</item>
+        <item quantity="other">%d Termine nicht exportiert: Sie sind privat.</item>
+    </plurals>
+    <plurals name="export_done">
+        <item quantity="one">%d Termin exportiert</item>
+        <item quantity="other">%d Termine exportiert</item>
+    </plurals>
+    <string name="notify_guests_title">Gäste benachrichtigen?</string>
+    <string name="notify_guests_text">Google sendet den Gästen eine E-Mail mit den Änderungen.</string>
+    <string name="notify_guests_send">Senden</string>
+    <string name="notify_guests_dont">Nicht senden</string>
+    <string name="export_format_ics">Kalender\n(.ics)</string>
+    <string name="export_format_csv">Text\n(.csv)</string>
+    <plurals name="export_rows_done">
+        <item quantity="one">%d Termin der Serie exportiert</item>
+        <item quantity="other">%d Termine der Serie exportiert</item>
+    </plurals>
+    <string name="csv_calendar">Kalender</string>
+    <string name="csv_title">Titel</string>
+    <string name="csv_start_date">Startdatum</string>
+    <string name="csv_start_time">Startzeit</string>
+    <string name="csv_end_date">Enddatum</string>
+    <string name="csv_end_time">Endzeit</string>
+    <string name="csv_all_day">Ganztägig</string>
+    <string name="csv_time_zone">Zeitzone</string>
+    <string name="csv_location">Ort</string>
+    <string name="csv_description">Beschreibung</string>
+    <string name="csv_meet">Google Meet</string>
+    <string name="csv_guests">Gäste</string>
+    <string name="csv_repeats">Wiederholt sich</string>
+    <string name="csv_reminders">Erinnerungen</string>
+    <string name="csv_yes">Ja</string>
+    <string name="csv_no">Nein</string>
+</resources>

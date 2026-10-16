@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="channel_reminders">Recordatorios</string>
+    <string name="channel_alarms">Alarmas</string>
+    <string name="channel_alarms_screen">Alarmas (pantalla abierta)</string>
+    <string name="channel_missed">Alarmas perdidas</string>
+    <string name="all_day">Todo el día</string>
+    <string name="snooze">Posponer</string>
+    <string name="snooze_minutes">Posponer %d min</string>
+    <string name="dismiss">Descartar</string>
+    <string name="join_meet">Unirse con Meet</string>
+    <string name="missed_alarm">Alarma perdida</string>
+    <plurals name="alarm_stops_in">
+        <item quantity="one">Se detiene sola después de %d minuto</item>
+        <item quantity="other">Se detiene sola después de %d minutos</item>
+    </plurals>
+    <string name="alarm_title">Alarma</string>
+    <plurals name="minutes">
+        <item quantity="one">%d minuto</item>
+        <item quantity="other">%d minutos</item>
+    </plurals>
+    <string name="now">Ahora</string>
+    <string name="intro_notifications">Para recordatorios y alarmas.</string>
+    <string name="intro_overlay">Para que la alarma se abra sola sobre otras apps.</string>
+    <string name="intro_fullscreen">Para que la alarma se abra con el teléfono bloqueado.</string>
+    <string name="intro_battery">Para que las alarmas suenen a su hora.</string>
+    <string name="intro_allow">Permitir</string>
+    <string name="intro_skip">Ahora no</string>
+    <string name="perm_notifications">Notificaciones</string>
+    <string name="perm_notifications_help">Necesarias para mostrar recordatorios y alarmas.</string>
+    <string name="perm_exact">Recordatorios puntuales</string>
+    <string name="perm_exact_help">Permite que los recordatorios lleguen en el minuto exacto, también con la pantalla apagada.</string>
+    <string name="perm_fullscreen">Notificaciones en pantalla completa</string>
+    <string name="perm_fullscreen_help">Permite que la alarma abra su pantalla con el teléfono bloqueado. Sin ello solo aparece una notificación.</string>
+    <string name="perm_overlay">Mostrar sobre otras apps</string>
+    <string name="perm_overlay_help">Permite que la pantalla de la alarma se abra sola sobre la app que estás usando, hasta que respondas.</string>
+    <string name="perm_battery">Batería: sin restricciones</string>
+    <string name="perm_battery_help">Evita que el teléfono retrase los recordatorios para ahorrar energía. Se cambia en Información de la aplicación > Batería.</string>
+    <string name="samsung_sleeping">En los Samsung revisa también Ajustes > Batería > Límites de uso en segundo plano: GGCalendar no debe estar entre las apps en suspensión ni en suspensión profunda.</string>
+    <string name="open_battery_settings">Abrir los ajustes de la batería</string>
+    <string name="perm_change">Cambiar</string>
+    <string name="fix">Corregir</string>
+    <string name="alarm_duration">Duración de la alarma</string>
+    <string name="alarm_duration_help">Una alarma que nadie cierra se detiene sola pasado este tiempo y deja una notificación de \"alarma perdida\".</string>
+    <string name="warning_notifications_off">Las notificaciones están desactivadas: este recordatorio no se mostrará.</string>
+    <string name="warning_exact_off">Las alarmas exactas no están permitidas: este recordatorio puede llegar tarde.</string>
+    <string name="stop_alarm">Detener alarma</string>
+    <string name="alarm_help">Detener apaga el sonido y cierra la alarma. Posponer vuelve a sonar pasado el tiempo elegido.</string>
+    <string name="snooze_for">Posponer durante</string>
+    <string name="snooze_choice">%d min</string>
+    <string name="active_alarms_title">Alarmas activas</string>
+    <string name="active_alarms_empty">No hay alarmas programadas.</string>
+    <string name="snoozed">Pospuesta</string>
+    <plurals name="minutes_before">
+        <item quantity="one">%d minuto antes</item>
+        <item quantity="other">%d minutos antes</item>
+    </plurals>
+    <plurals name="minutes_before_time">
+        <item quantity="one">%1$d minuto antes de las %2$s</item>
+        <item quantity="other">%1$d minutos antes de las %2$s</item>
+    </plurals>
+    <string name="remaining_less_than_minute">&lt; 1 min</string>
+    <string name="remaining_minutes">%d min</string>
+    <string name="remaining_hours_minutes">%d h %d min</string>
+    <string name="remaining_days_hours">%d d %d h</string>
+    <string name="close_alarm_title">¿Cancelar esta alarma?</string>
+    <string name="close_alarm_text">La alarma de \"%s\" no sonará. El evento sigue en el calendario.</string>
+    <string name="close_alarm">Cancelar alarma</string>
+    <string name="keep_alarm">Mantener</string>
+</resources>
