@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -43,7 +44,7 @@ import io.github.giansalvo.ggcalendar.core.model.EventInstance
 import kotlinx.coroutines.flow.distinctUntilChanged
 import java.time.Instant
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import io.github.giansalvo.ggcalendar.core.data.DateFormats
 import java.time.format.TextStyle
 import java.util.Locale
 
@@ -249,12 +250,10 @@ private fun NowLine() {
     }
 }
 
-private val weekFormat = DateTimeFormatter.ofPattern("d MMM")
-
 @Composable
 private fun WeekHeader(start: LocalDate) {
-    val end = start.plusDays(6)
-    val text = if (start.month == end.month) "${start.dayOfMonth}–${end.format(weekFormat)}" else "${start.format(weekFormat)}–${end.format(weekFormat)}"
+    // The language is read once for the line; the words and the order come from the language (12–18 Oct, Oct 12 – 18).
+    val text = DateFormats.days(start, start.plusDays(6), LocalConfiguration.current.locales[0])
     Text(
         text,
         style = MaterialTheme.typography.labelLarge,

@@ -3,6 +3,7 @@ package io.github.giansalvo.ggcalendar.feature.event
 import android.content.res.Resources
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import io.github.giansalvo.ggcalendar.core.data.DateFormats
 import io.github.giansalvo.ggcalendar.core.model.Frequency
 import io.github.giansalvo.ggcalendar.core.model.Reminder
 import io.github.giansalvo.ggcalendar.core.model.ReminderMethod
@@ -23,8 +24,9 @@ internal fun contentColorOn(background: Color): Color = if (background.luminance
 private fun String.capitalized(locale: Locale = Locale.getDefault()) = replaceFirstChar { it.titlecase(locale) }
 
 internal val timeFormat: DateTimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
-private val dayFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("EEEE d MMM")
-private val shortDayFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE d MMM")
+// In the order and with the words of the language of the app, read each time (a cached formatter per language).
+private val dayFormat: DateTimeFormatter get() = DateFormats.of("EEEEdMMM")
+private val shortDayFormat: DateTimeFormatter get() = DateFormats.of("EEEdMMM")
 internal val longDateFormat: DateTimeFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
 
 /** "Mercoledì 7 ott • 05:00–06:00", "Lun 12 ott 22:00 – Mar 13 ott 01:00", "Mercoledì 7 ott" or "Lun 12 – Mer 14 ott". */

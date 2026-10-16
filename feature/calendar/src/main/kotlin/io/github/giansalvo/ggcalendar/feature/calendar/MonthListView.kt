@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.format.DateTimeFormatter
+import io.github.giansalvo.ggcalendar.core.data.DateFormats
 import java.time.temporal.ChronoUnit
 import java.util.Date
 import java.util.Locale
@@ -144,5 +144,5 @@ private fun dayTitle(date: LocalDate): String {
         else -> pluralStringResource(R.plurals.days_ago, -days, -days)
     }
     val locale = Locale.getDefault()
-    return relative + " · " + date.format(DateTimeFormatter.ofPattern("EEE d MMM", locale))
+    return relative + " · " + date.format(DateFormats.of("EEEdMMM", locale))
 }

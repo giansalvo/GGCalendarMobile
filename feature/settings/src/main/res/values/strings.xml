@@ -22,4 +22,6 @@
     <string name="settings_keep_editing">Keep editing</string>
     <string name="settings_birthdays">Birthdays from contacts</string>
     <string name="settings_birthdays_hint">Shows the birthdays saved in the phone contacts, in a calendar of their own. Needs the permission to read the contacts.</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_hint">Opens the language screen of Android for this app</string>
 </resources>

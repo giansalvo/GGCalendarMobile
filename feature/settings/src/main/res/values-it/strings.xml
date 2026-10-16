@@ -22,4 +22,6 @@
     <string name="settings_keep_editing">Continua a modificare</string>
     <string name="settings_birthdays">Compleanni dalla rubrica</string>
     <string name="settings_birthdays_hint">Mostra i compleanni salvati nei contatti del telefono, in un calendario a parte. Serve il permesso di leggere i contatti.</string>
+    <string name="settings_language">Lingua</string>
+    <string name="settings_language_hint">Apre la schermata di Android per la lingua di questa app</string>
 </resources>

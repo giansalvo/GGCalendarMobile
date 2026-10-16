@@ -2,9 +2,14 @@ package io.github.giansalvo.ggcalendar.feature.settings
 
 import io.github.giansalvo.ggcalendar.core.notifications.NotificationSettingsSection
 import io.github.giansalvo.ggcalendar.core.notifications.exposeTestTags
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import android.Manifest
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.BackHandler
@@ -116,6 +121,9 @@ fun SettingsScreen(onClose: () -> Unit, viewModel: SettingsViewModel = hiltViewM
                             SwitchRow(stringResource(R.string.settings_dynamic), stringResource(R.string.settings_dynamic_hint), draft.dynamicColor, tag = "settings_dynamic") { draft = draft.copy(dynamicColor = it) }
                         }
 
+                        // Android 13 and later keep the language of each app on their own screen: it is opened from here.
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) LanguageRow()
+
                         Section(stringResource(R.string.settings_calendar))
                         WeekStartRow(draft.weekStart) { draft = draft.copy(weekStart = it) }
                         DayStartRow(draft.dayStartHour) { draft = draft.copy(dayStartHour = it) }
@@ -164,6 +172,26 @@ private fun SwitchRow(title: String, hint: String, checked: Boolean, tag: String
             Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Switch(checked = checked, onCheckedChange = onChange, modifier = Modifier.padding(start = 12.dp))
+    }
+}
+
+/** The language of the app: shown as it is now, changed on Android's own screen for this app (Android 13 and later). */
+@Composable
+private fun LanguageRow() {
+    val context = LocalContext.current
+    val locale = LocalConfiguration.current.locales[0]
+    val name = locale.getDisplayLanguage(locale).replaceFirstChar { it.titlecase(locale) }
+    Row(
+        Modifier.testTag("settings_language").fillMaxWidth().clickable {
+            runCatching { context.startActivity(Intent(Settings.ACTION_APP_LOCALE_SETTINGS, Uri.parse("package:" + context.packageName))) }
+        }.padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.settings_language), style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.settings_language_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Text(name, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
     }
 }
 

@@ -464,7 +464,7 @@ private fun PlainField(icon: ImageVector, value: String, placeholder: Int, singl
     }
 }
 
-private val editorDate = java.time.format.DateTimeFormatter.ofPattern("EEE d MMM yyyy")
+private val editorDate get() = io.github.giansalvo.ggcalendar.core.data.DateFormats.of("EEEdMMMy")
 
 @Composable
 private fun DateTimeRow(date: LocalDate, time: LocalTime, allDay: Boolean, onDate: () -> Unit, onTime: () -> Unit, tag: String) {
