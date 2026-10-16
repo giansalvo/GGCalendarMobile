@@ -5,7 +5,7 @@
 <p align="center">Calendario per Android con sincronizzazione Google Calendar · <em>Android calendar with Google Calendar sync</em></p>
 
 <p align="center">
-  <a href="https://profgusinu.altervista.org/GGCalendarMobile/">Sito</a> ·
+  <a href="https://profgusinu.altervista.org/GGCalendarAndroid/">Sito</a> ·
   <a href="https://profgusinu.altervista.org/GGCalendar/privacy.html">Privacy</a> ·
   <a href="https://github.com/giansalvo/GGCalendar">GGCalendar per Windows</a> ·
   <a href="LICENSE">Licenza GPL v3 o successive</a>

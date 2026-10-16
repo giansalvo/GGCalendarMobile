@@ -1,7 +1,7 @@
 # GGCalendar: architettura, strumenti, repository e landing page
 
 ## Contesto
-Si parte da una cartella vuota (`GGCalendarAndroid`). Vogliamo un'app Android di calendario simile a Google Calendar, sincronizzata in entrambe le direzioni con uno o più account Google tramite la Calendar API. Funzioni: eventi con Google Meet e invitati; tre tipi di notifica (popup, sveglia, email); viste giorno, 6 giorni (N configurabile), settimana, mese e programma (agenda); niente vista anno; invio, condivisione ed esportazione (la stampa è stata eliminata il 12/10/2026). L'app funziona anche offline. All'inizio si distribuisce come APK tramite una landing page su Altervista (profgusinu.altervista.org/GGCalendarMobile), senza Play Store. Il codice è open source con licenza GPL-3.0. Lo sviluppo avviene su Windows 11 e il dispositivo principale è un Samsung con One UI 8.5 (Android 16).
+Si parte da una cartella vuota (`GGCalendarAndroid`). Vogliamo un'app Android di calendario simile a Google Calendar, sincronizzata in entrambe le direzioni con uno o più account Google tramite la Calendar API. Funzioni: eventi con Google Meet e invitati; tre tipi di notifica (popup, sveglia, email); viste giorno, 6 giorni (N configurabile), settimana, mese e programma (agenda); niente vista anno; invio, condivisione ed esportazione (la stampa è stata eliminata il 12/10/2026). L'app funziona anche offline. All'inizio si distribuisce come APK tramite una landing page su Altervista (profgusinu.altervista.org/GGCalendarAndroid), senza Play Store. Il codice è open source con licenza GPL-3.0. Lo sviluppo avviene su Windows 11 e il dispositivo principale è un Samsung con One UI 8.5 (Android 16).
 
 ## Decisioni prese
 | Tema | Scelta |
@@ -14,7 +14,7 @@ Si parte da una cartella vuota (`GGCalendarAndroid`). Vogliamo un'app Android di
 | SDK | minSdk 26 (Android 8), target/compile 36 (Android 16) e test sul Samsung personale |
 | Repository | `github.com/giansalvo/GGCalendarMobile`, pubblico, GPL-3.0, monorepo `app/` + `site/` |
 | Nome / ID | Nome sotto l'icona "GGCalendar", `applicationId` `io.github.giansalvo.ggcalendar` (permanente) |
-| Landing | `https://profgusinu.altervista.org/GGCalendarMobile/`, nello stesso sito di `/GGCalendar/` (HTML, stesso stile), con una sola privacy policy e termini estesi ad Android; APK su GitHub Releases |
+| Landing | `https://profgusinu.altervista.org/GGCalendarAndroid/`, nello stesso sito di `/GGCalendar/` (HTML, stesso stile), con una sola privacy policy e termini estesi ad Android; APK su GitHub Releases |
 | OAuth | Si riusa il progetto Google Cloud del desktop (in Production). Il **branding è verificato**. Lo scope `calendar` non è dichiarato in "Accesso ai dati", quindi l'accesso ai dati non è verificato: avviso "app non verificata" e limite di 100 utenti condivisi tra desktop e Android. Azione: dichiarare lo scope e inviare la verifica con il video già pronto (`GGCalendar/Google_verifica_app`). Lo scope non cambia, quindi l'aggiunta dei client Android non dovrebbe richiedere una nuova verifica, ma va controllato. |
 | Brand | Logo `img/GGCalendarMobile_logo.jpg`; palette blu, rosso e grigio; icona adattiva semplificata |
 
