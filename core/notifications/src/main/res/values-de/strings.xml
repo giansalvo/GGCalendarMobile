@@ -67,4 +67,8 @@
     <string name="close_alarm_text">Der Wecker für \"%s\" klingelt nicht. Der Termin bleibt im Kalender.</string>
     <string name="close_alarm">Wecker abbrechen</string>
     <string name="keep_alarm">Behalten</string>
+    <string name="alarm_sound">Weckerton</string>
+    <string name="alarm_sound_help">Lässt er sich nicht abspielen, klingelt ein Ton der App.</string>
+    <string name="alarm_sound_default">Systemstandard</string>
+    <string name="alarm_sound_reset">Systemstandard verwenden</string>
 </resources>

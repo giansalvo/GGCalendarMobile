@@ -55,6 +55,7 @@ class ReminderScheduler @Inject constructor(
 
         // The snapshot goes first: if the process dies in between, the alarms are still restorable.
         store.setAlarmMinutes(prefs.alarmMinutes.first())
+        store.setAlarmSound(prefs.alarmSound.first())
         store.writeSnapshot(Snapshot(now, entries))
         registrar.sync(wanted)
     }

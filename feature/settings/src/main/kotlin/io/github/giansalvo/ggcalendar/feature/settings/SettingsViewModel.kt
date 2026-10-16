@@ -22,6 +22,8 @@ data class SettingsDraft(
     val birthdays: Boolean,
     /** How long an alarm rings before it stops by itself (1 to 10 minutes). */
     val alarmMinutes: Int,
+    /** The sound of the alarms (a Uri as text); null = the alarm sound of the phone. */
+    val alarmSound: String?,
 )
 
 @HiltViewModel
@@ -44,6 +46,7 @@ class SettingsViewModel @Inject constructor(
             dimPast = view.dimPast,
             birthdays = prefs.birthdaysEnabled.first() && contacts.granted,
             alarmMinutes = prefs.alarmMinutes.first(),
+            alarmSound = prefs.alarmSound.first(),
         )
     }
 
@@ -57,6 +60,8 @@ class SettingsViewModel @Inject constructor(
         // The copy in the device protected storage is what the alarm uses while the phone is locked after a reboot.
         alarmStore.setAlarmMinutes(draft.alarmMinutes)
         prefs.setAlarmMinutes(draft.alarmMinutes)
+        alarmStore.setAlarmSound(draft.alarmSound)
+        prefs.setAlarmSound(draft.alarmSound)
         // The calendar appears (or goes away) as soon as the choice is saved.
         birthdays.sync()
     }

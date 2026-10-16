@@ -134,7 +134,7 @@ fun SettingsScreen(onClose: () -> Unit, viewModel: SettingsViewModel = hiltViewM
                         }
 
                         Section(stringResource(R.string.settings_notifications))
-                        NotificationSettingsSection(draft.alarmMinutes) { draft = draft.copy(alarmMinutes = it) }
+                        NotificationSettingsSection(draft.alarmMinutes, { draft = draft.copy(alarmMinutes = it) }, draft.alarmSound) { draft = draft.copy(alarmSound = it) }
                         Spacer(Modifier.height(24.dp))
                     }
                 }

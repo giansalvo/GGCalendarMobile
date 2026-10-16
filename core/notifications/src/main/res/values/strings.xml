@@ -67,4 +67,8 @@
     <string name="close_alarm_text">The alarm for "%s" will not ring. The event stays in the calendar.</string>
     <string name="close_alarm">Cancel alarm</string>
     <string name="keep_alarm">Keep</string>
+    <string name="alarm_sound">Alarm sound</string>
+    <string name="alarm_sound_help">If it cannot be played, a sound built into the app rings instead.</string>
+    <string name="alarm_sound_default">System default</string>
+    <string name="alarm_sound_reset">Use the system default</string>
 </resources>

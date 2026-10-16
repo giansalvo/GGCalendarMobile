@@ -4,7 +4,11 @@ import androidx.compose.ui.platform.testTag
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -32,6 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.IntentCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 
@@ -49,7 +54,7 @@ internal fun Context.open(intent: Intent) {
  * alarm rings (1 to 10 minutes). The permissions are Android's own screens; the duration is part of the screen's draft.
  */
 @Composable
-fun NotificationSettingsSection(alarmMinutes: Int, onAlarmMinutesChange: (Int) -> Unit) {
+fun NotificationSettingsSection(alarmMinutes: Int, onAlarmMinutesChange: (Int) -> Unit, alarmSound: String? = null, onAlarmSoundChange: (String?) -> Unit = {}) {
     val context = LocalContext.current
     val checks = remember { NotificationChecks(context) }
     var status by remember { mutableStateOf(checks.status()) }
@@ -82,6 +87,8 @@ fun NotificationSettingsSection(alarmMinutes: Int, onAlarmMinutesChange: (Int) -
         TextButton(onClick = { context.open(checks.batteryList()) }) { Text(stringResource(R.string.open_battery_settings)) }
 
         HorizontalDivider(Modifier.padding(vertical = 12.dp))
+        AlarmSoundRow(alarmSound, onAlarmSoundChange)
+        HorizontalDivider(Modifier.padding(vertical = 12.dp))
         Text(stringResource(R.string.alarm_duration), style = MaterialTheme.typography.titleMedium)
         Text(
             pluralStringResource(R.plurals.minutes, slider.toInt(), slider.toInt()),
@@ -97,6 +104,50 @@ fun NotificationSettingsSection(alarmMinutes: Int, onAlarmMinutesChange: (Int) -
             steps = 8,
         )
         Text(stringResource(R.string.alarm_duration_help), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/**
+ * The alarm sound: the name of the one in use (or "System default"); a tap opens Android's own chooser of alarm sounds, which
+ * also plays a preview. Choosing the phone's default stores nothing: the alarm then follows the phone's setting.
+ */
+@Composable
+private fun AlarmSoundRow(alarmSound: String?, onChange: (String?) -> Unit) {
+    val context = LocalContext.current
+    val default = remember { RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM) }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val data = result.data ?: return@rememberLauncherForActivityResult
+        if (result.resultCode != android.app.Activity.RESULT_OK) return@rememberLauncherForActivityResult
+        val picked = IntentCompat.getParcelableExtra(data, RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java)
+        onChange(picked?.takeIf { it != default }?.toString())
+    }
+    val systemDefault = stringResource(R.string.alarm_sound_default)
+    val name = remember(alarmSound, systemDefault) {
+        alarmSound?.let { runCatching { RingtoneManager.getRingtone(context, Uri.parse(it)).getTitle(context) }.getOrNull() } ?: systemDefault
+    }
+    val title = stringResource(R.string.alarm_sound)
+    Row(
+        Modifier.testTag("settings_alarm_sound").fillMaxWidth().clickable {
+            val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER)
+                .putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
+                .putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, title)
+                .putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+                .putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
+                .putExtra(RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI, default)
+                .putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, alarmSound?.let(Uri::parse) ?: default)
+            runCatching { picker.launch(intent) }
+        },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.alarm_sound_help), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+        }
+        Text(name, Modifier.padding(start = 12.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+    }
+    // The chooser of some phones lists the default only when it is the current choice: going back to it is a button of ours.
+    if (alarmSound != null) {
+        TextButton(modifier = Modifier.testTag("alarm_sound_reset"), onClick = { onChange(null) }) { Text(stringResource(R.string.alarm_sound_reset)) }
     }
 }
 

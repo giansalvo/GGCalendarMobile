@@ -90,6 +90,15 @@ class DirectBootTest {
     }
 
     @Test
+    fun theAlarmSoundIsStoredAndClearedAndIsNothingByDefault() {
+        assertNull(store.alarmSound())
+        store.setAlarmSound("content://media/internal/audio/media/42")
+        assertEquals("content://media/internal/audio/media/42", store.alarmSound())
+        store.setAlarmSound(null)
+        assertNull(store.alarmSound())
+    }
+
+    @Test
     fun aMissingOrDamagedSnapshotReadsAsNothing() {
         assertNull(store.readSnapshot())
         context.filesDir.resolve("boot-test").mkdirs()

@@ -69,6 +69,7 @@ class DirectBootStore internal constructor(private val dir: File) {
     private val journalFile get() = File(dir, "journal.jsonl")
     private val keysFile get() = File(dir, "scheduled.json")
     private val minutesFile get() = File(dir, "alarm_minutes")
+    private val soundFile get() = File(dir, "alarm_sound")
 
     /** Atomic: a crash while writing leaves the previous snapshot in place (temporary file, then rename). */
     fun writeSnapshot(snapshot: Snapshot) = synchronized(LOCK) { writeAtomic(snapshotFile, snapshot.toJson().toString()) }
@@ -109,6 +110,15 @@ class DirectBootStore internal constructor(private val dir: File) {
     }
 
     fun setAlarmMinutes(minutes: Int) = synchronized(LOCK) { writeAtomic(minutesFile, minutes.coerceIn(1, 10).toString()) }
+
+    /** The sound chosen for the alarms (a Uri as text), or null for the alarm sound of the phone. */
+    fun alarmSound(): String? = synchronized(LOCK) {
+        runCatching { soundFile.readText().trim() }.getOrNull()?.takeIf { it.isNotEmpty() }
+    }
+
+    fun setAlarmSound(uri: String?) = synchronized(LOCK) {
+        if (uri == null) soundFile.delete() else writeAtomic(soundFile, uri)
+    }
 
     private fun parseJournal(file: File): List<JournalEntry> =
         runCatching { file.readLines() }.getOrDefault(emptyList()).mapNotNull { line ->

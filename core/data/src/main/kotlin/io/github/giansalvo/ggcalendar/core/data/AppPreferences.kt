@@ -50,6 +50,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         val windowZone = stringPreferencesKey("instances_zone")
         val windowComputedOn = longPreferencesKey("instances_computed_on")
         val alarmMinutes = intPreferencesKey("alarm_minutes")
+        val alarmSound = stringPreferencesKey("alarm_sound")
         val reminderLastCheck = longPreferencesKey("reminder_last_check")
         val askedNotifications = booleanPreferencesKey("asked_notifications")
         val bootCount = intPreferencesKey("handled_boot_count")
@@ -72,6 +73,13 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
 
     suspend fun setAlarmMinutes(minutes: Int) {
         context.dataStore.edit { it[Keys.alarmMinutes] = minutes.coerceIn(1, 10) }
+    }
+
+    /** The sound alarms ring with (the Uri of a system sound as text); null = the alarm sound of the phone. */
+    val alarmSound: Flow<String?> = context.dataStore.data.map { it[Keys.alarmSound] }
+
+    suspend fun setAlarmSound(uri: String?) {
+        context.dataStore.edit { if (uri == null) it.remove(Keys.alarmSound) else it[Keys.alarmSound] = uri }
     }
 
     /** Reminders firing up to this time (epoch millis) have been handled; null before the first check. */

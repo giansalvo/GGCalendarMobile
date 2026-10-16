@@ -86,7 +86,9 @@ class AlarmService : Service() {
 
     private fun ring() {
         val alert = current ?: return
-        val uri = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_ALARM)
+        // The sound the user chose, then the alarm sound of the phone, then the one bundled in the app.
+        val chosen = store.alarmSound()?.let(android.net.Uri::parse)
+        val system = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_ALARM)
             ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
             ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
         // The alarm screen opens by itself, also while the phone is in use (a notification alone would only slide in).
@@ -112,12 +114,13 @@ class AlarmService : Service() {
             }
             if (overlay && current?.key == alert.key) foreground(alert, quiet = false)
         }
-        // The system ringtone is a media provider content: before the first unlock it does not exist, and the alarm
-        // rings with the sound bundled in the app instead.
-        player = runCatching { loopingPlayer { it.setDataSource(this, uri) } }.getOrNull()
-            ?: runCatching {
-                loopingPlayer { player -> resources.openRawResourceFd(R.raw.alarm_fallback).use { player.setDataSource(it.fileDescriptor, it.startOffset, it.length) } }
-            }.getOrNull()
+        // System sounds are media provider contents: before the first unlock they do not exist (and a chosen sound can be gone),
+        // and the alarm then rings with the sound bundled in the app.
+        player = listOfNotNull(chosen?.let { it to "chosen" }, system?.let { it to "system" }).firstNotNullOfOrNull { (uri, name) ->
+            runCatching { loopingPlayer { it.setDataSource(this, uri) } }.getOrNull()?.also { android.util.Log.i("GGCalendar", "alarm sound: $name") }
+        } ?: runCatching {
+            loopingPlayer { player -> resources.openRawResourceFd(R.raw.alarm_fallback).use { player.setDataSource(it.fileDescriptor, it.startOffset, it.length) } }
+        }.getOrNull()?.also { android.util.Log.i("GGCalendar", "alarm sound: bundled") }
         @Suppress("DEPRECATION")
         (getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator)?.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 700, 500), 0))
         timeout?.cancel()

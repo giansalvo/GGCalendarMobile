@@ -67,4 +67,8 @@
     <string name="close_alarm_text">La alarma de \"%s\" no sonará. El evento sigue en el calendario.</string>
     <string name="close_alarm">Cancelar alarma</string>
     <string name="keep_alarm">Mantener</string>
+    <string name="alarm_sound">Sonido de la alarma</string>
+    <string name="alarm_sound_help">Si no se puede reproducir, suena uno incluido en la app.</string>
+    <string name="alarm_sound_default">Predeterminado del sistema</string>
+    <string name="alarm_sound_reset">Usar el sonido predeterminado del sistema</string>
 </resources>
