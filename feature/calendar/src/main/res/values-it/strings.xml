@@ -69,4 +69,8 @@
     <string name="account_timeout">Google non ha risposto per %1$s.</string>
     <string name="retry">Riprova</string>
     <string name="remove_account_cd">Rimuovi l\'account %1$s</string>
+    <string name="message_account_missing">GGCalendar non può sincronizzare %1$s perché l\'account non è presente nel telefono.</string>
+    <string name="message_sync_error">Sincronizzazione di %1$s non riuscita: %2$s</string>
+    <string name="account_add_action">Aggiungi</string>
+    <string name="message_close">Chiudi</string>
 </resources>

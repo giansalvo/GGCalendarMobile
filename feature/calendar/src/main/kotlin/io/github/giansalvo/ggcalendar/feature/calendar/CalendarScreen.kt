@@ -61,10 +61,12 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SnackbarVisuals
 import androidx.compose.material3.Text
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
@@ -170,18 +172,35 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
     }
     val authText = stringResource(R.string.message_auth)
     val authAction = stringResource(R.string.authorize)
+    val missingText = stringResource(R.string.message_account_missing)
+    val syncErrorText = stringResource(R.string.message_sync_error)
+    val addLabel = stringResource(R.string.account_add_action)
+    val closeLabel = stringResource(R.string.message_close)
     LaunchedEffect(state.message?.id) {
         val message = state.message ?: return@LaunchedEffect
         val isAuth = message.kind == "auth"
-        val text = if (isAuth) authText.format(message.accountEmail) else message.text
+        // The sentence is made here, in the language of the app now, from what the sync stored (a stored sentence keeps its language).
+        val text = when (message.kind) {
+            "auth" -> authText.format(message.accountEmail)
+            "account_missing" -> missingText.format(message.accountEmail)
+            "sync_error" -> syncErrorText.format(message.accountEmail, message.text)
+            else -> message.text
+        }
         // Conflicts and errors stay until the user closes them: they explain what happened to an edit.
-        val result = snackbar.showSnackbar(
-            text,
-            actionLabel = if (isAuth) authAction else okText,
-            withDismissAction = true,
-            duration = SnackbarDuration.Indefinite,
-        )
+        val result = if (message.kind == "account_missing") {
+            // The account is in the app but no longer on the phone: "Add" opens the list of the accounts of Android right away.
+            snackbar.showSnackbar(AddOrCloseVisuals(text, addLabel, closeLabel))
+        } else {
+            snackbar.showSnackbar(
+                text,
+                actionLabel = if (isAuth) authAction else okText,
+                // An error or conflict is closed with OK alone; the "authorize again" message keeps the X, its other button not being a way out.
+                withDismissAction = isAuth,
+                duration = SnackbarDuration.Indefinite,
+            )
+        }
         if (result == SnackbarResult.ActionPerformed && isAuth) message.accountEmail?.let(viewModel::reauthorize)
+        if (result == SnackbarResult.ActionPerformed && message.kind == "account_missing") pickAccount.launch(viewModel.chooseAccountIntent())
         viewModel.dismissMessage(message.id)
     }
 
@@ -248,7 +267,25 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                     Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.new_event))
                 }
             },
-            snackbarHost = { SnackbarHost(snackbar, Modifier.testTag("snackbar")) },
+            snackbarHost = {
+                SnackbarHost(snackbar, Modifier.testTag("snackbar")) { data ->
+                    val visuals = data.visuals
+                    if (visuals is AddOrCloseVisuals) {
+                        // Two buttons under the sentence: Close (or the X of the host) and Add.
+                        Snackbar(
+                            actionOnNewLine = true,
+                            action = {
+                                Row {
+                                    TextButton(modifier = Modifier.testTag("snackbar_close"), onClick = { data.dismiss() }) { Text(visuals.closeLabel) }
+                                    TextButton(modifier = Modifier.testTag("snackbar_add"), onClick = { data.performAction() }) { Text(visuals.addLabel) }
+                                }
+                            },
+                        ) { Text(visuals.message) }
+                    } else {
+                        Snackbar(data)
+                    }
+                }
+            },
         ) { padding ->
             Column(Modifier.padding(padding).fillMaxSize()) {
                 if (state.busy || state.syncing) {
@@ -614,4 +651,11 @@ private fun newEventRequest(state: CalendarUiState): EditorRequest.New {
     val now = java.time.LocalDateTime.now()
     val hour = if (state.date == now.toLocalDate()) minOf(now.hour + 1, 23) else 9
     return EditorRequest.New(state.date.atTime(hour, 0))
+}
+
+/** A message with two answers: [addLabel] (the snackbar's action) and [closeLabel]. It stays until one is chosen. */
+private class AddOrCloseVisuals(override val message: String, val addLabel: String, val closeLabel: String) : SnackbarVisuals {
+    override val actionLabel: String get() = addLabel
+    override val withDismissAction: Boolean get() = false
+    override val duration: SnackbarDuration get() = SnackbarDuration.Indefinite
 }

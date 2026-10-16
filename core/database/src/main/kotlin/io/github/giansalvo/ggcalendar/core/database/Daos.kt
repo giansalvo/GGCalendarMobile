@@ -277,4 +277,7 @@ interface SyncMessageDao {
 
     @Query("SELECT EXISTS(SELECT 1 FROM sync_messages WHERE read = 0 AND account_email = :email AND kind = :kind)")
     suspend fun hasUnread(email: String, kind: String): Boolean
+
+    @Query("SELECT EXISTS(SELECT 1 FROM sync_messages WHERE read = 0 AND account_email = :email AND kind = :kind AND text = :text)")
+    suspend fun hasUnreadText(email: String, kind: String, text: String): Boolean
 }

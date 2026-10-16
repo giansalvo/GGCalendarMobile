@@ -81,11 +81,32 @@ class SyncEngine @Inject constructor(
         } catch (e: GoogleApiException) {
             // Still 401 with a new token: the user has to authorize again (a clear message, not Google's JSON).
             if (e.status == 401) needsAuthorization(email)
-            else messages.insert(SyncMessageEntity(accountEmail = email, kind = "error", text = e.message ?: e.toString()))
+            else showError(email, e)
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
             if (e is java.io.IOException) return
-            messages.insert(SyncMessageEntity(accountEmail = email, kind = "error", text = e.message ?: e.toString()))
+            showError(email, e)
+        }
+    }
+
+    /**
+     * A sync error as a message that names the account. What is stored is the kind and the data, not a finished sentence: the screen
+     * writes it in the language of the app when it shows it (a sentence stored here would stay in the language it was made in, and
+     * Google's own text, such as "16: [28433] Cannot find a matching credential.", names no account and means nothing to the user).
+     * The same message is kept once while it is unread: a sync that fails every 15 minutes must not pile them up.
+     */
+    private suspend fun showError(email: String, e: Throwable, calendar: String? = null) {
+        val detail = e.message ?: e.toString()
+        if (detail.contains("matching credential", ignoreCase = true)) {
+            // Google does not know the account on this phone (removed from Android, or signed out): it has to be added again.
+            if (!messages.hasUnread(email, "account_missing")) {
+                messages.insert(SyncMessageEntity(accountEmail = email, kind = "account_missing", text = ""))
+            }
+        } else {
+            val text = if (calendar != null) "$calendar: $detail" else detail
+            if (!messages.hasUnreadText(email, "sync_error", text)) {
+                messages.insert(SyncMessageEntity(accountEmail = email, kind = "sync_error", text = text))
+            }
         }
     }
 
@@ -120,7 +141,7 @@ class SyncEngine @Inject constructor(
                     // No network is not an error to show: the next sync (the worker waits for a connection) picks up again.
                     if (e is java.io.IOException) return@forEach
                     if (e is GoogleApiException && e.status == 401) throw e // the token, not the calendar: handled by the caller
-                    messages.insert(SyncMessageEntity(accountEmail = email, kind = "error", text = "${cal.name}: ${e.message}"))
+                    showError(email, e, calendar = cal.name)
                 }
             }
             // Conflict copies are queued during the push: send them now rather than at the next sync.
