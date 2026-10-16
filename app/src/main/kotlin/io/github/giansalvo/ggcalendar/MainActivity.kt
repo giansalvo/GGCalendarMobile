@@ -11,9 +11,11 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.DisposableEffect
 import io.github.giansalvo.ggcalendar.core.data.ThemeMode
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.lifecycleScope
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.giansalvo.ggcalendar.core.data.AppPreferences
@@ -35,6 +37,9 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // The test runs start the app with `--ez skip_intro true`: the first-start splash and questions count as seen, so that
+        // a fresh install goes straight to the calendar. A normal start never has the extra.
+        if (intent.getBooleanExtra(EXTRA_SKIP_INTRO, false)) lifecycleScope.launch { prefs.setPermissionsIntroSeen() }
         readLink(intent)
         // Read once before the first frame so that a chosen dark or light theme does not flash the other one.
         val first = runBlocking { prefs.appearance.first() }
@@ -64,6 +69,10 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         readLink(intent)
+    }
+
+    private companion object {
+        const val EXTRA_SKIP_INTRO = "skip_intro"
     }
 
     private fun readLink(intent: Intent) {

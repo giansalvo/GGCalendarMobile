@@ -42,7 +42,7 @@ def start_app(ctx, fresh=False):
     d.wake()
     if fresh:
         d.shell(f"am force-stop {PKG}")
-    d.shell(f"am start -n {PKG}/.MainActivity")
+    d.shell(f"am start -n {PKG}/.MainActivity --ez skip_intro true")
     if d.wait(timeout=25, tag="btn_menu") is None:
         try:
             home(ctx)  # a sheet left open (e.g. the event opened from a notification) hides the bar
