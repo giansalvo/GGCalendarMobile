@@ -28,7 +28,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
-private const val WEBSITE = "https://profgusinu.altervista.org/GGCalendar/"
+private const val WEBSITE = "https://profgusinu.altervista.org/GGCalendarAndroid/"
 private const val SOURCE = "https://github.com/giansalvo/GGCalendarMobile"
 
 /** Name and date of the installed build: the version comes from the package, the date from the app manifest (set by Gradle at build time). */
