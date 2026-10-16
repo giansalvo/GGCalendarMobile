@@ -2,6 +2,7 @@
 
   python emu.py start API36Play        (stops any other emulator first; waits for the boot)
   python emu.py start API36Play --gpu host   (the PC's graphics card: faster, but it stalled the app once on 13/10/2026)
+  python emu.py start API34Play --wipe       (erases the data of the AVD first: a fresh phone, no accounts)
   python emu.py stop                   (stops every emulator)
   python emu.py list                   (the AVDs and the running emulators)
 
@@ -53,13 +54,14 @@ def keep_screen_on(serial):
     adb("shell", "wm dismiss-keyguard", serial=serial)
 
 
-def start(avd, gpu="swiftshader_indirect", wait=300):
+def start(avd, gpu="swiftshader_indirect", wait=300, wipe=False):
     stop_all()
     time.sleep(2)
     serial = f"emulator-{PORT}"
     log = open(os.path.join(os.environ.get("TEMP", "."), f"emu_{avd}.log"), "wb")
     for mode in ([gpu, "swiftshader_indirect"] if gpu != "swiftshader_indirect" else [gpu]):
-        proc = subprocess.Popen([EMULATOR, "-avd", avd, "-port", str(PORT), "-no-snapshot", "-no-boot-anim", "-gpu", mode],
+        extra = ["-wipe-data"] if wipe else []  # a fresh phone: no accounts, no apps of earlier tests
+        proc = subprocess.Popen([EMULATOR, "-avd", avd, "-port", str(PORT), "-no-snapshot", "-no-boot-anim", "-gpu", mode] + extra,
                                 stdout=log, stderr=log)
         end = time.time() + wait
         while time.time() < end:
@@ -81,7 +83,7 @@ def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else "list"
     if cmd == "start":
         gpu = sys.argv[sys.argv.index("--gpu") + 1] if "--gpu" in sys.argv else "swiftshader_indirect"
-        start(sys.argv[2], gpu=gpu)
+        start(sys.argv[2], gpu=gpu, wipe="--wipe" in sys.argv)
     elif cmd == "stop":
         stop_all()
         print("stopped")
