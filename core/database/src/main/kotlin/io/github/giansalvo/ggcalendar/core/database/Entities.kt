@@ -168,7 +168,7 @@ data class ReminderSnoozedEntity(
     val minutes: Int,
 )
 
-/** An occurrence with what is needed to compute and show its reminders, from every calendar (also hidden ones). */
+/** An occurrence with what is needed to compute and show its reminders, from a calendar (a snooze also from a hidden one). */
 data class ReminderRow(
     val eventId: String,
     val beginUtc: Long,

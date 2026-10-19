@@ -16,7 +16,7 @@ object Reminders {
     const val HORIZON_MILLIS = 48L * 60 * 60 * 1000
 
     /** Google accepts reminders up to four weeks before an event. */
-    const val MAX_MINUTES_BEFORE = 40_320L
+    const val MAX_MINUTES_BEFORE = io.github.giansalvo.ggcalendar.core.data.ReminderCalculator.MAX_MINUTES_BEFORE
 
     val SNOOZE_CHOICES = listOf(5, 10, 15, 30, 60)
 }

@@ -42,7 +42,8 @@ class ReminderEngine @Inject constructor(
         }
         val (eventId, begin, method, minutes) = parse(key) ?: return
         if (dao.fired(listOf(key)).isNotEmpty()) return
-        val row = dao.row(eventId, begin) ?: return
+        // A calendar hidden since the alarm was registered rings no more.
+        val row = dao.visibleRow(eventId, begin) ?: return
         val reminder = ReminderCalculator.remindersOf(row).firstOrNull { it.method == method && it.minutes == minutes } ?: return
         if (row.endUtc <= now) return
         dao.insertFired(ReminderFiredEntity(key, row.beginUtc - minutes * 60_000L))
@@ -118,7 +119,7 @@ class ReminderEngine @Inject constructor(
 
     companion object {
         private const val SNOOZE_PREFIX = "snooze|"
-        private const val CATCH_UP = 24L * 60 * 60 * 1000
+        private const val CATCH_UP = ReminderCalculator.CATCH_UP_MILLIS
 
         fun snoozeKey(id: Long) = SNOOZE_PREFIX + id
 

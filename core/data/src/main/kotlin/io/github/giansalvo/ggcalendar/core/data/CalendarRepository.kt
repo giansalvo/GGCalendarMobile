@@ -35,6 +35,7 @@ class CalendarRepository @Inject constructor(
     private val prefs: AppPreferences,
     private val birthdays: BirthdaySync,
     private val reminders: ReminderHooks,
+    private val visibility: CalendarVisibility,
 ) {
     val syncing: StateFlow<Boolean> get() = engine.syncing
 
@@ -99,7 +100,11 @@ class CalendarRepository @Inject constructor(
 
     suspend fun setHourHeight(height: Float) = prefs.setHourHeight(height)
 
-    suspend fun setCalendarVisible(id: String, visible: Boolean) = db.calendarDao().setVisible(id, visible)
+    /** Shows or hides a calendar; its reminders and alarms follow (see [CalendarVisibility]). */
+    suspend fun setCalendarVisible(id: String, visible: Boolean) {
+        visibility.set(id, visible)
+        reminders.changed()
+    }
 
     /** Adds an account whose access has just been granted, then syncs it. */
     suspend fun addAccount(email: String) {

@@ -20,6 +20,12 @@ data class DueReminder(val row: ReminderRow, val reminder: Reminder, val fireAt:
  * their "N minutes before" from.
  */
 object ReminderCalculator {
+    /** Google accepts reminders up to four weeks before an event. */
+    const val MAX_MINUTES_BEFORE = 40_320L
+
+    /** How far back the missed reminders are looked for (after a restart, or when a calendar is shown again). */
+    const val CATCH_UP_MILLIS = 24L * 60 * 60 * 1000
+
     /** Popup and alarm reminders of [row]: its own, or the calendar's defaults (Google's "useDefault"). */
     fun remindersOf(row: ReminderRow): List<Reminder> {
         val own = row.reminders ?: row.defaultReminders.map {

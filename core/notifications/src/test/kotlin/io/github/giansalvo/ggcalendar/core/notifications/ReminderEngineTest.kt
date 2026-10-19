@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import io.github.giansalvo.ggcalendar.core.data.AppPreferences
+import io.github.giansalvo.ggcalendar.core.data.CalendarVisibility
 import io.github.giansalvo.ggcalendar.core.data.DueReminder
 import io.github.giansalvo.ggcalendar.core.database.AccountEntity
 import io.github.giansalvo.ggcalendar.core.database.CalendarEntity
@@ -53,9 +54,17 @@ class ReminderEngineTest {
         prefs.setReminderLastCheck(System.currentTimeMillis() - 2 * 60 * minute)
         manager = context.getSystemService(NotificationManager::class.java)
         db.accountDao().insert(AccountEntity("me@x.com"))
-        // A hidden calendar still rings: hiding only cleans the views.
-        db.calendarDao().upsert(CalendarEntity(calendarId, "me@x.com", "me@x.com", "Me", "#1A73E8", "owner", isVisible = false))
+        db.calendarDao().upsert(CalendarEntity(calendarId, "me@x.com", "me@x.com", "Me", "#1A73E8", "owner"))
     }
+
+    private val visibility get() = CalendarVisibility(db)
+    private val alarmManager get() = shadowOf(context.getSystemService(android.app.AlarmManager::class.java))
+
+    private fun snoozeAlert(id: String, begin: Long, end: Long, method: ReminderMethod, minutes: Int) = ReminderAlert(
+        key = DueReminder.keyOf(id, begin, Reminder(method, minutes)),
+        eventId = id, beginUtc = begin, endUtc = end, allDay = false,
+        title = "Event $id", location = "", description = "", meetLink = null, method = method, minutes = minutes,
+    )
 
     @After
     fun tearDown() = db.close()
@@ -152,5 +161,74 @@ class ReminderEngineTest {
         db.instanceDao().insert(listOf(InstanceEntity("n", now + 600 * minute, now + 660 * minute, 0, 1, allDay = false)))
         scheduler.reschedule(now)
         assertEquals(setOf(now + 590 * minute, now + 570 * minute), alarms.scheduledAlarms.map { it.triggerAtMs }.toSet())
+    }
+
+    @Test
+    fun aHiddenCalendarNeitherRingsNorIsRegisteredNorListed() = runTest {
+        val now = System.currentTimeMillis()
+        addEvent("future", now + 100 * minute, now + 160 * minute, Reminder(ReminderMethod.ALARM, 10), Reminder(ReminderMethod.POPUP, 30))
+        addEvent("missed", now - 5 * minute, now + 55 * minute, Reminder(ReminderMethod.POPUP, 30))
+        visibility.set(calendarId, false, now)
+        scheduler.reschedule(now)
+        assertTrue(alarmManager.scheduledAlarms.isEmpty())
+        assertTrue(scheduler.upcomingAlarms(now).isEmpty())
+        engine.catchUp()
+        assertTrue(shown().isEmpty())
+        // An alarm registered earlier that still goes off finds the calendar hidden.
+        engine.onAlarm(DueReminder.keyOf("future", now + 100 * minute, Reminder(ReminderMethod.ALARM, 10)))
+        assertTrue(shown().isEmpty())
+    }
+
+    @Test
+    fun hidingCancelsTheRegisteredAlarmsAndTheSnoozes() = runTest {
+        val now = System.currentTimeMillis()
+        addEvent("x", now + 100 * minute, now + 160 * minute, Reminder(ReminderMethod.ALARM, 10))
+        engine.snooze(snoozeAlert("x", now + 100 * minute, now + 160 * minute, ReminderMethod.ALARM, 10), 5)
+        scheduler.reschedule(now)
+        assertEquals(2, alarmManager.scheduledAlarms.size)
+        visibility.set(calendarId, false, now)
+        scheduler.reschedule(now)
+        assertTrue(db.reminderDao().snoozed().isEmpty())
+        assertTrue(alarmManager.scheduledAlarms.isEmpty())
+    }
+
+    @Test
+    fun showingAgainRegistersWhatIsToComeAndDoesNotRingWhatWasMissed() = runTest {
+        val now = System.currentTimeMillis()
+        addEvent("future", now + 100 * minute, now + 160 * minute, Reminder(ReminderMethod.ALARM, 10))
+        addEvent("missed", now - 5 * minute, now + 55 * minute, Reminder(ReminderMethod.POPUP, 30))
+        visibility.set(calendarId, false, now - 60 * minute)
+        visibility.set(calendarId, true, now)
+        scheduler.reschedule(now)
+        assertEquals(listOf(now + 90 * minute), alarmManager.scheduledAlarms.map { it.triggerAtMs })
+        assertEquals(listOf("future"), scheduler.upcomingAlarms(now).map { it.eventId })
+        engine.catchUp()
+        assertTrue("the reminder that went off while hidden is not shown", shown().isEmpty())
+    }
+
+    @Test
+    fun aReminderThatGoesOffAfterShowingAgainStillRings() = runTest {
+        val now = System.currentTimeMillis()
+        visibility.set(calendarId, false, now - 60 * minute)
+        visibility.set(calendarId, true, now - 30 * minute)
+        // Created after the calendar was shown again, and past due: an ordinary missed reminder.
+        addEvent("later", now - 5 * minute, now + 55 * minute, Reminder(ReminderMethod.POPUP, 30))
+        engine.catchUp()
+        assertEquals(1, shown().size)
+    }
+
+    @Test
+    fun snoozeAskedOnAHiddenCalendarRingsAnyway() = runTest {
+        val now = System.currentTimeMillis()
+        addEvent("x", now + 100 * minute, now + 160 * minute, Reminder(ReminderMethod.ALARM, 10))
+        visibility.set(calendarId, false, now)
+        // A notification shown before still has its "Snooze" button: the user asked for another reminder.
+        engine.snooze(snoozeAlert("x", now + 100 * minute, now + 160 * minute, ReminderMethod.ALARM, 10), 5)
+        assertEquals(1, db.reminderDao().snoozed().size)
+        assertEquals(1, alarmManager.scheduledAlarms.size)
+        assertEquals(listOf(true), scheduler.upcomingAlarms(now).map { it.snoozed })
+        // Hiding it again forgets that snooze too.
+        visibility.set(calendarId, false, now)
+        assertTrue(db.reminderDao().snoozed().isEmpty())
     }
 }

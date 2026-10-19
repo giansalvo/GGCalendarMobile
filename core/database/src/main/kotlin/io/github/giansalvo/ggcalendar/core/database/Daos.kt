@@ -154,12 +154,21 @@ private const val REMINDER_ROW = """
 
 @Dao
 interface ReminderDao {
-    /** Occurrences of every calendar, hidden ones too, not ended by [endAfter] and starting by [beginUntil]. */
-    @Query("$REMINDER_ROW WHERE i.end_utc > :endAfter AND i.begin_utc <= :beginUntil")
+    /** Occurrences of the visible calendars (a hidden one neither rings nor wakes), not ended by [endAfter] and starting by [beginUntil]. */
+    @Query("$REMINDER_ROW WHERE c.is_visible = 1 AND i.end_utc > :endAfter AND i.begin_utc <= :beginUntil")
     suspend fun rows(endAfter: Long, beginUntil: Long): List<ReminderRow>
 
+    /** Occurrences of one calendar, visible or not, not ended by [endAfter] and starting by [beginUntil]. */
+    @Query("$REMINDER_ROW WHERE c.id = :calendarId AND i.end_utc > :endAfter AND i.begin_utc <= :beginUntil")
+    suspend fun rowsOfCalendar(calendarId: String, endAfter: Long, beginUntil: Long): List<ReminderRow>
+
+    /** An occurrence of any calendar: for a snooze, which the user asked for by pressing "Snooze" even if the calendar is hidden now. */
     @Query("$REMINDER_ROW WHERE i.event_id = :eventId AND i.begin_utc = :beginUtc")
     suspend fun row(eventId: String, beginUtc: Long): ReminderRow?
+
+    /** An occurrence of a visible calendar: for a planned reminder that goes off. */
+    @Query("$REMINDER_ROW WHERE c.is_visible = 1 AND i.event_id = :eventId AND i.begin_utc = :beginUtc")
+    suspend fun visibleRow(eventId: String, beginUtc: Long): ReminderRow?
 
     @Query("SELECT `key` FROM reminder_fired WHERE `key` IN (:keys)")
     suspend fun fired(keys: List<String>): List<String>
@@ -178,6 +187,10 @@ interface ReminderDao {
 
     @Query("DELETE FROM reminder_snoozed WHERE id = :id")
     suspend fun deleteSnoozed(id: Long)
+
+    /** The snoozes of the events of a calendar: they go when the calendar is hidden. */
+    @Query("DELETE FROM reminder_snoozed WHERE event_id IN (SELECT id FROM events WHERE calendar_id = :calendarId)")
+    suspend fun deleteSnoozedOfCalendar(calendarId: String)
 }
 
 @Dao

@@ -2,6 +2,10 @@
 
 Le modifiche di GGCalendar Mobile da una versione alla successiva, dalla più recente.
 
+## 1.0.2 (in preparazione)
+
+- Calendario nascosto dal menu laterale: le sveglie e i promemoria non suonano più; tornano quando si rimette la spunta
+
 ## 1.0.1 (16/10/2026)
 
 - Visualizza sveglia sopra le altre app
