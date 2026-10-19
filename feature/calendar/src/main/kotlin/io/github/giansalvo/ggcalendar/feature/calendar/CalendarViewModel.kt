@@ -9,6 +9,7 @@ import io.github.giansalvo.ggcalendar.core.auth.AuthorizationOutcome
 import io.github.giansalvo.ggcalendar.core.auth.GoogleAuthorizer
 import io.github.giansalvo.ggcalendar.core.data.AccountWithCalendars
 import io.github.giansalvo.ggcalendar.core.data.CalendarRepository
+import io.github.giansalvo.ggcalendar.core.model.Diag
 import io.github.giansalvo.ggcalendar.core.database.SyncMessageEntity
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
 import io.github.giansalvo.ggcalendar.feature.event.WeekSettings
@@ -29,6 +30,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -154,7 +158,10 @@ class CalendarViewModel @Inject constructor(
             hourHeight = g.hourHeight, dayStartHour = g.dayStartHour, dimPast = g.dimPast, firstDay = WeekSettings.firstDay, eventDays = days, pending = pending,
             selected = t.selected, editing = t.editing, pendingMove = t.pendingMove, busy = t.busy, addingAccount = t.addingAccount, accountTimeout = t.accountTimeout, consent = t.consent, error = t.error, noCalendar = t.noCalendar, message = message,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CalendarUiState())
+    }.onStart { Diag.log { "vm state upstream START" } }
+        .onEach { s -> Diag.log { "vm state out accounts=${s.accounts.size} [${s.accounts.joinToString { a -> Diag.who(a.email) + ":" + a.calendars.size }}] syncing=${s.syncing} adding=${Diag.who(s.addingAccount)} instances=${s.instances.size}" } }
+        .onCompletion { Diag.log { "vm state upstream STOP cause=${it?.javaClass?.simpleName}" } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CalendarUiState())
 
     init {
         repository.syncNow()
@@ -278,6 +285,7 @@ class CalendarViewModel @Inject constructor(
     fun chooseAccountIntent(): Intent = authorizer.chooseAccountIntent()
 
     fun onAccountChosen(resultCode: Int, data: Intent?) {
+        Diag.log { "vm onAccountChosen result=$resultCode hasData=${data != null}" }
         if (resultCode != Activity.RESULT_OK) return
         launchAction {
             authorize(authorizer.accountFromPicker(data))
@@ -290,6 +298,7 @@ class CalendarViewModel @Inject constructor(
     fun consentLaunched() = transient.update { it.copy(consent = null) }
 
     fun onConsentResult(resultCode: Int, data: Intent?) {
+        Diag.log { "vm onConsentResult result=$resultCode hasData=${data != null} pendingEmail=${Diag.who(consentEmail)}" }
         val email = consentEmail ?: return
         consentEmail = null
         if (resultCode != Activity.RESULT_OK) return
@@ -309,6 +318,7 @@ class CalendarViewModel @Inject constructor(
      * consent), or also takes the app's access away from the Google account, which holds on every device that uses it.
      */
     fun removeAccount(email: String, revokeEverywhere: Boolean = false) = launchAction {
+        Diag.log { "vm removeAccount ${Diag.who(email)} revoke=$revokeEverywhere" }
         repository.removeAccount(email)
         if (revokeEverywhere) authorizer.revoke(email)
     }
@@ -331,8 +341,12 @@ class CalendarViewModel @Inject constructor(
                 return
             }
             when (outcome) {
-                is AuthorizationOutcome.Authorized -> repository.addAccount(outcome.email)
+                is AuthorizationOutcome.Authorized -> {
+                    Diag.log { "vm authorize outcome=Authorized ${Diag.who(outcome.email)}" }
+                    repository.addAccount(outcome.email)
+                }
                 is AuthorizationOutcome.NeedsConsent -> {
+                    Diag.log { "vm authorize outcome=NeedsConsent ${Diag.who(outcome.email)}" }
                     consentEmail = outcome.email
                     transient.update { it.copy(consent = outcome) }
                 }

@@ -1,6 +1,7 @@
 package io.github.giansalvo.ggcalendar.core.data
 
 import android.content.Context
+import androidx.room.InvalidationTracker
 import androidx.room.Room
 import androidx.room.withTransaction
 import dagger.Module
@@ -13,6 +14,7 @@ import io.github.giansalvo.ggcalendar.core.database.GGCalendarDatabase
 import io.github.giansalvo.ggcalendar.core.database.InstanceRow
 import io.github.giansalvo.ggcalendar.core.database.SyncMessageEntity
 import io.github.giansalvo.ggcalendar.core.model.CalendarInfo
+import io.github.giansalvo.ggcalendar.core.model.Diag
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +22,7 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import java.time.Instant
 import java.time.LocalDate
 import javax.inject.Inject
@@ -40,7 +43,10 @@ class CalendarRepository @Inject constructor(
     val syncing: StateFlow<Boolean> get() = engine.syncing
 
     val accounts: Flow<List<AccountWithCalendars>> =
-        combine(db.accountDao().observeAll(), db.calendarDao().observeAll()) { accounts, calendars ->
+        combine(
+            db.accountDao().observeAll().onEach { Diag.log { "room accounts emits n=${it.size} [${it.joinToString { a -> Diag.who(a.email) }}]" } },
+            db.calendarDao().observeAll().onEach { Diag.log { "room calendars emits n=${it.size}" } },
+        ) { accounts, calendars ->
             accounts.map { a ->
                 AccountWithCalendars(
                     a.email,
@@ -49,7 +55,7 @@ class CalendarRepository @Inject constructor(
                     },
                 )
             }
-        }
+        }.onEach { list -> Diag.log { "repository accounts out n=${list.size} [${list.joinToString { a -> Diag.who(a.email) + ":" + a.calendars.size }}]" } }
 
     /** The "Birthdays" calendar of the phone's contacts, when turned on. */
     val birthdayCalendar: Flow<CalendarInfo?> = db.calendarDao().observeAll().map { all ->
@@ -108,7 +114,9 @@ class CalendarRepository @Inject constructor(
 
     /** Adds an account whose access has just been granted, then syncs it. */
     suspend fun addAccount(email: String) {
+        Diag.log { "repository addAccount begin ${Diag.who(email)}" }
         db.accountDao().insert(AccountEntity(email))
+        Diag.log { "repository addAccount inserted ${Diag.who(email)}" }
         scheduler.syncNow()
     }
 
@@ -118,10 +126,12 @@ class CalendarRepository @Inject constructor(
      */
     suspend fun removeAccount(email: String) {
         val prefix = email.replace("!", "!!").replace("%", "!%").replace("_", "!_") + "|"
+        Diag.log { "repository removeAccount begin ${Diag.who(email)}" }
         db.withTransaction {
             db.outboxDao().discardForAccount(prefix)
             db.accountDao().delete(email)
         }
+        Diag.log { "repository removeAccount done ${Diag.who(email)}" }
         reminders.changed()
     }
 
@@ -141,4 +151,12 @@ object DatabaseModule {
         Room.databaseBuilder(context, GGCalendarDatabase::class.java, GGCalendarDatabase.NAME)
             .addMigrations(GGCalendarDatabase.MIGRATION_1_2, GGCalendarDatabase.MIGRATION_2_3, GGCalendarDatabase.MIGRATION_3_4, GGCalendarDatabase.MIGRATION_4_5)
             .build()
+            .also { db ->
+                // A diag build only: says when Room tells the observers that a table changed, whether or not a flow then emits.
+                if (Diag.sink != null) {
+                    db.invalidationTracker.addObserver(object : InvalidationTracker.Observer("accounts", "calendars", "events", "instances") {
+                        override fun onInvalidated(tables: Set<String>) = Diag.log { "room invalidated $tables" }
+                    })
+                }
+            }
 }

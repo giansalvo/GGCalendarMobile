@@ -1,5 +1,6 @@
 package io.github.giansalvo.ggcalendar.core.data
 
+import io.github.giansalvo.ggcalendar.core.model.Diag
 import android.content.Context
 import android.os.Build
 import androidx.hilt.work.HiltWorker
@@ -29,9 +30,11 @@ class SyncWorker @AssistedInject constructor(
     private val birthdays: BirthdaySync,
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
+        Diag.log { "worker begin attempt=$runAttemptCount" }
         engine.syncAll()
         runCatching { birthdays.sync() }
         reminders.changed()
+        Diag.log { "worker end" }
         return Result.success()
     }
 }

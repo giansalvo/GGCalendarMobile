@@ -8,6 +8,7 @@ import io.github.giansalvo.ggcalendar.core.database.EventEntity
 import io.github.giansalvo.ggcalendar.core.database.GGCalendarDatabase
 import io.github.giansalvo.ggcalendar.core.database.SyncMessageEntity
 import io.github.giansalvo.ggcalendar.core.model.CalendarInfo
+import io.github.giansalvo.ggcalendar.core.model.Diag
 import io.github.giansalvo.ggcalendar.core.network.GoogleApiException
 import io.github.giansalvo.ggcalendar.core.network.GoogleCalendarApi
 import io.github.giansalvo.ggcalendar.core.network.GoogleSyncPage
@@ -50,11 +51,19 @@ class SyncEngine @Inject constructor(
 
     suspend fun syncAll() = mutex.withLock {
         _syncing.value = true
+        Diag.log { "sync begin" }
         try {
             updateWindowLocked(null, null)
-            accounts.getAll().forEach { syncAccount(it.email) }
+            val all = accounts.getAll()
+            Diag.log { "sync accounts in database n=${all.size} [${all.joinToString { Diag.who(it.email) }}]" }
+            all.forEach {
+                Diag.log { "sync account begin ${Diag.who(it.email)}" }
+                syncAccount(it.email)
+                Diag.log { "sync account end ${Diag.who(it.email)}" }
+            }
         } finally {
             _syncing.value = false
+            Diag.log { "sync end" }
         }
     }
 

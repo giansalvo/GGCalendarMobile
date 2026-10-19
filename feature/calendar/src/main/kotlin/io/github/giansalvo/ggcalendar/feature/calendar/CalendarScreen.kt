@@ -73,6 +73,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -81,6 +82,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -96,8 +98,11 @@ import io.github.giansalvo.ggcalendar.feature.event.SeriesScopeDialog
 import io.github.giansalvo.ggcalendar.feature.settings.SettingsScreen
 import io.github.giansalvo.ggcalendar.feature.event.occurrence
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.giansalvo.ggcalendar.core.model.CalendarInfo
+import io.github.giansalvo.ggcalendar.core.model.Diag
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
@@ -110,6 +115,16 @@ data class EventLink(val eventId: String, val beginUtc: Long)
 @Composable
 fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, viewModel: CalendarViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // Diag build only (see Diag): what the screen sees of the accounts, and when its lifecycle moves.
+    LaunchedEffect(state.accounts) {
+        Diag.log { "ui accounts=${state.accounts.size} [${state.accounts.joinToString { a -> Diag.who(a.email) + ":" + a.calendars.size }}]" }
+    }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event -> Diag.log { "ui lifecycle $event" } }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     LaunchedEffect(link) {
         if (link != null) {
             viewModel.openLink(link)
@@ -117,6 +132,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
         }
     }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
+    LaunchedEffect(drawerState) { snapshotFlow { drawerState.currentValue }.collect { Diag.log { "ui drawer=$it" } } }
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
     var miniOpen by rememberSaveable { mutableStateOf(false) }
@@ -129,6 +145,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
     var searchOpen by rememberSaveable { mutableStateOf(false) }
 
     val pickAccount = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        Diag.log { "ui pickAccount result=${it.resultCode}" }
         viewModel.onAccountChosen(it.resultCode, it.data)
     }
     val consent = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
@@ -528,6 +545,9 @@ private fun CalendarDrawer(
     onExport: () -> Unit,
     onAbout: () -> Unit,
 ) {
+    LaunchedEffect(state.accounts) {
+        Diag.log { "drawer composed accounts=${state.accounts.size} [${state.accounts.joinToString { a -> Diag.who(a.email) + ":" + a.calendars.size }}]" }
+    }
     ModalDrawerSheet {
         Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 12.dp)) {
             Text(

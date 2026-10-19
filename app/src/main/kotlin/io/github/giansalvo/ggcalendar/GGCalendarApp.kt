@@ -11,6 +11,7 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
 import io.github.giansalvo.ggcalendar.core.data.CalendarRepository
+import io.github.giansalvo.ggcalendar.core.model.Diag
 import io.github.giansalvo.ggcalendar.core.notifications.ReminderStartup
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +34,10 @@ class GGCalendarApp : Application(), Configuration.Provider {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     override fun onCreate() {
+        if (BuildConfig.DIAG) {
+            Diag.sink = { android.util.Log.d("GGCalDiag", "[${Thread.currentThread().name}] $it") }
+            Diag.log { "process start pid=${android.os.Process.myPid()} version=${BuildConfig.VERSION_NAME}" }
+        }
         super.onCreate()
         // A direct boot aware component also starts the app before the first unlock, when the normal storage (Room,
         // WorkManager) does not exist yet: the setup waits for the unlock.

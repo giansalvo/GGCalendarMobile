@@ -24,6 +24,11 @@ android {
         targetSdk = 36
         versionCode = 15
         versionName = "1.0.2"
+        // A diagnostic build (-Pdiag=true, with --no-configuration-cache) writes log lines tagged GGCalDiag about the accounts and
+        // the side menu; a normal build writes none.
+        val diag = providers.gradleProperty("diag").orNull == "true"
+        buildConfigField("boolean", "DIAG", diag.toString())
+        if (diag) versionNameSuffix = "-diag"
         // Shown in the About card. Fixed when Gradle configures the build: a release is built with --no-configuration-cache.
         manifestPlaceholders["buildDate"] = LocalDate.now().toString()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -53,7 +58,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
     androidResources { generateLocaleConfig = true }
 }
 

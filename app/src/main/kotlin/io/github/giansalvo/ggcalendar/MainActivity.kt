@@ -19,6 +19,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.giansalvo.ggcalendar.core.data.AppPreferences
+import io.github.giansalvo.ggcalendar.core.model.Diag
 import io.github.giansalvo.ggcalendar.core.notifications.Reminders
 import io.github.giansalvo.ggcalendar.feature.calendar.CalendarScreen
 import io.github.giansalvo.ggcalendar.feature.calendar.EventLink
@@ -36,6 +37,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        Diag.log { "activity onCreate id=${System.identityHashCode(this)} savedState=${savedInstanceState != null} action=${intent.action}" }
         enableEdgeToEdge()
         // The test runs start the app with `--ez skip_intro true`: the first-start splash and questions count as seen, so that
         // a fresh install goes straight to the calendar. A normal start never has the extra.
@@ -65,8 +67,39 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        Diag.log { "activity onStart id=${System.identityHashCode(this)}" }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Diag.log { "activity onResume id=${System.identityHashCode(this)}" }
+    }
+
+    override fun onPause() {
+        Diag.log { "activity onPause id=${System.identityHashCode(this)}" }
+        super.onPause()
+    }
+
+    override fun onStop() {
+        Diag.log { "activity onStop id=${System.identityHashCode(this)}" }
+        super.onStop()
+    }
+
+    override fun onDestroy() {
+        Diag.log { "activity onDestroy id=${System.identityHashCode(this)} finishing=$isFinishing config=$isChangingConfigurations" }
+        super.onDestroy()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        Diag.log { "activity focus=$hasFocus" }
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        Diag.log { "activity onNewIntent action=${intent.action}" }
         setIntent(intent)
         readLink(intent)
     }
