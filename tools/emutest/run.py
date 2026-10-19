@@ -21,7 +21,7 @@ import harness  # noqa: E402
 import settings_state  # noqa: E402
 from adbx import Device  # noqa: E402
 
-MODULES = ["cases_ab", "cases_c", "cases_d", "cases_g", "cases_h"]
+MODULES = ["cases_ab", "cases_c", "cases_d", "cases_g", "cases_hidden", "cases_h"]
 
 
 def load_cases():

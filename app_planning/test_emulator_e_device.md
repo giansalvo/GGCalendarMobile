@@ -128,6 +128,9 @@ Eventi creati a 3-5 minuti da ora, con promemoria a 1-2 minuti.
 | T63 | Avviso nel dettaglio se le notifiche sono bloccate | Appare e rimanda alle impostazioni | S (revoca permesso) |
 | T64 | Promemoria email | Il promemoria `email` si salva nell'evento (non si verifica la posta) | A |
 | T65 | Sveglia sincronizzata (`ggAlarm`) | Dopo round trip il promemoria resta una sveglia, non una notifica | A |
+| T66 | Calendario nascosto dal menu laterale (1.0.2) | Un promemoria che scatta mentre è nascosto non compare; non compare nemmeno quando si rimette la spunta | A (`cases_hidden.py`, circa 10 minuti) |
+| T67 | Calendario rimostrato prima dell'ora (1.0.2) | Il promemoria suona: l'allarme è stato registrato di nuovo | A |
+| T68 | "Posticipa" premuto su una notifica di un calendario nascosto nel frattempo (1.0.2) | La notifica resta a schermo dopo il nascondimento; lo snooze si registra e suona dopo 10 minuti | A (circa 15 minuti) |
 
 ### H. Rete e conflitti
 | ID | Cosa si prova | Esito atteso | Auto |
@@ -198,6 +201,9 @@ Cartella `tools/emutest/` (Python 3 con Pillow, adb dell'SDK, nessuna altra dipe
 | 15/10/2026 | API 34 (emulatore, inglese) | 1.0.1 (in preparazione) | impostazioni unificate e schermata iniziale dei permessi | T13, T14, T17 e T19 passano con le opzioni di notifiche e sveglie dentro Impostazioni (T19 ora cambia la durata della sveglia e salva; lo script non parte più dal bordo dello schermo, dove scatta il gesto indietro). Dopo l'aggiornamento compare una volta "Before you start" con notifiche, sveglia sopra le altre app e batteria; dopo "Done" non ricompare. |
 | 15/10/2026 | API 34 (emulatore, inglese) | 1.0.1 (in preparazione) | permesso e banner | In Impostazioni → Notifiche e sveglie compare la riga "Alarm over other apps" con Fix, che apre "Display over other apps"; aggiungere una sveglia nell'editor non chiede più nulla (decisione del 15/10/2026); banner leggibile in tema scuro. |
 | 14/10/2026 | API 34 (Android 14, google_apis_playstore x86_64, inglese) | 0.4.7 | modalità completa in tre giri: 63 casi passano, T34 e T74 saltati, T51D NA | Primo giro (T01–T44 passano, poi 6 fallimenti): T45–T48, T50 e le sveglie fallivano perché un evento nuovo, creato dopo la modifica di un'occorrenza di serie (T43), chiedeva "Modifica evento ricorrente" e non veniva scritto (**difetto dell'app**, corretto in 0.4.7: l'editor non azzerava `occurrence`). Poi problemi dello script: l'app Google Calendar dell'immagine Play Store mostrava le sue notifiche per gli stessi eventi (ora disattivata sugli emulatori con `pm disable-user`); T51D, variante da telefono, durava sei minuti e faceva scadere le sveglie di T52, T57 e T59 (ora NA sugli emulatori); il login falliva in silenzio su Android 14 (il tocco sull'indirizzo non sceglie la riga: ora tocca anche il pallino). Il login ora stampa un messaggio se non compaiono calendari. T01–T42 sono stati eseguiti sulla build prima della correzione dell'editor; T43–T48 e T50–T82 dopo. |
+| 19/10/2026 | API 34 (google_apis_playstore, italiano) | 1.0.2 (in preparazione) | calendari nascosti: sveglie e promemoria | T66 passa (non compare nulla mentre è nascosto, e niente al ritorno), T67 passa (rimostrato prima dell'ora suona). T68: passa (con il calendario nascosto la notifica resta a schermo, Posticipa registra lo snooze e dopo 10 minuti suona lo stesso). Test unitari: 11 in `ReminderEngineTest` (nascosto non suona né si registra né è in elenco; nascondere cancella allarmi e snooze; rimostrare registra i futuri e non suona i persi; snooze esplicito suona anche a calendario nascosto). Lo script apre il pannello delle notifiche e, con tre notifiche raggruppate, i pulsanti restano nascosti: T68 pulisce le altre prima. |
+| 19/10/2026 | API 36 (google_apis_playstore, inglese) | 1.0.2 (in preparazione) | calendari nascosti: sveglie e promemoria | T66, T67 e T68 passano (T68 ~13 minuti). Il primo tentativo era stato saltato ("no Google account in the app"): lo script non riconosceva l'account già presente nell'app, non era un difetto dell'app; rifatta, 3 su 3. |
+| 19/10/2026 | Samsung A56 (API 36) | 1.0.1 | Doze forzato | Non riuscito, come previsto dal piano: con `dumpsys battery unplug` e `dumpsys deviceidle force-idle` Android resta in `INACTIVE` ("Unable to go deep idle"). Il caso automatico è stato tolto dal registro dei test; resta la prova vera (TM101 in `plan_V2.md`: telefono scollegato, fermo, schermo spento, un'ora; script `tools/emutest/doze_real_setup.py`). Ha anche lasciato due eventi di prova nel calendario, poi tolti a mano con lo script di pulizia. |
 
 **Difetti dell'app trovati dai test (13/10/2026)**
 1. Prima di Android 12 il sync su richiesta falliva (corretto in 0.4.1).
@@ -286,6 +292,9 @@ Totali: A 54 pass, 3 skip (57 casi); B (API 30) 3 pass (T01, T02, T09), il resto
 | T63 | Avviso nel dettaglio se le notifiche sono bloccate | M | — | bloc. | — | — | ✔ 0.4.7 | bloc. |
 | T64 | Promemoria email | A | ✔ | bloc. | ✔ 0.4.7 | ✔ | ✔ | bloc. |
 | T65 | Sveglia sincronizzata (ggAlarm) | A | ✔ | bloc. | ✔ 0.4.7 | ✔ | — | bloc. |
+| T66 | Calendario nascosto: un promemoria che scatta nel frattempo non compare, nemmeno al ritorno | A | — | — | ✔ 1.0.2 | ✔ 1.0.2 | — | — |
+| T67 | Calendario rimostrato prima dell'ora: il promemoria suona | A | — | — | ✔ 1.0.2 | ✔ 1.0.2 | — | — |
+| T68 | Posticipa su una notifica di un calendario nascosto: lo snooze suona lo stesso | A | — | — | ✔ 1.0.2 | ✔ 1.0.2 | — | — |
 | T70 | Modifica offline (svc wifi disable; svc data disable) | A | ✔ | bloc. | ✔ 0.4.7 | ✔ | ✖ | bloc. |
 | T71 | Assenza di rete all'avvio | A | ✔ | bloc. | ✔ 0.4.7 | ✔ | — | bloc. |
 | T72 | Conflitto: modifica offline sull'emulatore e modifica dello stesso eve | M | — | bloc. | — | — | ✔ 0.4.8 | bloc. |
