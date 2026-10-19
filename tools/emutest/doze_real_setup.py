@@ -3,7 +3,8 @@
   python doze_real_setup.py --serial RZGYB28HPTJ
 
 Nothing is waited for and nothing is cleaned up: the phone is then unplugged and left alone (still, screen off) for the hour,
-and doze_real_read.py reads the result when it is plugged in again. The events are removed afterwards with doze_real_read.py --clean.
+and doze_real_read.py reads the result when it is plugged in again. The events carry the tag of this run (saved in the state file);
+doze_real_read.py --clean removes only those, so other runs on the same account are never touched.
 """
 import argparse
 import json
@@ -27,6 +28,9 @@ a = ap.parse_args()
 
 d = Device(a.serial, os.path.join(os.path.dirname(STATE), "doze_real_shots"))
 ctx = harness.Ctx(d, a.account, None)
+# the screen stays on while the events are created, and the phone's own setting is put back before the end
+stay_on = d.shell("settings get global stay_on_while_plugged_in").strip() or "0"
+d.shell("svc power stayon true")
 d.shell("input keyevent 224")
 F.start_app(ctx)
 # a bigger log buffer keeps the app's lines for the whole hour; the battery history gets the wake locks too
@@ -36,7 +40,8 @@ t0 = G.now(ctx)
 pop = G.create_with_reminders(ctx, "z_popup", "zpopup", [("POPUP", a.popup_min * 60)], t0)
 alm = G.create_with_reminders(ctx, "z_alarm", "zalarm", [("ALARM", a.alarm_min * 60)], t0)
 F.home(ctx)
-out = dict(serial=a.serial, popup_title=pop["title"], popup_due=pop["fires"][0].isoformat(), alarm_title=alm["title"],
+d.shell(f"settings put global stay_on_while_plugged_in {stay_on}")
+out = dict(serial=a.serial, run_tag=ctx.run_tag, popup_title=pop["title"], popup_due=pop["fires"][0].isoformat(), alarm_title=alm["title"],
            alarm_due=alm["fires"][0].isoformat(), set_up_at=G.now(ctx).isoformat())
 os.makedirs(os.path.dirname(STATE), exist_ok=True)
 with open(STATE, "w", encoding="utf-8") as f:

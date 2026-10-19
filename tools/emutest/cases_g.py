@@ -37,11 +37,20 @@ def create_with_reminders(ctx, key, title, specs, t0=None):
     specs: [(METHOD, seconds after t0)] (t0 defaults to now). Records ctx.state[key] = {title, fires: [datetime]}."""
     t0 = t0 or now(ctx)
     fires = []
+    # The editor proposes the next full hour (after 23:00 that is midnight, on the next day) and the day is picked as today plus
+    # an offset. The event must start after its last reminder is due (a reminder cannot fall after its event), so the offset is
+    # the smallest one that puts the start more than two minutes after the latest due time.
+    clock = now(ctx)
+    proposal = (clock.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)).time()
+    last = t0 + timedelta(seconds=max(after for _, after in specs))
+    offset = 1
+    while datetime.combine(clock.date() + timedelta(days=offset), proposal) <= last + timedelta(minutes=2):
+        offset += 1
 
     def reminders():
-        # the event starts tomorrow at the hour the editor proposed when it was opened
+        # the event starts on the chosen day, at the hour the editor proposed when it was opened
         opened = ctx.state["editor_opened_at"]
-        start = opened.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1, days=1)
+        start = datetime.combine(opened.date() + timedelta(days=offset), (opened.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)).time())
         out = []
         for method, after in specs:
             target = t0 + timedelta(seconds=after)
@@ -50,7 +59,7 @@ def create_with_reminders(ctx, key, title, specs, t0=None):
             fires.append(start - timedelta(minutes=minutes))
         return out
 
-    full = F.create_event(ctx, title, reminders=reminders, day_offset=1)
+    full = F.create_event(ctx, title, reminders=reminders, day_offset=offset)
     ctx.state[key] = dict(title=full, fires=sorted(fires))
     return ctx.state[key]
 

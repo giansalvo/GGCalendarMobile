@@ -320,6 +320,8 @@ def create_event(ctx, title, *, all_day=False, location=None, description=None, 
     """Creates an event from the + button. Returns the full title. `reminders`: [(METHOD, minutes)]."""
     d = ctx.d
     full = title if title.startswith(TEST_PREFIX) else f"{TEST_PREFIX} {title}"
+    if not full.endswith(ctx.run_tag):
+        full = f"{full} {ctx.run_tag}"  # the tag of this run: the cleanup finds its own events by it
     home(ctx)
     open_editor_new(ctx)
     ctx.check(calendar_in_editor_is_test_account(ctx), f"the editor does not show {ctx.account_email}: refusing to write elsewhere")
@@ -476,13 +478,14 @@ def delete_event(ctx, title, scope="ALL"):
 
 
 def cleanup(ctx, limit=40):
-    """Deletes every event whose title starts with the prefix (and only those). Returns how many."""
+    """Deletes the events this run created: title starting with the prefix and carrying the tag of the run (and only those).
+    Events of other runs, even with the same prefix, are never touched. Returns how many."""
     d = ctx.d
     removed = 0
     skipped = 0  # rows that cannot be changed from the app (read-only): the next one is tried instead of stopping
     for _ in range(limit):
-        nodes = search(ctx, TEST_PREFIX)
-        hits = result_titles(ctx, nodes)
+        nodes = search(ctx, ctx.run_tag)
+        hits = [n for n in result_titles(ctx, nodes) if ctx.run_tag in n.text]
         if skipped >= len(hits):
             close_search(ctx)
             break

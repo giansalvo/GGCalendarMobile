@@ -1,4 +1,5 @@
 """Case registry and context for the emulator tests."""
+import random
 import time
 import traceback
 
@@ -27,8 +28,11 @@ def case(cid, group, title, account=False, api_min=0, api_max=999, slow=False):
 
 
 class Ctx:
-    def __init__(self, device, account_email, apk, apk_prev=None):
+    def __init__(self, device, account_email, apk, apk_prev=None, run_tag=None):
         self.d = device
+        # Every event this run creates ends with this tag, and the cleanup deletes only the events carrying it: several runs
+        # (an emulator and a phone, on the same account) can work at the same time without deleting each other's events.
+        self.run_tag = run_tag or "r" + "".join(random.choice("0123456789abcdef") for _ in range(4))
         self.account_email = account_email
         self.apk = apk
         self.apk_prev = apk_prev
