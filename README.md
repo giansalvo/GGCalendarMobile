@@ -13,8 +13,8 @@
 
 ---
 
-> **Stato:** versione 1.0.0. L'APK firmato è nella pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases). Il piano e i test sono in [app_planning/](app_planning/).
-> **Status:** version 1.0.0. The signed APK is on the [Releases](https://github.com/giansalvo/GGCalendarMobile/releases) page. Planning and test records are in [app_planning/](app_planning/) (Italian).
+> **Stato:** versione 1.0.0. L'APK firmato è nella pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases).
+> **Status:** version 1.0.0. The signed APK is on the [Releases](https://github.com/giansalvo/GGCalendarMobile/releases) page.
 
 ## Installazione e primo accesso
 
@@ -79,7 +79,6 @@ keyPassword=...
 | `core/network` | Client delle Google Calendar API |
 | `core/auth` | Accesso Google (scelta dell'account e autorizzazione) |
 | `feature/calendar` | Schermata principale: menu laterale e viste |
-| `app_planning` | Piano di progetto e mockup |
 
 ## Privacy
 
