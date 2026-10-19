@@ -38,3 +38,6 @@ Thumbs.db
 
 __pycache__/
 *.pyc
+
+# Planning documents: kept only on this computer, in their own local Git repository (no remote)
+app_planning/
