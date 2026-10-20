@@ -59,6 +59,9 @@ class ReminderNotifier @Inject constructor(@ApplicationContext private val conte
         val builder = base(alert, if (quiet) CHANNEL_ALARMS_QUIET else CHANNEL_ALARMS)
             .setPriority(if (quiet) NotificationCompat.PRIORITY_LOW else NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
+            // A group of its own: with a reminder already in the shade Android 16 folds two notifications of the app into an automatic
+            // group ("Aggregate_AlertingSection") and the full-screen intent of the alarm is not launched (seen on the API 36 emulator).
+            .setGroup("alarm_" + alert.notificationId)
             .setOngoing(true)
             .setContentIntent(screen)
             .addAction(0, context.getString(R.string.snooze_minutes, AppPreferences.DEFAULT_SNOOZE_MINUTES), snoozeIntent(alert, AppPreferences.DEFAULT_SNOOZE_MINUTES))
