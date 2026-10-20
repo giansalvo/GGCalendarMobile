@@ -23,8 +23,8 @@ google-services.json
 *.aab
 *.apks
 
-# Risultati dei test sull'emulatore: screenshot e report con eventi reali del calendario, mai pubblicati
-/tools/emutest/runs/
+# Strumenti di test (script, risultati con screenshot di eventi reali): solo in locale, in un repository Git annidato senza remote
+/tools/
 
 # Screenshot di riferimento con dati personali (account, eventi reali)
 img/*.jpeg
