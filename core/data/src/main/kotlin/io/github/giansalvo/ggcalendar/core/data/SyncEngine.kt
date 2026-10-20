@@ -258,7 +258,9 @@ class SyncEngine @Inject constructor(
         val range = RecurrenceExpander.Window(days.from.atStartOfDay(zone).toInstant(), days.to.atStartOfDay(zone).toInstant())
         val exceptions = if (event.rrule != null) events.getExceptions(eventId) else emptyList()
         instances.deleteForEvent(eventId)
-        instances.insert(RecurrenceExpander.expand(event, exceptions, range, zone))
+        val expanded = RecurrenceExpander.expand(event, exceptions, range, zone)
+        instances.insert(expanded)
+        Diag.log { "engine recompute event=${eventId.take(8)} window=${days.from}..${days.to} rows=${expanded.size} first=${expanded.firstOrNull()?.let { "${it.startDay}/${it.beginUtc}" }}" }
         exceptions.forEach { ex ->
             instances.deleteForEvent(ex.id)
             RecurrenceExpander.single(ex, zone)?.let { instances.insert(listOf(it)) }

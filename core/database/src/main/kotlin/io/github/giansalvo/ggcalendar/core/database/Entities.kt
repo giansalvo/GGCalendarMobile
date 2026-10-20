@@ -17,7 +17,18 @@ data class AccountEntity(
     @ColumnInfo(name = "added_at") val addedAt: Long = System.currentTimeMillis(),
 )
 
-/** Google calendars have id "{email}|{googleId}" as in the desktop app; local calendars (M6) "local:{uuid}" and no account. */
+/** What a calendar is made of: where its events come from and whether they travel to Google. */
+object CalendarKind {
+    const val GOOGLE = "google"
+    const val LOCAL = "local"
+    const val SUBSCRIPTION = "subscription"
+    const val BIRTHDAYS = "birthdays"
+}
+
+/**
+ * Google calendars have id "{email}|{googleId}" as in the desktop app; the others have no account: local calendars
+ * "local:{uuid}", subscriptions "sub:{uuid}", the birthdays "local:birthdays". Only Google calendars have an outbox and a sync.
+ */
 @Entity(
     tableName = "calendars",
     foreignKeys = [ForeignKey(AccountEntity::class, ["email"], ["account_email"], onDelete = ForeignKey.CASCADE)],
@@ -37,8 +48,19 @@ data class CalendarEntity(
     @ColumnInfo(name = "sort_order") val sortOrder: Int = 0,
     @ColumnInfo(name = "sync_token") val syncToken: String? = null,
     @ColumnInfo(name = "last_synced_at") val lastSyncedAt: Long? = null,
+    @ColumnInfo(name = "kind", defaultValue = "google") val kind: String = CalendarKind.GOOGLE,
+    /** Subscriptions: the address (a secret for private calendars), the hash and ETag of the last copy, and how it went. */
+    @ColumnInfo(name = "source_url") val sourceUrl: String? = null,
+    @ColumnInfo(name = "source_hash") val sourceHash: String? = null,
+    @ColumnInfo(name = "source_etag") val sourceEtag: String? = null,
+    @ColumnInfo(name = "last_fetched_at") val lastFetchedAt: Long? = null,
+    @ColumnInfo(name = "last_error") val lastError: String? = null,
+    @ColumnInfo(name = "refresh_minutes") val refreshMinutes: Int? = null,
 ) {
     val canWrite: Boolean get() = accessRole == "owner" || accessRole == "writer"
+
+    /** Its events are sent to Google and read back from it. */
+    val syncsWithGoogle: Boolean get() = kind == CalendarKind.GOOGLE
 }
 
 /**

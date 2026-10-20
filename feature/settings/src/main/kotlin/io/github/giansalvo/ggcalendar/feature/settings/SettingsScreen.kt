@@ -15,6 +15,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -27,6 +28,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.WorkOutline
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -53,6 +56,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -128,6 +132,14 @@ fun SettingsScreen(onClose: () -> Unit, viewModel: SettingsViewModel = hiltViewM
                         WeekStartRow(draft.weekStart) { draft = draft.copy(weekStart = it) }
                         DayStartRow(draft.dayStartHour) { draft = draft.copy(dayStartHour = it) }
                         SwitchRow(stringResource(R.string.settings_dim_past), stringResource(R.string.settings_dim_past_hint), draft.dimPast, tag = "settings_dim_past") { draft = draft.copy(dimPast = it) }
+                        TwoChoiceRow(
+                            Icons.Outlined.WorkOutline, stringResource(R.string.settings_status), stringResource(R.string.settings_status_hint),
+                            stringResource(R.string.settings_status_busy), stringResource(R.string.settings_status_free), draft.defaultBusy, "settings_status",
+                        ) { draft = draft.copy(defaultBusy = it) }
+                        TwoChoiceRow(
+                            Icons.Outlined.Lock, stringResource(R.string.settings_visibility), stringResource(R.string.settings_visibility_hint),
+                            stringResource(R.string.settings_visibility_public), stringResource(R.string.settings_visibility_private), !draft.defaultPrivate, "settings_visibility",
+                        ) { draft = draft.copy(defaultPrivate = !it) }
                         SwitchRow(stringResource(R.string.settings_birthdays), stringResource(R.string.settings_birthdays_hint), draft.birthdays, tag = "settings_birthdays") { on ->
                             // The contacts are read only with the permission, asked when the user turns this on.
                             if (on && !viewModel.contactsGranted) askContacts.launch(Manifest.permission.READ_CONTACTS) else draft = draft.copy(birthdays = on)
@@ -223,6 +235,29 @@ private fun DayStartRow(hour: Int, onChange: (Int) -> Unit) {
 internal fun weekOf(day: DayOfWeek): DayOfWeek = if (day in WEEK_STARTS) day else DayOfWeek.MONDAY
 
 private val WEEK_STARTS = listOf(DayOfWeek.MONDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY)
+
+/** A setting with an icon and two exclusive choices side by side; [first] says the first one is on. */
+@Composable
+private fun TwoChoiceRow(icon: ImageVector, title: String, hint: String, firstLabel: String, secondLabel: String, first: Boolean, tag: String, onChange: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.Top) {
+        Icon(icon, contentDescription = null, Modifier.padding(top = 2.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(Modifier.padding(start = 16.dp)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+            Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                listOf(true to firstLabel, false to secondLabel).forEach { (isFirst, label) ->
+                    Row(
+                        Modifier.testTag(tag + (if (isFirst) "_first" else "_second")).selectable(selected = first == isFirst, role = Role.RadioButton) { onChange(isFirst) }.padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = first == isFirst, onClick = null)
+                        Text(label, Modifier.padding(start = 8.dp), style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+            }
+        }
+    }
+}
 
 @Composable
 private fun WeekStartRow(selected: DayOfWeek, onChange: (DayOfWeek) -> Unit) {

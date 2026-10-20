@@ -2,6 +2,8 @@ package io.github.giansalvo.ggcalendar.core.database
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.RoomDatabase.Builder
+import androidx.room.RoomDatabase.Callback
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
@@ -21,7 +23,7 @@ import kotlinx.serialization.json.Json
         ReminderFiredEntity::class,
         ReminderSnoozedEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -37,45 +39,18 @@ abstract class GGCalendarDatabase : RoomDatabase() {
     companion object {
         const val NAME = "ggcalendar.db"
 
-        /** v2: events.list also asks for birthdays, so every calendar needs a full sync (new sync tokens). */
-        val MIGRATION_1_2 = object : Migration(1, 2) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("UPDATE calendars SET sync_token = NULL")
-            }
-        }
+        /**
+         * Version 6 starts again from a clean schema (calendar kinds, local calendars and subscriptions): databases of versions 1 to 5
+         * are dropped, and the accounts are added again. From here on a change of schema needs a real migration.
+         */
+        const val OLDEST_KEPT_VERSION = 6
 
-        /** v3: events.event_type (birthday icon); a full sync fills it for the events already stored. */
-        val MIGRATION_2_3 = object : Migration(2, 3) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE events ADD COLUMN event_type TEXT NOT NULL DEFAULT 'default'")
-                db.execSQL("UPDATE calendars SET sync_token = NULL")
-            }
-        }
-
-        /** v4: outbox of the local changes waiting to be sent to Google (milestone M3). */
-        val MIGRATION_3_4 = object : Migration(3, 4) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
-                    "CREATE TABLE IF NOT EXISTS `outbox` (`seq` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-                        "`event_id` TEXT NOT NULL, `calendar_id` TEXT NOT NULL, `operation` TEXT NOT NULL, `payload` TEXT, " +
-                        "`base` TEXT, `send_updates` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, " +
-                        "`attempts` INTEGER NOT NULL, `last_error` TEXT)",
-                )
-                db.execSQL("CREATE INDEX IF NOT EXISTS `index_outbox_event_id` ON `outbox` (`event_id`)")
-            }
-        }
-
-        /** v5: reminders already shown and snoozed (milestone M4). */
-        val MIGRATION_4_5 = object : Migration(4, 5) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("CREATE TABLE IF NOT EXISTS `reminder_fired` (`key` TEXT NOT NULL, `fire_at` INTEGER NOT NULL, PRIMARY KEY(`key`))")
-                db.execSQL(
-                    "CREATE TABLE IF NOT EXISTS `reminder_snoozed` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
-                        "`fire_at` INTEGER NOT NULL, `event_id` TEXT NOT NULL, `begin_utc` INTEGER NOT NULL, " +
-                        "`method` TEXT NOT NULL, `minutes` INTEGER NOT NULL)",
-                )
-            }
-        }
+        /** The schema rules of the app: versions 1-5 are dropped ([onReset] is told when that happens), later ones will migrate. */
+        fun configure(builder: Builder<GGCalendarDatabase>, onReset: () -> Unit): Builder<GGCalendarDatabase> =
+            builder.fallbackToDestructiveMigrationFrom(true, 1, 2, 3, 4, 5)
+                .addCallback(object : Callback() {
+                    override fun onDestructiveMigration(db: SupportSQLiteDatabase) = onReset()
+                })
     }
 }
 

@@ -15,6 +15,8 @@ data class CalendarInfo(
     val isVisible: Boolean = true,
     val canWrite: Boolean = true,
     val isPrimary: Boolean = false,
+    /** A calendar kept on this phone only (no account, nothing sent to Google). */
+    val local: Boolean = false,
 ) {
     companion object {
         fun googleId(email: String, remoteId: String) = "$email|$remoteId"

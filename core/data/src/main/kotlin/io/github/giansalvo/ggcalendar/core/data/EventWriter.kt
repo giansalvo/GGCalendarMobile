@@ -1,6 +1,7 @@
 package io.github.giansalvo.ggcalendar.core.data
 
 import androidx.room.withTransaction
+import io.github.giansalvo.ggcalendar.core.model.Diag
 import io.github.giansalvo.ggcalendar.core.database.EventEntity
 import io.github.giansalvo.ggcalendar.core.database.GGCalendarDatabase
 import io.github.giansalvo.ggcalendar.core.database.OutboxEntity
@@ -10,7 +11,7 @@ import javax.inject.Singleton
 /**
  * The only way the app changes events. Each change is written to Room at once (so it works offline and shows
  * immediately), queued in the outbox for Google and followed by a sync request, which WorkManager runs as soon as
- * there is a connection.
+ * there is a connection. The events of local calendars stay in Room: no outbox and no sync.
  */
 @Singleton
 class EventWriter @Inject constructor(
@@ -25,9 +26,17 @@ class EventWriter @Inject constructor(
 
     /** Saves a new or edited event (also a modified occurrence of a series: [EventEntity.seriesMasterId] set). */
     suspend fun save(event: EventEntity, sendUpdates: Boolean = true) {
-        val saved = event.copy(updatedAt = System.currentTimeMillis())
+        val toGoogle = db.calendarDao().get(event.calendarId)?.syncsWithGoogle ?: true
+        Diag.log { "writer save begin event=${event.id.take(8)} google=$toGoogle allDay=${event.allDay} start=${event.startUtc} end=${event.endUtc}" }
+        val saved = if (toGoogle) event.copy(updatedAt = System.currentTimeMillis())
+        // No guests, no Meet and no invitations in a calendar that is not Google's.
+        else event.copy(updatedAt = System.currentTimeMillis(), attendees = emptyList(), addMeet = false, meetLink = null, sendInvites = false)
         db.withTransaction {
             val existing = events.get(event.id)
+            if (!toGoogle) {
+                events.upsert(listOf(saved))
+                return@withTransaction
+            }
             val pending = outbox.getFor(event.id)
             // The Google version the edit starts from: the row as last synced, or the base of the first queued edit.
             val base = if (pending.isEmpty()) existing?.takeIf { it.remoteId != null }?.let { json.encodeToString(it) } else pending.first().base
@@ -44,8 +53,9 @@ class EventWriter @Inject constructor(
             )
         }
         engine.recompute(saved.seriesMasterId ?: saved.id)
-        scheduler.syncNow()
+        if (toGoogle) scheduler.syncNow()
         reminders.changed()
+        Diag.log { "writer save done event=${event.id.take(8)}" }
     }
 
     /**
@@ -54,11 +64,12 @@ class EventWriter @Inject constructor(
      */
     suspend fun delete(eventId: String, sendUpdates: Boolean = true) {
         val event = events.get(eventId) ?: return
+        val toGoogle = db.calendarDao().get(event.calendarId)?.syncsWithGoogle ?: true
         db.withTransaction {
             outbox.discardFor(eventId)
             if (event.seriesMasterId != null) {
                 events.upsert(listOf(event.copy(isCancelled = true, updatedAt = System.currentTimeMillis())))
-                outbox.insert(OutboxEntity(eventId = eventId, calendarId = event.calendarId, operation = OutboxEntity.DELETE, payload = event.remoteId, sendUpdates = sendUpdates))
+                if (toGoogle) outbox.insert(OutboxEntity(eventId = eventId, calendarId = event.calendarId, operation = OutboxEntity.DELETE, payload = event.remoteId, sendUpdates = sendUpdates))
             } else {
                 events.deleteWithSeries(listOf(eventId))
                 if (event.remoteId != null) {
@@ -67,7 +78,7 @@ class EventWriter @Inject constructor(
             }
         }
         engine.recompute(event.seriesMasterId ?: eventId)
-        scheduler.syncNow()
+        if (toGoogle) scheduler.syncNow()
         reminders.changed()
     }
 

@@ -7,6 +7,7 @@ import io.github.giansalvo.ggcalendar.core.model.Attendee
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
 import io.github.giansalvo.ggcalendar.core.model.Reminder
 import io.github.giansalvo.ggcalendar.core.model.ReminderMethod
+import io.github.giansalvo.ggcalendar.core.model.IcsWriter
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -32,6 +33,39 @@ class EventShareTest {
         "e1", calendar.id, "Riunione", "Sala 1", "#1A73E8", false, at, at.plusSeconds(3600),
         LocalDate.of(2026, 10, 8), LocalDate.of(2026, 10, 9), hasMeet = false, hasAlarm = false, isRecurring = false,
     )
+
+    @Test
+    fun theExportOfMyCalendarsHasEveryEventInFullWithItsVisibilityAndStatus() {
+        val calendar = calendar
+        fun export(e: EventEntity, exceptions: List<EventEntity> = emptyList()) =
+            lines(IcsWriter.write(EventShare.seriesEvents(e, calendar, exceptions, forExport = true), now))
+        // Private, busy or free: the same details as any other event, marked private, with its status.
+        val privateBusy = export(event("p").copy(visibility = "PRIVATE", availability = "BUSY", title = "Medico", location = "Studio", description = "dettagli"))
+        assertTrue("CLASS:PRIVATE" in privateBusy)
+        assertTrue("TRANSP:OPAQUE" in privateBusy)
+        assertTrue("SUMMARY:Medico" in privateBusy)
+        assertTrue("LOCATION:Studio" in privateBusy)
+        assertTrue("DESCRIPTION:dettagli" in privateBusy)
+        val privateFree = export(event("q").copy(visibility = "PRIVATE", availability = "FREE", title = "Segreto"))
+        assertTrue("SUMMARY:Segreto" in privateFree)
+        assertTrue("CLASS:PRIVATE" in privateFree)
+        assertTrue("TRANSP:TRANSPARENT" in privateFree)
+        val publicFree = export(event("r").copy(visibility = "PUBLIC", availability = "FREE", title = "Festa"))
+        assertTrue("CLASS:PUBLIC" in publicFree)
+        assertTrue("TRANSP:TRANSPARENT" in publicFree)
+        // An event that follows its calendar writes no class.
+        assertFalse(export(event("s").copy(visibility = "DEFAULT")).any { it.startsWith("CLASS") })
+        // A private series keeps its modified occurrences.
+        val series = event("t", rrule = "FREQ=DAILY;COUNT=3").copy(visibility = "PRIVATE", title = "Terapia")
+        val modified = event("t|x").copy(title = "Terapia spostata", seriesMasterId = "t", originalStartUtc = start.plusSeconds(86_400).toEpochMilli(), visibility = "PRIVATE")
+        val withException = export(series, listOf(modified))
+        assertTrue("SUMMARY:Terapia" in withException)
+        assertTrue("SUMMARY:Terapia spostata" in withException)
+        // The copy of one event sent to somebody else has no class.
+        val shared = lines(IcsWriter.write(EventShare.seriesEvents(event("u").copy(visibility = "PRIVATE", title = "Medico"), calendar, emptyList()), now))
+        assertFalse(shared.any { it.startsWith("CLASS") })
+        assertTrue("SUMMARY:Medico" in shared)
+    }
 
     private fun lines(ics: String) = ics.replace("\r\n ", "").split("\r\n").filter { it.isNotEmpty() }
 

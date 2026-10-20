@@ -19,6 +19,10 @@ data class SettingsDraft(
     val weekStart: DayOfWeek,
     val dayStartHour: Int,
     val dimPast: Boolean,
+    /** New events start as Busy (on, the default) or as Free (off). */
+    val defaultBusy: Boolean,
+    /** New events start as Public (off, the default) or as Private (on). */
+    val defaultPrivate: Boolean,
     val birthdays: Boolean,
     /** How long an alarm rings before it stops by itself (1 to 10 minutes). */
     val alarmMinutes: Int,
@@ -44,6 +48,8 @@ class SettingsViewModel @Inject constructor(
             weekStart = weekOf(view.weekStart ?: WeekSettings.localeDefault()),
             dayStartHour = view.dayStartHour,
             dimPast = view.dimPast,
+            defaultBusy = prefs.defaultBusy.first(),
+            defaultPrivate = prefs.defaultPrivate.first(),
             birthdays = prefs.birthdaysEnabled.first() && contacts.granted,
             alarmMinutes = prefs.alarmMinutes.first(),
             alarmSound = prefs.alarmSound.first(),
@@ -56,6 +62,8 @@ class SettingsViewModel @Inject constructor(
         prefs.setWeekStart(draft.weekStart)
         prefs.setDayStartHour(draft.dayStartHour)
         prefs.setDimPast(draft.dimPast)
+        prefs.setDefaultBusy(draft.defaultBusy)
+        prefs.setDefaultPrivate(draft.defaultPrivate)
         prefs.setBirthdaysEnabled(draft.birthdays)
         // The copy in the device protected storage is what the alarm uses while the phone is locked after a reboot.
         alarmStore.setAlarmMinutes(draft.alarmMinutes)

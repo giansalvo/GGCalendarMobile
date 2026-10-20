@@ -11,6 +11,7 @@ import io.github.giansalvo.ggcalendar.core.model.EventInstance
 import io.github.giansalvo.ggcalendar.core.model.EventTime
 import io.github.giansalvo.ggcalendar.core.model.IcsEvent
 import io.github.giansalvo.ggcalendar.core.model.IcsWriter
+import io.github.giansalvo.ggcalendar.core.model.Visibility
 import java.io.File
 import java.time.Instant
 import java.time.LocalDate
@@ -34,14 +35,18 @@ internal object EventShare {
         return IcsWriter.write(listOf(single), now)
     }
 
-    /** The `VEVENT`s of a series: the series itself (with the cancelled occurrences excluded) and each modified occurrence. */
-    fun seriesEvents(master: EventEntity, calendar: CalendarEntity, exceptions: List<EventEntity>): List<IcsEvent> {
+    /**
+     * The `VEVENT`s of a series: the series itself (with the cancelled occurrences excluded) and each modified occurrence.
+     * [forExport] is the export of the user's own calendars: every event goes in full, public or private, with its visibility
+     * (`CLASS:PUBLIC` or `CLASS:PRIVATE`) and its status (`TRANSP`). A copy of one event sent to somebody else has no class.
+     */
+    fun seriesEvents(master: EventEntity, calendar: CalendarEntity, exceptions: List<EventEntity>, forExport: Boolean = false): List<IcsEvent> {
         val uid = uidOf(master)
         val cancelled = exceptions.filter { it.isCancelled }.mapNotNull(::originalStart)
-        val series = icsEvent(master, uid, timeOf(master))
+        val series = icsEvent(master, uid, timeOf(master), forExport)
             .copy(exdates = (master.exdates + cancelled).distinct())
         val modified = exceptions.filter { !it.isCancelled }.mapNotNull { e ->
-            originalStart(e)?.let { icsEvent(e, uid, timeOf(e)).copy(recurrenceId = it) }
+            originalStart(e)?.let { icsEvent(e, uid, timeOf(e), forExport).copy(recurrenceId = it) }
         }
         return listOf(series) + modified
     }
@@ -61,7 +66,7 @@ internal object EventShare {
     private fun originalStart(e: EventEntity): String? =
         e.originalStartDay?.let { LocalDate.ofEpochDay(it).toString() } ?: e.originalStartUtc?.let { Instant.ofEpochMilli(it).toString() }
 
-    private fun icsEvent(e: EventEntity, uid: String, time: EventTime) = IcsEvent(
+    private fun icsEvent(e: EventEntity, uid: String, time: EventTime, forExport: Boolean = false) = IcsEvent(
         uid = uid,
         title = e.title,
         time = time,
@@ -69,10 +74,15 @@ internal object EventShare {
         description = e.description,
         rrule = e.rrule,
         exdates = e.exdates,
-        // No organizer, guests, reminders or privacy class: the file is a copy of the event, not an invitation, and Google
-        // refuses to import events that another account organizes.
+        // No organizer, guests or reminders: the file is a copy of the event, not an invitation, and Google refuses to import
+        // events that another account organizes. The status (TRANSP) always goes; the visibility (CLASS) only in an export.
         meetLink = e.meetLink,
         busy = e.availability != "FREE",
+        visibility = if (!forExport) Visibility.DEFAULT else when (e.visibility) {
+            "PRIVATE" -> Visibility.PRIVATE
+            "PUBLIC" -> Visibility.PUBLIC
+            else -> Visibility.DEFAULT
+        },
     )
 
     /** File name for the `.ics`: the title without characters that file systems and messengers dislike. */

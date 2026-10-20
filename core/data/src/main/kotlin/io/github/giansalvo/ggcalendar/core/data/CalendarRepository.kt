@@ -10,6 +10,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.github.giansalvo.ggcalendar.core.database.AccountEntity
+import io.github.giansalvo.ggcalendar.core.database.CalendarKind
 import io.github.giansalvo.ggcalendar.core.database.GGCalendarDatabase
 import io.github.giansalvo.ggcalendar.core.database.InstanceRow
 import io.github.giansalvo.ggcalendar.core.database.SyncMessageEntity
@@ -57,9 +58,27 @@ class CalendarRepository @Inject constructor(
             }
         }.onEach { list -> Diag.log { "repository accounts out n=${list.size} [${list.joinToString { a -> Diag.who(a.email) + ":" + a.calendars.size }}]" } }
 
+    /** The calendars kept on this phone only, in the order they were made. */
+    val localCalendars: Flow<List<CalendarInfo>> = db.calendarDao().observeAll().map { all ->
+        all.filter { it.kind == CalendarKind.LOCAL }.sortedBy { it.sortOrder }
+            .map { CalendarInfo(it.id, null, it.name, it.color, it.isVisible, it.canWrite, false, local = true) }
+    }
+
     /** The "Birthdays" calendar of the phone's contacts, when turned on. */
     val birthdayCalendar: Flow<CalendarInfo?> = db.calendarDao().observeAll().map { all ->
         all.firstOrNull { it.id == BirthdaySync.CALENDAR_ID }?.let { CalendarInfo(it.id, it.accountEmail, it.name, it.color, it.isVisible, it.canWrite, it.isPrimary) }
+    }
+
+    /**
+     * After the database was dropped by the change of schema: forgets the data-related settings and leaves a message that tells
+     * the user to add the Google accounts again. Does nothing when the schema was not reset.
+     */
+    suspend fun acknowledgeSchemaReset(context: Context) {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { db.openHelper.writableDatabase }
+        if (!SchemaReset.pending(context)) return
+        prefs.resetDataKeys()
+        db.syncMessageDao().insert(SyncMessageEntity(accountEmail = null, kind = "schema_reset", text = ""))
+        SchemaReset.clear(context)
     }
 
     /** Rebuilds the birthdays from the contacts (or removes them when off or without the permission). */
@@ -75,7 +94,10 @@ class CalendarRepository @Inject constructor(
         launch { engine.updateWindow(from, to) }
         db.instanceDao().observeRange(from.toEpochDay(), to.toEpochDay()).map { rows ->
             rows.map { it.toInstance() }
-        }.collect { send(it) }
+        }.collect {
+            Diag.log { "room instances emits ${from}..${to} n=${it.size}" }
+            send(it)
+        }
     }
 
     /** Occurrences matching [query] in title, place, description or guests (visible calendars, works offline). */
@@ -148,8 +170,8 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun database(@ApplicationContext context: Context): GGCalendarDatabase =
-        Room.databaseBuilder(context, GGCalendarDatabase::class.java, GGCalendarDatabase.NAME)
-            .addMigrations(GGCalendarDatabase.MIGRATION_1_2, GGCalendarDatabase.MIGRATION_2_3, GGCalendarDatabase.MIGRATION_3_4, GGCalendarDatabase.MIGRATION_4_5)
+        // Versions 1-5 (up to the 1.0.x releases) are dropped, not migrated: see GGCalendarDatabase.OLDEST_KEPT_VERSION.
+        GGCalendarDatabase.configure(Room.databaseBuilder(context, GGCalendarDatabase::class.java, GGCalendarDatabase.NAME)) { SchemaReset.mark(context) }
             .build()
             .also { db ->
                 // A diag build only: says when Room tells the observers that a table changed, whether or not a flow then emits.

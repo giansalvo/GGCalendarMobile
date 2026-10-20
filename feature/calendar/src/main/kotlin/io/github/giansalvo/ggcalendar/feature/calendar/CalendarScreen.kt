@@ -116,6 +116,8 @@ data class EventLink(val eventId: String, val beginUtc: Long)
 fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, viewModel: CalendarViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     // Diag build only (see Diag): what the screen sees of the accounts, and when its lifecycle moves.
+    LaunchedEffect(state.instances) { Diag.log { "ui instances n=${state.instances.size} view=${state.view} date=${state.date}" } }
+    LaunchedEffect(state.editing) { Diag.log { "ui editing=${state.editing?.javaClass?.simpleName}" } }
     LaunchedEffect(state.accounts) {
         Diag.log { "ui accounts=${state.accounts.size} [${state.accounts.joinToString { a -> Diag.who(a.email) + ":" + a.calendars.size }}]" }
     }
@@ -141,6 +143,9 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
     var aboutOpen by rememberSaveable { mutableStateOf(false) }
     var exportOpen by rememberSaveable { mutableStateOf(false) }
     var removing by rememberSaveable { mutableStateOf<String?>(null) }
+    // The local calendar being made (empty text) or changed (its id), and the one being deleted.
+    var editingLocal by rememberSaveable { mutableStateOf<String?>(null) }
+    var deletingLocal by rememberSaveable { mutableStateOf<String?>(null) }
     var settingsOpen by rememberSaveable { mutableStateOf(false) }
     var searchOpen by rememberSaveable { mutableStateOf(false) }
 
@@ -190,6 +195,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
     val authText = stringResource(R.string.message_auth)
     val authAction = stringResource(R.string.authorize)
     val missingText = stringResource(R.string.message_account_missing)
+    val schemaResetText = stringResource(R.string.message_schema_reset)
     val syncErrorText = stringResource(R.string.message_sync_error)
     val addLabel = stringResource(R.string.account_add_action)
     val closeLabel = stringResource(R.string.message_close)
@@ -201,6 +207,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
             "auth" -> authText.format(message.accountEmail)
             "account_missing" -> missingText.format(message.accountEmail)
             "sync_error" -> syncErrorText.format(message.accountEmail, message.text)
+            "schema_reset" -> schemaResetText
             else -> message.text
         }
         // Conflicts and errors stay until the user closes them: they explain what happened to an edit.
@@ -239,6 +246,9 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                 onAddAccount = { pickAccount.launch(viewModel.chooseAccountIntent()) },
                 onRetryAccount = viewModel::reauthorize,
                 onRemoveAccount = { removing = it },
+                onNewLocal = { editingLocal = "" },
+                onEditLocal = { editingLocal = it },
+                onDeleteLocal = { deletingLocal = it },
                 onActiveAlarms = {
                     alarmsOpen = true
                     scope.launch { drawerState.close() }
@@ -411,7 +421,23 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
     if (settingsOpen) {
         SettingsScreen(onClose = { settingsOpen = false })
     }
-    if (exportOpen) ExportDialog(accounts = state.accounts, onDismiss = { exportOpen = false })
+    if (exportOpen) ExportDialog(accounts = state.accounts, locals = state.localCalendars, onDismiss = { exportOpen = false })
+    editingLocal?.let { id ->
+        val current = state.localCalendars.firstOrNull { it.id == id }
+        LocalCalendarDialog(
+            initial = current,
+            onConfirm = { name, color ->
+                if (current == null) viewModel.createLocalCalendar(name, color) else viewModel.updateLocalCalendar(current.id, name, color)
+                editingLocal = null
+            },
+            onDismiss = { editingLocal = null },
+        )
+    }
+    deletingLocal?.let { id ->
+        val current = state.localCalendars.firstOrNull { it.id == id }
+        if (current == null) deletingLocal = null
+        else DeleteLocalCalendarDialog(current, onConfirm = { viewModel.deleteLocalCalendar(id); deletingLocal = null }, onDismiss = { deletingLocal = null })
+    }
     removing?.let { email ->
         // Off by default: the account leaves this app only. On, the access of the app is also taken away from the Google account.
         var revokeEverywhere by remember(email) { mutableStateOf(false) }
@@ -540,6 +566,9 @@ private fun CalendarDrawer(
     onAddAccount: () -> Unit,
     onRetryAccount: (String) -> Unit,
     onRemoveAccount: (String) -> Unit,
+    onNewLocal: () -> Unit,
+    onEditLocal: (String) -> Unit,
+    onDeleteLocal: (String) -> Unit,
     onActiveAlarms: () -> Unit,
     onSettings: () -> Unit,
     onExport: () -> Unit,
@@ -593,6 +622,7 @@ private fun CalendarDrawer(
                 }
                 account.calendars.forEach { CalendarRow(it, onToggleCalendar) }
             }
+            LocalCalendarsSection(state.localCalendars, onToggleCalendar, onNewLocal, onEditLocal, onDeleteLocal)
             state.birthdays?.let { birthdays ->
                 Row(Modifier.padding(16.dp, 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.Cake, contentDescription = null)
@@ -648,7 +678,7 @@ private fun CalendarDrawer(
 }
 
 @Composable
-private fun CalendarRow(calendar: CalendarInfo, onToggle: (String, Boolean) -> Unit) {
+internal fun CalendarRow(calendar: CalendarInfo, onToggle: (String, Boolean) -> Unit, trailing: @Composable (() -> Unit)? = null) {
     val color = parseColor(calendar.colorHex)
     Row(
         Modifier.testTag("calendar_row").fillMaxWidth().clickable { onToggle(calendar.id, !calendar.isVisible) }.padding(start = 4.dp, end = 16.dp),
@@ -661,7 +691,8 @@ private fun CalendarRow(calendar: CalendarInfo, onToggle: (String, Boolean) -> U
         )
         // Google names the primary calendar after the account email; show it as Google Calendar does.
         val name = if (calendar.isPrimary && calendar.name == calendar.accountEmail) stringResource(R.string.my_calendar) else calendar.name
-        Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge)
+        Text(name, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge)
+        trailing?.invoke()
     }
 }
 

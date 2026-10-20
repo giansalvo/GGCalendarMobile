@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.text.format.DateFormat
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
@@ -104,6 +105,12 @@ class AlarmActivity : ComponentActivity() {
             val minutes = remember { DirectBootStore(applicationContext).alarmMinutes() }
             MaterialTheme(colorScheme = darkColorScheme()) {
                 current?.let { a ->
+                    // Closing the screen with Back is closing the alarm: the sound stops with it (it would otherwise ring on, with no window,
+                    // until the time set in the settings).
+                    BackHandler {
+                        ReminderActions.dismiss(applicationContext, a)
+                        finish()
+                    }
                     AlarmScreen(
                         alert = a,
                         durationMinutes = minutes,

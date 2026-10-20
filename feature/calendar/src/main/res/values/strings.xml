@@ -16,7 +16,7 @@
     <string name="alarm">Alarm</string>
     <string name="no_events_today">No events today</string>
     <string name="go_to_date">Go to date</string>
-    <string name="message_no_calendar">Add a Google account first: there is no calendar to put the event in</string>
+    <string name="message_no_calendar">Add a Google account or a local calendar first: there is no calendar to put the event in</string>
     <string name="message_auth">Access to Google Calendar for %1$s must be granted again</string>
     <string name="authorize">Authorize</string>
     <string name="my_calendar">My calendar</string>
@@ -74,4 +74,13 @@
     <string name="message_sync_error">Sync of %1$s failed: %2$s</string>
     <string name="account_add_action">Add</string>
     <string name="message_close">Close</string>
+    <string name="local_calendars">On this phone</string>
+    <string name="local_calendar_new">New local calendar</string>
+    <string name="local_calendar_edit">Edit calendar</string>
+    <string name="local_calendar_delete">Delete</string>
+    <string name="local_calendar_name">Name</string>
+    <string name="local_calendar_options">Options for %1$s</string>
+    <string name="local_calendar_delete_title">Delete \"%1$s\"?</string>
+    <string name="local_calendar_delete_message">The calendar and all its events are removed from this phone. This cannot be undone.</string>
+    <string name="message_schema_reset">GGCalendar was updated and started again with an empty database. Add your Google accounts again from the menu.</string>
 </resources>

@@ -15,7 +15,7 @@
     <string name="alarm">Sveglia</string>
     <string name="no_events_today">Nessun evento oggi</string>
     <string name="go_to_date">Vai a una data</string>
-    <string name="message_no_calendar">Aggiungi prima un account Google: non c\'è un calendario dove mettere l\'evento</string>
+    <string name="message_no_calendar">Aggiungi prima un account Google o un calendario locale: non c\'è un calendario dove mettere l\'evento</string>
     <string name="message_auth">Bisogna autorizzare di nuovo l\'accesso a Google Calendar per %1$s</string>
     <string name="authorize">Autorizza</string>
     <string name="my_calendar">Il mio calendario</string>
@@ -73,4 +73,13 @@
     <string name="message_sync_error">Sincronizzazione di %1$s non riuscita: %2$s</string>
     <string name="account_add_action">Aggiungi</string>
     <string name="message_close">Chiudi</string>
+    <string name="local_calendars">Su questo telefono</string>
+    <string name="local_calendar_new">Nuovo calendario locale</string>
+    <string name="local_calendar_edit">Modifica calendario</string>
+    <string name="local_calendar_delete">Elimina</string>
+    <string name="local_calendar_name">Nome</string>
+    <string name="local_calendar_options">Opzioni di %1$s</string>
+    <string name="local_calendar_delete_title">Eliminare \"%1$s\"?</string>
+    <string name="local_calendar_delete_message">Il calendario e tutti i suoi eventi vengono tolti da questo telefono. L\'operazione non si può annullare.</string>
+    <string name="message_schema_reset">GGCalendar è stato aggiornato e riparte da un database vuoto. Aggiungi di nuovo i tuoi account Google dal menu.</string>
 </resources>

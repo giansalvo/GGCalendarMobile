@@ -44,6 +44,12 @@ interface CalendarDao {
 
     @Query("DELETE FROM calendars WHERE id = :id")
     suspend fun delete(id: String)
+
+    @Query("UPDATE calendars SET name = :name, color = :color WHERE id = :id")
+    suspend fun setNameAndColor(id: String, name: String, color: String)
+
+    @Query("SELECT COALESCE(MAX(sort_order), 0) FROM calendars WHERE kind = :kind")
+    suspend fun maxSortOrder(kind: String): Int
 }
 
 @Dao

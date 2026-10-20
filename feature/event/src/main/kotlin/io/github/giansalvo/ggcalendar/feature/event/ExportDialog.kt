@@ -61,7 +61,7 @@ import java.time.format.FormatStyle
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, viewModel: ExportViewModel = hiltViewModel()) {
+fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, locals: List<io.github.giansalvo.ggcalendar.core.model.CalendarInfo> = emptyList(), viewModel: ExportViewModel = hiltViewModel()) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val year = remember { LocalDate.now().year }
@@ -76,10 +76,9 @@ fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, vi
     var summary by remember { mutableStateOf<String?>(null) }
     fun summaryOf(r: ExportResult, saved: Boolean): String = buildString {
         append(if (!saved) context.getString(R.string.export_failed) else context.resources.getQuantityString(if (r.occurrences) R.plurals.export_rows_done else R.plurals.export_done, r.count, r.count))
-        if (r.skippedPrivate > 0) append("\n").append(context.resources.getQuantityString(R.plurals.export_skipped_private, r.skippedPrivate, r.skippedPrivate))
     }
 
-    val all = accounts.flatMap { it.calendars }
+    val all = accounts.flatMap { it.calendars } + locals
     val selected = chosen ?: all.filter { it.isVisible }.map { it.id }.toSet()
     val fromDay = LocalDate.parse(from)
     val toDay = LocalDate.parse(to)
@@ -133,9 +132,11 @@ fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, vi
                 if (toDay.isBefore(fromDay)) Text(stringResource(R.string.export_range_invalid), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 Column(Modifier.padding(top = 12.dp).heightIn(max = 300.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(stringResource(R.string.export_calendars), style = MaterialTheme.typography.titleSmall)
-                accounts.forEach { account ->
+                val phoneTitle = stringResource(R.string.export_on_phone)
+                val groups = accounts.map { it.email to it.calendars } + (if (locals.isEmpty()) emptyList() else listOf(phoneTitle to locals))
+                groups.forEach { (title, calendars) ->
                     // The master checkbox of the account: all of its calendars or none; a dash when only some are chosen.
-                    val ids = account.calendars.map { it.id }
+                    val ids = calendars.map { it.id }
                     val picked = ids.count { it in selected }
                     val all = picked == ids.size && ids.isNotEmpty()
                     Row(
@@ -150,16 +151,16 @@ fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, vi
                             },
                             onClick = { chosen = if (all) selected - ids.toSet() else selected + ids },
                         )
-                        Text(account.email, style = MaterialTheme.typography.titleSmall, maxLines = 1)
+                        Text(title, style = MaterialTheme.typography.titleSmall, maxLines = 1)
                     }
-                    account.calendars.forEach { c ->
+                    calendars.forEach { c ->
                         Row(
                             Modifier.fillMaxWidth().clickable { chosen = if (c.id in selected) selected - c.id else selected + c.id },
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Spacer(Modifier.width(24.dp))
                             Checkbox(checked = c.id in selected, onCheckedChange = { chosen = if (it) selected + c.id else selected - c.id })
-                            Text(if (c.isPrimary) account.email else c.name, maxLines = 1)
+                            Text(if (c.isPrimary) title else c.name, maxLines = 1)
                         }
                     }
                 }
@@ -173,7 +174,7 @@ fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, vi
                 scope.launch {
                     val result = if (csv) viewModel.csv(selected, fromDay, toDay, context.resources) else viewModel.ics(selected, fromDay, toDay)
                     if (result.count == 0) {
-                        summary = context.getString(R.string.export_nothing) + (if (result.skippedPrivate > 0) "\n" + context.resources.getQuantityString(R.plurals.export_skipped_private, result.skippedPrivate, result.skippedPrivate) else "")
+                        summary = context.getString(R.string.export_nothing)
                         busy = false
                     } else {
                         pending = result

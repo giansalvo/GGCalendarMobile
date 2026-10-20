@@ -43,12 +43,12 @@ import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Notes
+import androidx.compose.material.icons.outlined.WorkOutline
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Videocam
-import androidx.compose.material.icons.outlined.WorkOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -220,7 +220,10 @@ fun EventEditorSheet(
             text = {
                 Column {
                     Text(stringResource(R.string.move_calendar_question, from?.let { calendarWithAccount(it) } ?: "", to?.let { calendarWithAccount(it) } ?: ""))
-                    if (from?.accountEmail != to?.accountEmail) {
+                    if (from?.syncsWithGoogle == true && to?.syncsWithGoogle == false) {
+                        // A local calendar has no guests and no Meet: they are not kept (and Google is told the event is gone).
+                        Text(stringResource(R.string.move_calendar_to_local), modifier = Modifier.padding(top = 8.dp).testTag("move_local_warning"))
+                    } else if (from?.accountEmail != to?.accountEmail) {
                         Text(stringResource(R.string.move_calendar_other_account), modifier = Modifier.padding(top = 8.dp))
                     }
                 }
@@ -303,23 +306,26 @@ private fun EditorFields(
         }
         Divider()
 
-        Guests(draft, suggestions, update, onGuestsFocused)
-        Divider()
+        // Guests and Meet belong to Google: a local calendar has neither.
+        if (calendars.firstOrNull { it.id == draft.calendarId }?.syncsWithGoogle != false) {
+            Guests(draft, suggestions, update, onGuestsFocused)
+            Divider()
 
-        FieldRow(Icons.Outlined.Videocam, tag = "editor_meet", onClick = { update { it.copy(addMeet = !it.addMeet) } }) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.add_meet), Modifier.weight(1f))
-                Switch(checked = draft.addMeet, onCheckedChange = { v -> update { it.copy(addMeet = v) } })
+            FieldRow(Icons.Outlined.Videocam, tag = "editor_meet", onClick = { update { it.copy(addMeet = !it.addMeet) } }) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.add_meet), Modifier.weight(1f))
+                    Switch(checked = draft.addMeet, onCheckedChange = { v -> update { it.copy(addMeet = v) } })
+                }
             }
-        }
-        draft.meetLink?.takeIf { draft.addMeet }?.let { link ->
-            val clipboard = LocalClipboardManager.current
-            Row(Modifier.padding(start = 56.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(link, Modifier.weight(1f), color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                IconButton(onClick = { clipboard.setText(AnnotatedString(link)) }) { Icon(Icons.Outlined.ContentCopy, stringResource(R.string.copy_link)) }
+            draft.meetLink?.takeIf { draft.addMeet }?.let { link ->
+                val clipboard = LocalClipboardManager.current
+                Row(Modifier.padding(start = 56.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(link, Modifier.weight(1f), color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    IconButton(onClick = { clipboard.setText(AnnotatedString(link)) }) { Icon(Icons.Outlined.ContentCopy, stringResource(R.string.copy_link)) }
+                }
             }
+            Divider()
         }
-        Divider()
 
         PlainField(Icons.Outlined.LocationOn, draft.location, R.string.add_location, tag = "editor_location") { v -> update { it.copy(location = v) } }
         Divider()
@@ -338,16 +344,9 @@ private fun EditorFields(
         FieldRow(Icons.Outlined.WorkOutline, tag = "editor_availability", onClick = { update { it.copy(availability = if (it.availability == "FREE") "BUSY" else "FREE") } }) {
             Text(stringResource(if (draft.availability == "FREE") R.string.free else R.string.busy))
         }
-        FieldRow(Icons.Outlined.Lock, tag = "editor_visibility", onClick = { picking = Picker.Visibility }) {
-            Text(
-                stringResource(
-                    when (draft.visibility) {
-                        "PUBLIC" -> R.string.visibility_public
-                        "PRIVATE" -> R.string.visibility_private
-                        else -> R.string.visibility_default
-                    },
-                ),
-            )
+        // Only for this event: "private" or "public" (an event that follows the calendar, "default", is shown as public).
+        FieldRow(Icons.Outlined.Lock, tag = "editor_visibility", onClick = { update { it.copy(visibility = if (it.visibility == "PRIVATE") "PUBLIC" else "PRIVATE") } }) {
+            Text(stringResource(if (draft.visibility == "PRIVATE") R.string.visibility_private else R.string.visibility_public))
         }
         Divider()
         PlainField(Icons.Outlined.Notes, draft.description, R.string.add_description, singleLine = false, tag = "editor_description") { v -> update { it.copy(description = v) } }
@@ -362,11 +361,6 @@ private fun EditorFields(
         Picker.Recurrence -> RecurrenceDialog(draft, { picking = null }) { r -> update { it.copy(rrule = r) } }
         Picker.Reminder -> ReminderDialog({ picking = null }) { r -> update { it.copy(reminders = (it.reminders.orEmpty() + r).distinct()) } }
         Picker.Color -> ColorDialog(draft.color, { picking = null }) { c -> update { it.copy(color = c) } }
-        Picker.Visibility -> ChoiceDialog(
-            listOf("DEFAULT" to R.string.visibility_default, "PUBLIC" to R.string.visibility_public, "PRIVATE" to R.string.visibility_private),
-            draft.visibility, { picking = null },
-            onPick = { v -> update { it.copy(visibility = v) } },
-        )
         null -> Unit
     }
 }
@@ -388,12 +382,12 @@ private fun CalendarChooser(calendars: List<CalendarEntity>, selectedId: String,
             supportingText = selected?.accountEmail?.let { { Text(it) } },
             leadingIcon = { Box(Modifier.size(14.dp).background(parseColor(selected?.color), CircleShape)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(open) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
+            modifier = Modifier.testTag("editor_calendar").fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
         )
         ExposedDropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             calendars.groupBy { it.accountEmail ?: "" }.forEach { (account, list) ->
                 Text(
-                    account,
+                    account.ifEmpty { stringResource(R.string.export_on_phone) },
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -429,7 +423,7 @@ private fun calendarLabel(cal: CalendarEntity): String =
 private fun calendarWithAccount(cal: CalendarEntity): String =
     calendarLabel(cal) + (cal.accountEmail?.let { " ($it)" } ?: "")
 
-private enum class Picker { StartDate, EndDate, StartTime, EndTime, Zone, Recurrence, Reminder, Color, Visibility }
+private enum class Picker { StartDate, EndDate, StartTime, EndTime, Zone, Recurrence, Reminder, Color }
 
 @Composable
 private fun Divider() = HorizontalDivider(Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)

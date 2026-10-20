@@ -3,6 +3,7 @@ package io.github.giansalvo.ggcalendar.core.data
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.giansalvo.ggcalendar.core.database.CalendarEntity
+import io.github.giansalvo.ggcalendar.core.database.CalendarKind
 import io.github.giansalvo.ggcalendar.core.database.EventEntity
 import io.github.giansalvo.ggcalendar.core.database.GGCalendarDatabase
 import kotlinx.coroutines.flow.first
@@ -69,7 +70,7 @@ class BirthdaySync @Inject constructor(
         db.calendarDao().upsert(
             CalendarEntity(
                 id = CALENDAR_ID, accountEmail = null, remoteId = null, name = context.getString(R.string.birthdays_calendar),
-                color = COLOR, accessRole = "reader", isVisible = existingCalendar?.isVisible ?: true, sortOrder = Int.MAX_VALUE,
+                color = COLOR, accessRole = "reader", isVisible = existingCalendar?.isVisible ?: true, sortOrder = Int.MAX_VALUE, kind = CalendarKind.BIRTHDAYS,
             ),
         )
         val google = db.eventDao().birthdaysOutside(CALENDAR_ID).mapNotNull { e ->

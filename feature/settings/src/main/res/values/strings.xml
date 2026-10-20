@@ -24,4 +24,12 @@
     <string name="settings_birthdays_hint">Shows the birthdays saved in the phone contacts, in a calendar of their own. Needs the permission to read the contacts.</string>
     <string name="settings_language">Language</string>
     <string name="settings_language_hint">Opens the language screen of Android for this app</string>
+    <string name="settings_status">Status of new events</string>
+    <string name="settings_status_hint">You can change it for each event in the editor</string>
+    <string name="settings_status_busy">Busy</string>
+    <string name="settings_status_free">Free</string>
+    <string name="settings_visibility">Visibility of new events</string>
+    <string name="settings_visibility_hint">You can change it for each event in the editor</string>
+    <string name="settings_visibility_public">Public</string>
+    <string name="settings_visibility_private">Private</string>
 </resources>

@@ -24,4 +24,12 @@
     <string name="settings_birthdays_hint">Mostra i compleanni salvati nei contatti del telefono, in un calendario a parte. Serve il permesso di leggere i contatti.</string>
     <string name="settings_language">Lingua</string>
     <string name="settings_language_hint">Apre la schermata di Android per la lingua di questa app</string>
+    <string name="settings_status">Stato dei nuovi eventi</string>
+    <string name="settings_status_hint">Si può cambiare per ogni evento nell\'editor</string>
+    <string name="settings_status_busy">Occupato</string>
+    <string name="settings_status_free">Disponibile</string>
+    <string name="settings_visibility">Visibilità dei nuovi eventi</string>
+    <string name="settings_visibility_hint">Si può cambiare per ogni evento nell\'editor</string>
+    <string name="settings_visibility_public">Pubblico</string>
+    <string name="settings_visibility_private">Privato</string>
 </resources>

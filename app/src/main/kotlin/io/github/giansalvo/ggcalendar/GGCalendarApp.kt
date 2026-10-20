@@ -62,6 +62,10 @@ class GGCalendarApp : Application(), Configuration.Provider {
         repository.get().schedulePeriodicSync()
         reminders.get().start()
         // First start of the day or after a change of time zone while the app was closed.
-        scope.launch { repository.get().refreshInstances() }
+        scope.launch {
+            // The database is opened (and, after an update from 1.0.x, made again) before anything reads the window of instances.
+            repository.get().acknowledgeSchemaReset(this@GGCalendarApp)
+            repository.get().refreshInstances()
+        }
     }
 }

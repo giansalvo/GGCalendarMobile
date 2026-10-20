@@ -200,4 +200,8 @@
     <string name="csv_reminders">Reminders</string>
     <string name="csv_yes">Yes</string>
     <string name="csv_no">No</string>
+    <string name="export_on_phone">On this phone</string>
+    <string name="move_calendar_to_local">Guests and Google Meet links are not saved in a local calendar: they are lost, and the event is removed from Google Calendar.</string>
+    <string name="csv_status">Status</string>
+    <string name="csv_visibility">Visibility</string>
 </resources>

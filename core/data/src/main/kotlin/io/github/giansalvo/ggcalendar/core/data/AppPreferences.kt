@@ -45,6 +45,8 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         val hourHeight = floatPreferencesKey("hour_height")
         val dayStartHour = intPreferencesKey("day_start_hour")
         val dimPast = booleanPreferencesKey("dim_past")
+        val defaultBusy = booleanPreferencesKey("default_busy")
+        val defaultPrivate = booleanPreferencesKey("default_private")
         val windowFrom = longPreferencesKey("instances_from")
         val windowTo = longPreferencesKey("instances_to")
         val windowZone = stringPreferencesKey("instances_zone")
@@ -151,6 +153,20 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         context.dataStore.edit { it[Keys.weekStart] = day.name }
     }
 
+    /** New events start as Busy (true, the default) or as Free (false); each event can change it in the editor. */
+    val defaultBusy: Flow<Boolean> = context.dataStore.data.map { it[Keys.defaultBusy] ?: true }
+
+    suspend fun setDefaultBusy(on: Boolean) {
+        context.dataStore.edit { it[Keys.defaultBusy] = on }
+    }
+
+    /** New events start as Public (false, the default) or as Private (true); each event can change it in the editor. */
+    val defaultPrivate: Flow<Boolean> = context.dataStore.data.map { it[Keys.defaultPrivate] ?: false }
+
+    suspend fun setDefaultPrivate(on: Boolean) {
+        context.dataStore.edit { it[Keys.defaultPrivate] = on }
+    }
+
     suspend fun setDimPast(on: Boolean) {
         context.dataStore.edit { it[Keys.dimPast] = on }
     }
@@ -170,6 +186,17 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
             zoneId = it[Keys.windowZone] ?: return null,
             computedOn = LocalDate.ofEpochDay(it[Keys.windowComputedOn] ?: return null),
         )
+    }
+
+    /** After the database was started again from nothing: the keys that describe its data go, the settings stay. */
+    suspend fun resetDataKeys() {
+        context.dataStore.edit {
+            it.remove(Keys.windowFrom)
+            it.remove(Keys.windowTo)
+            it.remove(Keys.windowZone)
+            it.remove(Keys.windowComputedOn)
+            it.remove(Keys.reminderLastCheck)
+        }
     }
 
     suspend fun setInstanceWindow(window: InstanceWindow) {

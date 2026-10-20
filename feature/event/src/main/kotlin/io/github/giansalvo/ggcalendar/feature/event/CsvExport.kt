@@ -16,7 +16,7 @@ internal object CsvExport {
         val header = listOf(
             R.string.csv_calendar, R.string.csv_title, R.string.csv_start_date, R.string.csv_start_time, R.string.csv_end_date,
             R.string.csv_end_time, R.string.csv_all_day, R.string.csv_time_zone, R.string.csv_location, R.string.csv_description,
-            R.string.csv_meet, R.string.csv_guests, R.string.csv_repeats, R.string.csv_reminders,
+            R.string.csv_meet, R.string.csv_guests, R.string.csv_repeats, R.string.csv_reminders, R.string.csv_status, R.string.csv_visibility,
         ).map(res::getString)
         return CsvWriter.write(listOf(header) + rows.map { row(it, res) })
     }
@@ -46,6 +46,8 @@ internal object CsvExport {
             e.attendees.joinToString(", ") { it.email },
             r.series.rrule.orEmpty().removePrefix("RRULE:"),
             reminders,
+            res.getString(if (e.availability == "FREE") R.string.free else R.string.busy),
+            res.getString(if (e.visibility == "PRIVATE" || r.series.visibility == "PRIVATE") R.string.visibility_private else R.string.visibility_public),
         )
     }
 }

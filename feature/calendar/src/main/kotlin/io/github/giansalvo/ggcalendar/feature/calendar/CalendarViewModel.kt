@@ -16,6 +16,7 @@ import io.github.giansalvo.ggcalendar.feature.event.WeekSettings
 import io.github.giansalvo.ggcalendar.feature.event.EditorRequest
 import io.github.giansalvo.ggcalendar.feature.event.occurrence
 import io.github.giansalvo.ggcalendar.core.data.EventRepository
+import io.github.giansalvo.ggcalendar.core.data.LocalCalendars
 import io.github.giansalvo.ggcalendar.core.data.SeriesScope
 import java.time.Instant
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -49,6 +50,8 @@ data class CalendarUiState(
     val accounts: List<AccountWithCalendars> = emptyList(),
     /** The calendar made from the birthdays of the phone's contacts, when turned on. */
     val birthdays: io.github.giansalvo.ggcalendar.core.model.CalendarInfo? = null,
+    /** The calendars kept on this phone only. */
+    val localCalendars: List<io.github.giansalvo.ggcalendar.core.model.CalendarInfo> = emptyList(),
     val instances: List<EventInstance> = emptyList(),
     val syncing: Boolean = false,
     /** Changes waiting to reach Google. */
@@ -122,6 +125,7 @@ class CalendarViewModel @Inject constructor(
     private val authorizer: GoogleAuthorizer,
     private val repository: CalendarRepository,
     private val events: EventRepository,
+    private val localCalendars: LocalCalendars,
 ) : ViewModel() {
     private val navigation = MutableStateFlow(Navigation(CalendarView.SCHEDULE, LocalDate.now()))
     private val transient = MutableStateFlow(Transient())
@@ -146,15 +150,15 @@ class CalendarViewModel @Inject constructor(
 
     val state: StateFlow<CalendarUiState> = combine(
         navigation,
-        combine(repository.accounts, repository.birthdayCalendar, ::Pair),
+        combine(repository.accounts, repository.birthdayCalendar, repository.localCalendars, ::Triple),
         instances,
         combine(repository.syncing, transient, repository.messages.map { it.firstOrNull() }, ::Triple),
         combine(grid, eventDays, repository.pendingChanges, ::Triple),
-    ) { nav, (accounts, birthdays), list, (syncing, t, message), (g, days, pending) ->
+    ) { nav, (accounts, birthdays, locals), list, (syncing, t, message), (g, days, pending) ->
         // Set before the state goes out: the views read the first day of the week while they compose.
         WeekSettings.firstDay = g.weekStart ?: WeekSettings.localeDefault()
         CalendarUiState(
-            view = nav.view, date = nav.date, scheduleFrom = nav.scheduleFrom, scheduleTo = nav.scheduleTo, accounts = accounts, birthdays = birthdays, instances = list, syncing = syncing,
+            view = nav.view, date = nav.date, scheduleFrom = nav.scheduleFrom, scheduleTo = nav.scheduleTo, accounts = accounts, birthdays = birthdays, localCalendars = locals, instances = list, syncing = syncing,
             hourHeight = g.hourHeight, dayStartHour = g.dayStartHour, dimPast = g.dimPast, firstDay = WeekSettings.firstDay, eventDays = days, pending = pending,
             selected = t.selected, editing = t.editing, pendingMove = t.pendingMove, busy = t.busy, addingAccount = t.addingAccount, accountTimeout = t.accountTimeout, consent = t.consent, error = t.error, noCalendar = t.noCalendar, message = message,
         )
@@ -322,6 +326,12 @@ class CalendarViewModel @Inject constructor(
         repository.removeAccount(email)
         if (revokeEverywhere) authorizer.revoke(email)
     }
+
+    fun createLocalCalendar(name: String, colorHex: String) = viewModelScope.launch { localCalendars.create(name, colorHex) }
+
+    fun updateLocalCalendar(id: String, name: String, colorHex: String) = viewModelScope.launch { localCalendars.update(id, name, colorHex) }
+
+    fun deleteLocalCalendar(id: String) = viewModelScope.launch { localCalendars.delete(id) }
 
     fun toggleCalendar(id: String, visible: Boolean) = viewModelScope.launch { repository.setCalendarVisible(id, visible) }
 

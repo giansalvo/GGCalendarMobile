@@ -86,7 +86,10 @@ data class Draft(
 }
 
 @HiltViewModel
-class EventEditorViewModel @Inject constructor(private val repository: EventRepository) : ViewModel() {
+class EventEditorViewModel @Inject constructor(
+    private val repository: EventRepository,
+    private val prefs: io.github.giansalvo.ggcalendar.core.data.AppPreferences,
+) : ViewModel() {
     val calendars: StateFlow<List<CalendarEntity>> =
         repository.writableCalendars.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
@@ -196,6 +199,9 @@ class EventEditorViewModel @Inject constructor(private val repository: EventRepo
             startTime = start.toLocalTime(),
             endDate = if (request.allDay) start.toLocalDate() else end.toLocalDate(),
             endTime = end.toLocalTime(),
+            // The choice of the settings: Busy (the default) or Free.
+            availability = if (prefs.defaultBusy.first()) "BUSY" else "FREE",
+            visibility = if (prefs.defaultPrivate.first()) "PRIVATE" else "PUBLIC",
         )
     }
 

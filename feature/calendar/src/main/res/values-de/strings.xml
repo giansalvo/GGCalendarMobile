@@ -15,7 +15,7 @@
     <string name="alarm">Wecker</string>
     <string name="no_events_today">Heute keine Termine</string>
     <string name="go_to_date">Zum Datum springen</string>
-    <string name="message_no_calendar">Füge zuerst ein Google-Konto hinzu: Es gibt keinen Kalender für den Termin</string>
+    <string name="message_no_calendar">Füge zuerst ein Google-Konto oder einen lokalen Kalender hinzu: Es gibt keinen Kalender für den Termin</string>
     <string name="message_auth">Der Zugriff auf Google Kalender für %1$s muss erneut erteilt werden</string>
     <string name="authorize">Autorisieren</string>
     <string name="my_calendar">Mein Kalender</string>
@@ -73,4 +73,13 @@
     <string name="message_sync_error">Synchronisierung von %1$s fehlgeschlagen: %2$s</string>
     <string name="account_add_action">Hinzufügen</string>
     <string name="message_close">Schließen</string>
+    <string name="local_calendars">Auf diesem Telefon</string>
+    <string name="local_calendar_new">Neuer lokaler Kalender</string>
+    <string name="local_calendar_edit">Kalender bearbeiten</string>
+    <string name="local_calendar_delete">Löschen</string>
+    <string name="local_calendar_name">Name</string>
+    <string name="local_calendar_options">Optionen für %1$s</string>
+    <string name="local_calendar_delete_title">„%1$s“ löschen?</string>
+    <string name="local_calendar_delete_message">Der Kalender und alle seine Termine werden von diesem Telefon entfernt. Das lässt sich nicht rückgängig machen.</string>
+    <string name="message_schema_reset">GGCalendar wurde aktualisiert und startet mit einer leeren Datenbank. Füge deine Google-Konten über das Menü erneut hinzu.</string>
 </resources>

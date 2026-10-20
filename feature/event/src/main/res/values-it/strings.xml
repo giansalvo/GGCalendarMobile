@@ -197,4 +197,8 @@
     <string name="csv_reminders">Promemoria</string>
     <string name="csv_yes">Sì</string>
     <string name="csv_no">No</string>
+    <string name="export_on_phone">Su questo telefono</string>
+    <string name="move_calendar_to_local">Invitati e collegamenti Google Meet non vengono salvati in un calendario locale: si perdono e l\'evento viene rimosso da Google Calendar.</string>
+    <string name="csv_status">Stato</string>
+    <string name="csv_visibility">Visibilità</string>
 </resources>
