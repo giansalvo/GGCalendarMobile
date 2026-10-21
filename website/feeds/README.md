@@ -10,8 +10,8 @@
     2. Scrivi l'indirizzo della cartella (con la barra finale) in `tools/emutest/data/feeds_base_url.txt`: gli script lo leggono da lì; il file non va in nessun repository.
     3. `.htaccess` evita che il sito serva una copia vecchia; senza, l'attesa dopo un cambio può arrivare a diversi minuti.
     4. **Altervista (piano gratuito) può aggiungere pubblicità alle pagine HTML**: i file `.ics` e gli script con un altro tipo di contenuto non dovrebbero essere toccati.
-       Alla prima prova guarda che la fine di `ggcal_basic.ics` sia `END:VCALENDAR` e basta (aprilo in un browser). Il limite di tempo dei `.php` sul piano gratuito può essere
-       inferiore ai 70 secondi di `slow.php`: se la prova mostra un errore del server invece del tempo scaduto, accorcia `seconds` oltre i 60 (la app aspetta al massimo 60 s).
+       Alla prima prova guarda che la fine di `ggcal_basic.ics` sia `END:VCALENDAR` e basta (aprilo in un browser). Sul piano gratuito i `.php` si fermano dopo circa 30 secondi e la risposta
+       di un indirizzo già visto può essere tenuta in memoria: per questo `slow.php` aspetta al massimo 29 secondi (l'app ne aspetta 20 per il primo byte) e gli indirizzi dei test portano un testo che cambia a ogni prova.
 
     ## I file e a cosa servono
     | File | Per cosa |
@@ -33,7 +33,7 @@
 | `ggcal_bom_lf.ics` | file con BOM UTF-8 e righe terminate da LF |
 | `ggcal_dup_uid.ics` | tre eventi, due con lo stesso UID: l'app ne legge 2 (il secondo con lo stesso UID è scartato e segnalato) |
 | `status.php` | T157 T158: risposte 403, 404, 410, 429, 500: status.php?code=404 |
-| `slow.php` | T160 T167: risposta lenta (70 s): slow.php?seconds=70 |
+| `slow.php` | T160 T167: risposta lenta (25 s, più dei 20 s che l'app aspetta): slow.php?s=25-qualcosa |
 | `big.php` | T160: oltre 10 MB, rifiutato (file troppo grande), fatto al volo: big.php?mb=11 e big.php?mb=11&declared=1 |
 | `redirect.php` | T159: reindirizzamenti: redirect.php?kind=ok|to_http|chain |
 | `.htaccess` | facoltativo: niente cache |
@@ -52,4 +52,4 @@
     - `ggcal_rrule.ics`: **8 eventi**; `RDATE` è ignorato e dichiarato; la regola `BYSETPOS` (secondo lunedì del mese) non è espansa dall'app.
     - `ggcal_not_calendar.html` dà "non restituisce un calendario"; `ggcal_empty.ics` "risposta vuota"; un indirizzo inesistente (404) "non più disponibile".
     - `redirect.php?kind=ok` si segue; `kind=to_http` è rifiutato; `kind=chain` si ferma dopo 5 passaggi.
-    - `slow.php?seconds=70` dà "il server non ha risposto in tempo".
+    - `slow.php?s=25-qualcosa` dà "il server non ha risposto in tempo" (l'app aspetta al massimo 20 secondi il primo byte; Altervista ferma gli script dopo circa 30 secondi e tiene in memoria la risposta di un indirizzo già visto, perciò il testo dopo il trattino cambia l'indirizzo).

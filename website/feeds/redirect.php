@@ -3,6 +3,7 @@
 // always https: behind the server of Altervista $_SERVER['HTTPS'] is not set, and a redirect to http would be refused by the app
 $base = 'https://' . $_SERVER['HTTP_HOST'] . dirname($_SERVER['SCRIPT_NAME']);
 $kind = isset($_GET['kind']) ? $_GET['kind'] : 'ok';
+header('Cache-Control: no-store');
 switch ($kind) {
     case 'ok':       header('Location: ' . $base . '/ggcal_basic.ics', true, 302); break;           // one hop to a good file
     case 'to_http':  header('Location: http://example.org/calendar.ics', true, 302); break;           // to an address that is not https: refused

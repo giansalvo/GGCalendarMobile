@@ -9,6 +9,7 @@ $line = "X-FILL:" . str_repeat("0123456789abcdef", 4) . "\r\n";
 $foot = "END:VCALENDAR\r\n";
 $lines = intdiv($mb * 1024 * 1024, strlen($line));
 header('Content-Type: text/calendar; charset=utf-8');
+header('Cache-Control: no-store');
 if (isset($_GET['declared'])) { header('Content-Length: ' . (strlen($head) + $lines * strlen($line) + strlen($foot))); }
 echo $head;
 for ($i = 0; $i < $lines; $i++) { echo $line; if ($i % 2000 === 0) { flush(); } }
