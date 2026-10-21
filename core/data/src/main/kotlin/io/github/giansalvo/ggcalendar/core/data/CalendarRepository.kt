@@ -1,7 +1,6 @@
 package io.github.giansalvo.ggcalendar.core.data
 
 import android.content.Context
-import androidx.room.InvalidationTracker
 import androidx.room.Room
 import androidx.room.withTransaction
 import dagger.Module
@@ -12,6 +11,7 @@ import dagger.hilt.components.SingletonComponent
 import io.github.giansalvo.ggcalendar.core.database.AccountEntity
 import io.github.giansalvo.ggcalendar.core.database.CalendarKind
 import io.github.giansalvo.ggcalendar.core.database.GGCalendarDatabase
+import io.github.giansalvo.ggcalendar.core.database.keepObservingTables
 import io.github.giansalvo.ggcalendar.core.database.InstanceRow
 import io.github.giansalvo.ggcalendar.core.database.SyncMessageEntity
 import io.github.giansalvo.ggcalendar.core.model.CalendarInfo
@@ -173,12 +173,6 @@ object DatabaseModule {
         // Versions 1-5 (up to the 1.0.x releases) are dropped, not migrated: see GGCalendarDatabase.OLDEST_KEPT_VERSION.
         GGCalendarDatabase.configure(Room.databaseBuilder(context, GGCalendarDatabase::class.java, GGCalendarDatabase.NAME)) { SchemaReset.mark(context) }
             .build()
-            .also { db ->
-                // A diag build only: says when Room tells the observers that a table changed, whether or not a flow then emits.
-                if (Diag.sink != null) {
-                    db.invalidationTracker.addObserver(object : InvalidationTracker.Observer("accounts", "calendars", "events", "instances") {
-                        override fun onInvalidated(tables: Set<String>) = Diag.log { "room invalidated $tables" }
-                    })
-                }
-            }
+            // Always on, not only in a diag build: see keepObservingTables. The log line is written by a diag build only.
+            .also { db -> db.keepObservingTables { tables -> Diag.log { "room invalidated $tables" } } }
 }

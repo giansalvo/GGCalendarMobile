@@ -1,6 +1,7 @@
 package io.github.giansalvo.ggcalendar.core.database
 
 import androidx.room.Database
+import androidx.room.InvalidationTracker
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabase.Builder
 import androidx.room.RoomDatabase.Callback
@@ -52,6 +53,28 @@ abstract class GGCalendarDatabase : RoomDatabase() {
                     override fun onDestructiveMigration(db: SupportSQLiteDatabase) = onReset()
                 })
     }
+}
+
+/** The tables that screens observe through flows: the list of what the app shows is built from them. */
+val OBSERVED_TABLES = arrayOf("accounts", "calendars", "events", "instances", "outbox", "sync_messages")
+
+/**
+ * Keeps Room's change tracking switched on for [OBSERVED_TABLES] for as long as the database lives.
+ *
+ * Room installs the triggers that tell it a table changed when the first observer of that table arrives and removes them after the
+ * last one leaves; a flow that is collected only while a screen is shown comes and goes all the time. A write made in that gap
+ * (a sync or the recomputation of the instances, on a background thread) is not announced, and the screen that opens afterwards
+ * keeps an old list: a new event was found by the search (a plain query) but not drawn in the views (flows), and the counter of
+ * the changes waiting to be sent stayed at its old value. Found on 21/10/2026: the full run failed at T144 and T145 on the API 34
+ * and 36 emulators with the normal build and passed with the diagnostic build, the only difference being this observer.
+ * [onInvalidated] is called on each change (the diagnostic build logs it).
+ */
+fun GGCalendarDatabase.keepObservingTables(onInvalidated: (Set<String>) -> Unit = {}): InvalidationTracker.Observer {
+    val observer = object : InvalidationTracker.Observer(OBSERVED_TABLES) {
+        override fun onInvalidated(tables: Set<String>) = onInvalidated(tables)
+    }
+    invalidationTracker.addObserver(observer)
+    return observer
 }
 
 /** Lists are stored as JSON (only queried columns are real columns). */

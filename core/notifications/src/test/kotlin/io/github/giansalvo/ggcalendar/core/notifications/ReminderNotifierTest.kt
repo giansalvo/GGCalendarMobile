@@ -13,7 +13,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * The alarm notification carries a group of its own. Without it Android 16 folds two notifications of the app (a popup left in the
+ * (U148, U149, U150) The alarm notification carries a group of its own. Without it Android 16 folds two notifications of the app (a popup left in the
  * shade and the alarm) into an automatic group and does not launch the full-screen intent of the alarm: the screen stays dark
  * (seen on the API 36 emulator, case T52).
  */

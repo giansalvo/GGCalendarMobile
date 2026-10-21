@@ -7,6 +7,7 @@ import io.github.giansalvo.ggcalendar.core.database.EventEntity
 import io.github.giansalvo.ggcalendar.core.database.GGCalendarDatabase
 import io.github.giansalvo.ggcalendar.core.database.OutboxEntity
 import io.github.giansalvo.ggcalendar.core.database.SyncMessageEntity
+import io.github.giansalvo.ggcalendar.core.model.Diag
 import io.github.giansalvo.ggcalendar.core.network.GoogleApiException
 import io.github.giansalvo.ggcalendar.core.network.GoogleCalendarApi
 import io.github.giansalvo.ggcalendar.core.network.GoogleEvent
@@ -42,7 +43,13 @@ class OutboxPusher @Inject constructor(
     suspend fun push(email: String, accessToken: String, recompute: suspend (String) -> Unit): Boolean {
         var conflicts = false
         val conflicted = HashSet<String>()
-        for (item in outbox.getAll()) {
+        val queue = outbox.getAll()
+        Diag.log {
+            "outbox push ${Diag.who(email)}: ${queue.size} queued [" + queue.joinToString("; ") {
+                "#${it.seq} ${it.operation} cal=${if (it.calendarId.startsWith("local:")) "local" else Diag.who(it.calendarId.substringBefore('|'))} ev=${it.eventId.takeLast(6)} tries=${it.attempts} err=${it.lastError?.take(50)}"
+            } + "]"
+        }
+        for (item in queue) {
             if (item.calendarId.substringBefore('|') != email || item.eventId in conflicted) continue
             val remoteCalendar = calendars.get(item.calendarId)?.remoteId
             if (remoteCalendar == null) {
