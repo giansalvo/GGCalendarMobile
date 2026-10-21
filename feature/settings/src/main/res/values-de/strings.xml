@@ -32,4 +32,8 @@
     <string name="settings_visibility_hint">Im Editor lässt es sich für jeden Termin ändern</string>
     <string name="settings_visibility_public">Öffentlich</string>
     <string name="settings_visibility_private">Privat</string>
+    <string name="settings_subscriptions_refresh">Öffentliche Kalender synchronisieren alle</string>
+    <string name="settings_subscriptions_refresh_hint">Wie lange die App wartet, bevor sie einen öffentlichen Kalender erneut liest. Gegenüber der im Menü gewählten Zeit kann es zu einer Verzögerung von bis zu 15 Minuten kommen.</string>
+    <string name="settings_subscriptions_minutes">%1$d Min.</string>
+    <string name="settings_subscriptions_hours">%1$d Std.</string>
 </resources>

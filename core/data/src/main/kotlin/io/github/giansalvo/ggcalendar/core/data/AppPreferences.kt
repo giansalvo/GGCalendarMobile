@@ -61,6 +61,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         val weekStart = stringPreferencesKey("week_start")
         val dynamicColor = booleanPreferencesKey("dynamic_color")
         val permissionsIntroSeen = booleanPreferencesKey("permissions_intro_seen")
+        val subscriptionMinutes = intPreferencesKey("subscription_refresh_minutes")
     }
 
     /** The "before you start" screen about the permissions of alarms has been shown (or closed) once. */
@@ -68,6 +69,13 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
 
     suspend fun setPermissionsIntroSeen() {
         context.dataStore.edit { it[Keys.permissionsIntroSeen] = true }
+    }
+
+    /** How long the app waits before it downloads a subscribed calendar again, in minutes ([MIN_SUBSCRIPTION_MINUTES] to [MAX_SUBSCRIPTION_MINUTES]). */
+    val subscriptionMinutes: Flow<Int> = context.dataStore.data.map { it[Keys.subscriptionMinutes].asSubscriptionMinutes() }
+
+    suspend fun setSubscriptionMinutes(minutes: Int) {
+        context.dataStore.edit { it[Keys.subscriptionMinutes] = minutes.coerceIn(MIN_SUBSCRIPTION_MINUTES, MAX_SUBSCRIPTION_MINUTES) }
     }
 
     /** How long an alarm rings before it stops by itself and becomes a "missed alarm", in minutes (1 to 10). */
@@ -107,6 +115,15 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
 
     companion object {
         const val DEFAULT_ALARM_MINUTES = 2
+
+        const val MIN_SUBSCRIPTION_MINUTES = 15
+        const val DEFAULT_SUBSCRIPTION_MINUTES = 60
+        const val MAX_SUBSCRIPTION_MINUTES = 24 * 60
+
+        /** The values the settings screen offers. */
+        val SUBSCRIPTION_CHOICES = listOf(15, 30, 60, 120, 360, 720, 1440)
+
+        private fun Int?.asSubscriptionMinutes() = (this ?: DEFAULT_SUBSCRIPTION_MINUTES).coerceIn(MIN_SUBSCRIPTION_MINUTES, MAX_SUBSCRIPTION_MINUTES)
 
         /** Snooze length offered first (5, 15 and 30 from a menu); a setting in M6. */
         const val DEFAULT_SNOOZE_MINUTES = 10

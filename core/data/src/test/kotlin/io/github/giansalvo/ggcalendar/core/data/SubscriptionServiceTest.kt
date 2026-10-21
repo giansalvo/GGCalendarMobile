@@ -13,6 +13,7 @@ import io.github.giansalvo.ggcalendar.core.database.GGCalendarDatabase
 import io.github.giansalvo.ggcalendar.core.network.GoogleCalendarApi
 import io.github.giansalvo.ggcalendar.core.network.IcsFetcher
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
@@ -55,6 +56,8 @@ class SubscriptionServiceTest {
             if (lost || !stored.startsWith("v1:")) null else String(Base64.getDecoder().decode(stored.removePrefix("v1:"))).reversed()
     }
 
+    private lateinit var prefs: AppPreferences
+
     @Before
     fun setUp() {
         val held = HeldCertificate.Builder().addSubjectAlternativeName("localhost").build()
@@ -68,7 +71,9 @@ class SubscriptionServiceTest {
         val api = GoogleCalendarApi(client, server.url("/calendar/v3/"))
         val engine = SyncEngine(db, api, GoogleAuthorizer(context), AppPreferences(context), OutboxPusher(context, db, api))
         cipher = FakeCipher()
-        service = SubscriptionService(db, IcsFetcher(client), cipher, engine, ReminderHooks(emptySet()))
+        prefs = AppPreferences(context)
+        runBlocking { prefs.setSubscriptionMinutes(AppPreferences.DEFAULT_SUBSCRIPTION_MINUTES) } // the store outlives a test
+        service = SubscriptionService(db, IcsFetcher(client), cipher, engine, ReminderHooks(emptySet()), prefs)
         service.clock = { now }
     }
 
@@ -162,7 +167,7 @@ class SubscriptionServiceTest {
         assertFalse(calendar.syncsWithGoogle)
         assertNull(calendar.accountEmail)
         assertTrue(calendar.defaultReminders.isEmpty())
-        assertEquals(60, calendar.refreshMinutes)
+        assertNull(calendar.refreshMinutes) // the waiting time is one setting for all, not a column
         assertNotEquals(address, calendar.sourceUrl)
         assertFalse(calendar.sourceUrl!!.contains("example.org"))
         val event = events(id).values.single()
@@ -337,6 +342,54 @@ class SubscriptionServiceTest {
         assertEquals(2, events(first).size)
         assertEquals(1, events(second).size)
         assertEquals(0, service.refreshDue())
+    }
+
+    @Test
+    fun `the waiting time of the settings decides which subscriptions are due`() = runTest {
+        prefs.setSubscriptionMinutes(15)
+        val id = add(ics(vevent("a@x", "Uno")))
+        now += 10 * 60_000
+        assertEquals(0, service.refreshDue())
+        now += 5 * 60_000 // fifteen minutes since the first download
+        serve(ics(vevent("a@x", "Uno"), vevent("a2@x", "Uno bis")))
+        assertEquals(1, service.refreshDue())
+        assertEquals(2, events(id).size)
+        now += 10 * 60_000
+        assertEquals(0, service.refreshDue()) // the waiting time is counted from the last attempt
+    }
+
+    @Test
+    fun `with the shortest waiting time a worker a minute early still counts as on time`() = runTest {
+        prefs.setSubscriptionMinutes(15)
+        add(ics(vevent("a@x", "Uno")))
+        now += 13 * 60_000 // 13:00, more than the tolerance of 90 seconds early
+        assertEquals(0, service.refreshDue())
+        now += 60_000 + 15_000 // 14:15
+        serve(ics(vevent("a@x", "Uno")))
+        assertEquals(1, service.refreshDue())
+    }
+
+    @Test
+    fun `a longer waiting time keeps a subscription out of the way`() = runTest {
+        prefs.setSubscriptionMinutes(24 * 60)
+        add(ics(vevent("a@x", "Uno")))
+        now += 23 * 3_600_000L
+        assertEquals(0, service.refreshDue())
+        now += 61 * 60_000L
+        serve(ics(vevent("a@x", "Uno")))
+        assertEquals(1, service.refreshDue())
+    }
+
+    @Test
+    fun `the waiting time cannot be set under 15 minutes or over a day`() = runTest {
+        prefs.setSubscriptionMinutes(5)
+        assertEquals(15, prefs.subscriptionMinutes.first())
+        prefs.setSubscriptionMinutes(0)
+        assertEquals(15, prefs.subscriptionMinutes.first())
+        prefs.setSubscriptionMinutes(100_000)
+        assertEquals(24 * 60, prefs.subscriptionMinutes.first())
+        prefs.setSubscriptionMinutes(30)
+        assertEquals(30, prefs.subscriptionMinutes.first())
     }
 
     @Test

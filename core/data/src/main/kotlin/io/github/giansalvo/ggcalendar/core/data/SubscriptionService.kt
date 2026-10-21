@@ -14,6 +14,7 @@ import io.github.giansalvo.ggcalendar.core.model.UrlCheck
 import io.github.giansalvo.ggcalendar.core.network.FetchFailure
 import io.github.giansalvo.ggcalendar.core.network.FetchResult
 import io.github.giansalvo.ggcalendar.core.network.IcsFetcher
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.Instant
@@ -87,6 +88,7 @@ class SubscriptionService @Inject constructor(
     private val cipher: UrlCipher,
     private val engine: SyncEngine,
     private val reminders: ReminderHooks,
+    private val prefs: AppPreferences,
 ) {
     private val mutex = Mutex()
 
@@ -135,7 +137,7 @@ class SubscriptionService @Inject constructor(
                 id = id, accountEmail = null, remoteId = null, name = name.trim().ifEmpty { preview.name }.take(LocalCalendars.MAX_NAME), color = colorHex,
                 accessRole = READER, isVisible = true, defaultReminders = emptyList(), sortOrder = db.calendarDao().maxSortOrder(CalendarKind.SUBSCRIPTION) + 1,
                 kind = CalendarKind.SUBSCRIPTION, sourceUrl = cipher.encrypt(preview.url), sourceHash = preview.fetched.sha256, sourceEtag = preview.fetched.etag,
-                lastFetchedAt = now, refreshMinutes = REFRESH_MINUTES, lastSyncedAt = now,
+                lastFetchedAt = now, lastSyncedAt = now,
             ),
         )
         // The copy is read again with the id of the new calendar: the ids of the events carry it.
@@ -169,14 +171,19 @@ class SubscriptionService @Inject constructor(
     /** Downloads the calendar again. A copy that did not change writes nothing; a failure keeps the events and notes the reason. */
     suspend fun refresh(id: String): RefreshResult = mutex.withLock { refreshLocked(id) }
 
-    /** The subscriptions whose last attempt is older than their interval, one after the other; stops if the network is gone. */
+    /**
+     * The subscriptions whose last attempt is older than the interval of the settings (the same for all), one after the other;
+     * stops if the network is gone.
+     */
     suspend fun refreshDue(): Int = mutex.withLock {
         val now = clock()
+        val interval = prefs.subscriptionMinutes.first() * 60_000L
+        // A worker that runs a little early still counts as due: a tenth of the interval, 2 minutes at most (90 seconds for 15 minutes).
+        val tolerance = minOf(TOLERANCE_MS, interval / 10)
         var done = 0
         for (calendar in db.calendarDao().getByKind(CalendarKind.SUBSCRIPTION)) {
-            val interval = (calendar.refreshMinutes ?: REFRESH_MINUTES) * 60_000L
             val last = calendar.lastSyncedAt ?: 0L
-            if (now - last < interval - TOLERANCE_MS) continue
+            if (now - last < interval - tolerance) continue
             val result = refreshLocked(calendar.id)
             done++
             if (result is RefreshResult.Failed && result.problem == SubscriptionProblem.NO_NETWORK) break
@@ -284,7 +291,6 @@ class SubscriptionService @Inject constructor(
     companion object {
         const val MAX_EVENTS = 5000
         const val MAX_SUBSCRIPTIONS = 10
-        const val REFRESH_MINUTES = 60
         /** A worker that runs a little early still counts as due. */
         private const val TOLERANCE_MS = 2 * 60_000L
         private const val READER = "reader"

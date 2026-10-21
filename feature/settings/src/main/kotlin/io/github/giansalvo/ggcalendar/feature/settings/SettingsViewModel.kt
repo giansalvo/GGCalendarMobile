@@ -24,6 +24,8 @@ data class SettingsDraft(
     /** New events start as Public (off, the default) or as Private (on). */
     val defaultPrivate: Boolean,
     val birthdays: Boolean,
+    /** How long the app waits before it downloads a subscribed calendar again (5 minutes at least). */
+    val subscriptionMinutes: Int,
     /** How long an alarm rings before it stops by itself (1 to 10 minutes). */
     val alarmMinutes: Int,
     /** The sound of the alarms (a Uri as text); null = the alarm sound of the phone. */
@@ -51,6 +53,7 @@ class SettingsViewModel @Inject constructor(
             defaultBusy = prefs.defaultBusy.first(),
             defaultPrivate = prefs.defaultPrivate.first(),
             birthdays = prefs.birthdaysEnabled.first() && contacts.granted,
+            subscriptionMinutes = prefs.subscriptionMinutes.first(),
             alarmMinutes = prefs.alarmMinutes.first(),
             alarmSound = prefs.alarmSound.first(),
         )
@@ -65,6 +68,7 @@ class SettingsViewModel @Inject constructor(
         prefs.setDefaultBusy(draft.defaultBusy)
         prefs.setDefaultPrivate(draft.defaultPrivate)
         prefs.setBirthdaysEnabled(draft.birthdays)
+        prefs.setSubscriptionMinutes(draft.subscriptionMinutes)
         // The copy in the device protected storage is what the alarm uses while the phone is locked after a reboot.
         alarmStore.setAlarmMinutes(draft.alarmMinutes)
         prefs.setAlarmMinutes(draft.alarmMinutes)

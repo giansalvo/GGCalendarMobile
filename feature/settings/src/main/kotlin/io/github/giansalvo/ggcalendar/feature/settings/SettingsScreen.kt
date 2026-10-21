@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.github.giansalvo.ggcalendar.core.data.AppPreferences
 import io.github.giansalvo.ggcalendar.core.data.ThemeMode
 import io.github.giansalvo.ggcalendar.feature.event.WeekSettings
 import kotlinx.coroutines.launch
@@ -145,6 +146,8 @@ fun SettingsScreen(onClose: () -> Unit, viewModel: SettingsViewModel = hiltViewM
                             if (on && !viewModel.contactsGranted) askContacts.launch(Manifest.permission.READ_CONTACTS) else draft = draft.copy(birthdays = on)
                         }
 
+                        SubscriptionRefreshRow(draft.subscriptionMinutes) { draft = draft.copy(subscriptionMinutes = it) }
+
                         Section(stringResource(R.string.settings_notifications))
                         NotificationSettingsSection(draft.alarmMinutes, { draft = draft.copy(alarmMinutes = it) }, draft.alarmSound) { draft = draft.copy(alarmSound = it) }
                         Spacer(Modifier.height(24.dp))
@@ -225,6 +228,32 @@ private fun DayStartRow(hour: Int, onChange: (Int) -> Unit) {
                 DropdownMenuItem(text = { Text(LocalTime.of(h, 0).format(format)) }, onClick = {
                     open = false
                     onChange(h)
+                })
+            }
+        }
+    }
+}
+
+/** How long the app waits before it downloads a subscribed calendar again (5 minutes at least). */
+@Composable
+private fun SubscriptionRefreshRow(minutes: Int, onChange: (Int) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    val choices = (AppPreferences.SUBSCRIPTION_CHOICES + minutes).distinct().sorted()
+    @Composable
+    fun label(m: Int) = if (m % 60 == 0) stringResource(R.string.settings_subscriptions_hours, m / 60) else stringResource(R.string.settings_subscriptions_minutes, m)
+    Column {
+        Row(Modifier.testTag("settings_subscription_refresh").fillMaxWidth().clickable { open = true }.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.settings_subscriptions_refresh), style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.settings_subscriptions_refresh_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Text(label(minutes), Modifier.testTag("settings_subscription_refresh_value"), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            choices.forEach { m ->
+                DropdownMenuItem(text = { Text(label(m)) }, modifier = Modifier.testTag("settings_subscription_refresh_$m"), onClick = {
+                    open = false
+                    onChange(m)
                 })
             }
         }

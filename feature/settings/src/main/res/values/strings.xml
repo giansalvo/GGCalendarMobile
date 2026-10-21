@@ -32,4 +32,8 @@
     <string name="settings_visibility_hint">You can change it for each event in the editor</string>
     <string name="settings_visibility_public">Public</string>
     <string name="settings_visibility_private">Private</string>
+    <string name="settings_subscriptions_refresh">Sync public calendars every</string>
+    <string name="settings_subscriptions_refresh_hint">How long the app waits before it reads a public calendar again. Compared with the time chosen in the menu there can be a delay of up to 15 minutes.</string>
+    <string name="settings_subscriptions_minutes">%1$d min</string>
+    <string name="settings_subscriptions_hours">%1$d h</string>
 </resources>
