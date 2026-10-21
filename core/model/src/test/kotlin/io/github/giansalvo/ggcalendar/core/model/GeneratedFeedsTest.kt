@@ -9,8 +9,8 @@ import java.io.File
 import java.time.ZoneId
 
 /**
- * The test calendars made by tools/emutest/feeds/make_feeds.py, read by the parser of the app (U161). They live outside this repository:
- * the test runs only when the folder is named by the environment variable GGCAL_FEEDS_DIR, and is skipped otherwise.
+ * The test calendars made by tools/emutest/feeds/make_feeds.py (they are the folder website/feeds), read by the parser of the app (U161).
+ * The test runs only when the folder is named by the environment variable GGCAL_FEEDS_DIR, and is skipped otherwise.
  */
 class GeneratedFeedsTest {
     private val dir: File? = System.getenv("GGCAL_FEEDS_DIR")?.let(::File)?.takeIf { it.isDirectory }
@@ -57,7 +57,8 @@ class GeneratedFeedsTest {
 
         assertEquals(5000, counts("ggcal_5000.ics"))
         assertEquals(5001, counts("ggcal_5001.ics"))
-        assertTrue(File(dir!!, "ggcal_too_big.ics").length() > 10L * 1024 * 1024)
+        assertTrue("the big file is made by big.php", File(dir!!, "big.php").readText().contains("max(1, min(20"))
+        assertTrue(!File(dir!!, "ggcal_too_big.ics").exists())
 
         val dup = read("ggcal_dup_uid.ics")
         println("dup events=${dup.events.size} issues=${dup.report.issues.map { it.code }}")

@@ -1,0 +1,22 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8"><title>Calendari di prova</title></head><body><h1>Calendari di prova di GGCalendar</h1><ul>
+<li><a href="ggcal_basic.ics">ggcal_basic.ics</a> &mdash; T151 T153 T154 T155 T161 T162 T163 T168 (11 eventi mostrati, 1 annullato)</li>
+<li><a href="ggcal_google_busy.ics">ggcal_google_busy.ics</a> &mdash; T152: 109 eventi 'Busy' con lo stesso UID e RECURRENCE-ID, come il feed pubblico di Google</li>
+<li><a href="ggcal_change_v1.ics">ggcal_change_v1.ics</a> &mdash; T154 T164: la versione 1 (6 eventi)</li>
+<li><a href="ggcal_change_v2.ics">ggcal_change_v2.ics</a> &mdash; T154 T164: la versione 2 (B cambia titolo, C si sposta, D e F spariscono, G è nuovo, 5 eventi)</li>
+<li><a href="ggcal_utc.ics">ggcal_utc.ics</a> &mdash; T165: orari in UTC; cambiano con il fuso del telefono</li>
+<li><a href="ggcal_rrule.ics">ggcal_rrule.ics</a> &mdash; T166: serie di un altro produttore (anche BYSETPOS e RDATE, non supportati e dichiarati)</li>
+<li><a href="ggcal_windows_tz.ics">ggcal_windows_tz.ics</a> &mdash; fusi di Outlook (nomi Windows) e un fuso sconosciuto</li>
+<li><a href="ggcal_apple.ics">ggcal_apple.ics</a> &mdash; file in stile Apple (con VALARM e proprietà X-APPLE)</li>
+<li><a href="ggcal_alarms.ics">ggcal_alarms.ics</a> &mdash; T161: un abbonamento non ha promemoria, anche se il file ha VALARM</li>
+<li><a href="ggcal_5000.ics">ggcal_5000.ics</a> &mdash; T160: esattamente 5000 eventi, accettato</li>
+<li><a href="ggcal_5001.ics">ggcal_5001.ics</a> &mdash; T160: 5001 eventi, rifiutato (troppi)</li>
+<li><a href="ggcal_not_calendar.html">ggcal_not_calendar.html</a> &mdash; T157: una pagina web con risposta 200: non è un calendario</li>
+<li><a href="ggcal_empty.ics">ggcal_empty.ics</a> &mdash; T157: file vuoto</li>
+<li><a href="ggcal_malformed.ics">ggcal_malformed.ics</a> &mdash; file interrotto a metà di un evento: l'app legge i 6 eventi completi e segnala il troncamento</li>
+<li><a href="ggcal_bom_lf.ics">ggcal_bom_lf.ics</a> &mdash; file con BOM UTF-8 e righe terminate da LF</li>
+<li><a href="ggcal_dup_uid.ics">ggcal_dup_uid.ics</a> &mdash; tre eventi, due con lo stesso UID: l'app ne legge 2 (il secondo con lo stesso UID è scartato e segnalato)</li>
+<li><a href="status.php">status.php</a> &mdash; T157 T158: risposte 403, 404, 410, 429, 500: status.php?code=404</li>
+<li><a href="slow.php">slow.php</a> &mdash; T160 T167: risposta lenta (70 s): slow.php?seconds=70</li>
+<li><a href="big.php">big.php</a> &mdash; T160: oltre 10 MB, rifiutato (file troppo grande), fatto al volo: big.php?mb=11 e big.php?mb=11&declared=1</li>
+<li><a href="redirect.php">redirect.php</a> &mdash; T159: reindirizzamenti: redirect.php?kind=ok|to_http|chain</li>
+</ul></body></html>

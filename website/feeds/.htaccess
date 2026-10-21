@@ -1,0 +1,7 @@
+# Optional, for the folder of the test calendars (Apache with mod_headers): the app and the test must not be given an old copy.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(ics|html)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>
+AddType text/calendar .ics
