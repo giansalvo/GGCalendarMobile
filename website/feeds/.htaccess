@@ -5,3 +5,10 @@
   </FilesMatch>
 </IfModule>
 AddType text/calendar .ics
+
+# Altervista answers an address of the folder without the final slash (.../feeds) with a redirect written with http://, and the browser
+# leaves https. The address is put back to https, only for this site (a redirect to another host, as redirect.php?kind=to_http does on
+# purpose, must stay as it is).
+<IfModule mod_headers.c>
+  Header always edit Location "^http://(profgusinu\.altervista\.org/.*)$" "https://$1"
+</IfModule>
