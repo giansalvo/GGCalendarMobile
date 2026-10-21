@@ -7,9 +7,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -31,6 +35,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -62,6 +68,18 @@ class PermissionsIntroViewModel @Inject constructor(private val prefs: AppPrefer
 
 private const val SPLASH_MILLIS = 5_000L
 
+/** "Giansalvo Gusinu · v1.0.2 · 22 Oct 2026": the author, the version and the day of the build (the same sources as the About card). */
+private fun splashSignature(context: android.content.Context): String {
+    val pm = context.packageManager
+    val version = runCatching { pm.getPackageInfo(context.packageName, 0).versionName }.getOrNull().orEmpty()
+    val built = runCatching {
+        pm.getApplicationInfo(context.packageName, android.content.pm.PackageManager.GET_META_DATA).metaData
+            ?.getString("io.github.giansalvo.ggcalendar.BUILD_DATE")?.let(java.time.LocalDate::parse)
+            ?.format(java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM))
+    }.getOrNull()
+    return listOfNotNull("Giansalvo Gusinu", "v$version", built).joinToString(" · ")
+}
+
 /** TEST ONLY: show the splash and the questions at every start, whatever was answered before. Must be false in a release. */
 private const val ALWAYS_SHOW_FOR_TESTING = false
 
@@ -92,7 +110,23 @@ fun PermissionsIntro(viewModel: PermissionsIntroViewModel = hiltViewModel()) {
         ) {
             // The logo has a light grey background of its own: the screen takes the same grey.
             Box(Modifier.exposeTestTags().testTag("splash_logo").fillMaxSize().background(Color(0xFFE1E1E1)), contentAlignment = Alignment.Center) {
-                Image(painterResource(R.drawable.logo_splash), contentDescription = null, modifier = Modifier.fillMaxWidth(0.6f), contentScale = ContentScale.Fit)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Image(painterResource(R.drawable.logo_splash), contentDescription = null, modifier = Modifier.fillMaxWidth(0.6f), contentScale = ContentScale.Fit)
+                    Text(
+                        "GGCalendar",
+                        Modifier.padding(top = 16.dp).testTag("splash_name"),
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF212121),
+                    )
+                }
+                // Small, at the bottom and in the middle: who made it, which version, when it was built.
+                Text(
+                    splashSignature(LocalContext.current),
+                    Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 24.dp).testTag("splash_signature"),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFF616161),
+                )
             }
         }
         return
