@@ -8,6 +8,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.giansalvo.ggcalendar.core.auth.AuthorizationOutcome
 import io.github.giansalvo.ggcalendar.core.auth.GoogleAuthorizer
 import io.github.giansalvo.ggcalendar.core.data.AccountWithCalendars
+import io.github.giansalvo.ggcalendar.core.data.AddResult
+import io.github.giansalvo.ggcalendar.core.data.PreviewResult
+import io.github.giansalvo.ggcalendar.core.data.SubscriptionPreview
 import io.github.giansalvo.ggcalendar.core.data.CalendarRepository
 import io.github.giansalvo.ggcalendar.core.model.Diag
 import io.github.giansalvo.ggcalendar.core.database.SyncMessageEntity
@@ -20,10 +23,12 @@ import io.github.giansalvo.ggcalendar.core.data.LocalCalendars
 import io.github.giansalvo.ggcalendar.core.data.SeriesScope
 import java.time.Instant
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -52,6 +57,8 @@ data class CalendarUiState(
     val birthdays: io.github.giansalvo.ggcalendar.core.model.CalendarInfo? = null,
     /** The calendars kept on this phone only. */
     val localCalendars: List<io.github.giansalvo.ggcalendar.core.model.CalendarInfo> = emptyList(),
+    /** The calendars read from an address, with how their last download went. */
+    val subscriptions: List<io.github.giansalvo.ggcalendar.core.model.SubscriptionInfo> = emptyList(),
     val instances: List<EventInstance> = emptyList(),
     val syncing: Boolean = false,
     /** Changes waiting to reach Google. */
@@ -94,6 +101,42 @@ data class PendingMove(
     val scope: SeriesScope? = null,
 ) {
     val needsScope: Boolean get() = recurring && scope == null
+}
+
+/** The calendars of the side menu, taken together. */
+private data class Calendars(
+    val accounts: List<AccountWithCalendars>,
+    val birthdays: io.github.giansalvo.ggcalendar.core.model.CalendarInfo?,
+    val locals: List<io.github.giansalvo.ggcalendar.core.model.CalendarInfo>,
+    val subscriptions: List<io.github.giansalvo.ggcalendar.core.model.SubscriptionInfo>,
+)
+
+/**
+ * The dialog that adds a subscription. The address can be a secret: these classes never print it ([toString]) and the dialog does not
+ * save it with the screen state.
+ */
+sealed interface SubscriptionDialog {
+    class Input(val address: String = "", val problem: io.github.giansalvo.ggcalendar.core.data.SubscriptionProblem? = null) : SubscriptionDialog {
+        override fun toString() = "Input"
+    }
+
+    class Checking(val address: String) : SubscriptionDialog {
+        override fun toString() = "Checking"
+    }
+
+    class Preview(
+        val address: String,
+        val preview: SubscriptionPreview,
+        val problem: io.github.giansalvo.ggcalendar.core.data.SubscriptionProblem? = null,
+    ) : SubscriptionDialog {
+        override fun toString() = "Preview"
+    }
+}
+
+/** The address of a subscription as the "show address" dialog has it: masked, and whole once the user asked for it. */
+class AddressShown(val calendarName: String, val masked: String, val full: String?) {
+    fun copy(full: String?) = AddressShown(calendarName, masked, full)
+    override fun toString() = "AddressShown"
 }
 
 private data class Navigation(
@@ -150,15 +193,16 @@ class CalendarViewModel @Inject constructor(
 
     val state: StateFlow<CalendarUiState> = combine(
         navigation,
-        combine(repository.accounts, repository.birthdayCalendar, repository.localCalendars, ::Triple),
+        combine(repository.accounts, repository.birthdayCalendar, repository.localCalendars, repository.subscriptions, ::Calendars),
         instances,
         combine(repository.syncing, transient, repository.messages.map { it.firstOrNull() }, ::Triple),
         combine(grid, eventDays, repository.pendingChanges, ::Triple),
-    ) { nav, (accounts, birthdays, locals), list, (syncing, t, message), (g, days, pending) ->
+    ) { nav, calendars, list, (syncing, t, message), (g, days, pending) ->
+        val (accounts, birthdays, locals, subscriptions) = calendars
         // Set before the state goes out: the views read the first day of the week while they compose.
         WeekSettings.firstDay = g.weekStart ?: WeekSettings.localeDefault()
         CalendarUiState(
-            view = nav.view, date = nav.date, scheduleFrom = nav.scheduleFrom, scheduleTo = nav.scheduleTo, accounts = accounts, birthdays = birthdays, localCalendars = locals, instances = list, syncing = syncing,
+            view = nav.view, date = nav.date, scheduleFrom = nav.scheduleFrom, scheduleTo = nav.scheduleTo, accounts = accounts, birthdays = birthdays, localCalendars = locals, subscriptions = subscriptions, instances = list, syncing = syncing,
             hourHeight = g.hourHeight, dayStartHour = g.dayStartHour, dimPast = g.dimPast, firstDay = WeekSettings.firstDay, eventDays = days, pending = pending,
             selected = t.selected, editing = t.editing, pendingMove = t.pendingMove, busy = t.busy, addingAccount = t.addingAccount, accountTimeout = t.accountTimeout, consent = t.consent, error = t.error, noCalendar = t.noCalendar, message = message,
         )
@@ -223,7 +267,10 @@ class CalendarViewModel @Inject constructor(
         viewModelScope.launch { repository.setLastView(CalendarView.DAY.name) }
     }
 
-    fun refresh() = repository.syncNow()
+    fun refresh() {
+        repository.syncNow()
+        viewModelScope.launch { runCatching { repository.refreshSubscriptions() } }
+    }
 
     /** The occurrence of a reminder notification, also from a calendar hidden in the menu. */
     fun openLink(link: EventLink) {
@@ -332,6 +379,80 @@ class CalendarViewModel @Inject constructor(
     fun updateLocalCalendar(id: String, name: String, colorHex: String) = viewModelScope.launch { localCalendars.update(id, name, colorHex) }
 
     fun deleteLocalCalendar(id: String) = viewModelScope.launch { localCalendars.delete(id) }
+
+    // ---- subscriptions (calendars read from an address)
+
+    private val _subscriptionDialog = MutableStateFlow<SubscriptionDialog?>(null)
+
+    /** The dialog that adds a subscription, or null when closed. It lives in the view model: a rotation keeps it, a killed process does not. */
+    val subscriptionDialog: StateFlow<SubscriptionDialog?> = _subscriptionDialog.asStateFlow()
+
+    private val _addressShown = MutableStateFlow<AddressShown?>(null)
+    val addressShown: StateFlow<AddressShown?> = _addressShown.asStateFlow()
+    private var subscriptionJob: Job? = null
+    private var shownCalendar: String? = null
+
+    fun openSubscriptionDialog() { _subscriptionDialog.value = SubscriptionDialog.Input() }
+
+    fun checkSubscription(address: String) {
+        subscriptionJob?.cancel()
+        _subscriptionDialog.value = SubscriptionDialog.Checking(address)
+        subscriptionJob = viewModelScope.launch {
+            _subscriptionDialog.value = when (val result = repository.previewSubscription(address)) {
+                is PreviewResult.Ok -> SubscriptionDialog.Preview(address, result.preview)
+                is PreviewResult.Problem -> SubscriptionDialog.Input(address, result.problem)
+            }
+        }
+    }
+
+    /** From the preview (or the wait) back to the address, which is kept. */
+    fun backToSubscriptionAddress() {
+        subscriptionJob?.cancel()
+        val address = when (val d = _subscriptionDialog.value) {
+            is SubscriptionDialog.Preview -> d.address
+            is SubscriptionDialog.Checking -> d.address
+            is SubscriptionDialog.Input -> d.address
+            null -> ""
+        }
+        _subscriptionDialog.value = SubscriptionDialog.Input(address)
+    }
+
+    fun addSubscription(name: String, colorHex: String) {
+        val dialog = _subscriptionDialog.value as? SubscriptionDialog.Preview ?: return
+        subscriptionJob = viewModelScope.launch {
+            when (val result = repository.addSubscription(dialog.preview, name, colorHex)) {
+                is AddResult.Added -> _subscriptionDialog.value = null
+                is AddResult.Problem -> _subscriptionDialog.value = SubscriptionDialog.Preview(dialog.address, dialog.preview, result.problem)
+            }
+        }
+    }
+
+    fun dismissSubscriptionDialog() {
+        subscriptionJob?.cancel()
+        _subscriptionDialog.value = null
+    }
+
+    fun refreshSubscription(id: String) = viewModelScope.launch { repository.refreshSubscription(id) }
+
+    fun updateSubscription(id: String, name: String, colorHex: String) = viewModelScope.launch { repository.updateSubscription(id, name, colorHex) }
+
+    fun deleteSubscription(id: String) = viewModelScope.launch { repository.deleteSubscription(id) }
+
+    fun showSubscriptionAddress(id: String, calendarName: String) = viewModelScope.launch {
+        shownCalendar = id
+        _addressShown.value = AddressShown(calendarName, repository.subscriptionAddress(id) ?: "•••", null)
+    }
+
+    fun revealSubscriptionAddress() = viewModelScope.launch {
+        val id = shownCalendar ?: return@launch
+        val current = _addressShown.value ?: return@launch
+        _addressShown.value = current.copy(full = repository.revealSubscriptionAddress(id))
+    }
+
+    fun hideSubscriptionAddress() {
+        shownCalendar = null
+        _addressShown.value = null
+    }
 
     fun toggleCalendar(id: String, visible: Boolean) = viewModelScope.launch { repository.setCalendarVisible(id, visible) }
 

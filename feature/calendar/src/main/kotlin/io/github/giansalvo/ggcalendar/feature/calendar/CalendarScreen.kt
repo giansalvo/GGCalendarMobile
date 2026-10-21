@@ -146,6 +146,11 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
     // The local calendar being made (empty text) or changed (its id), and the one being deleted.
     var editingLocal by rememberSaveable { mutableStateOf<String?>(null) }
     var deletingLocal by rememberSaveable { mutableStateOf<String?>(null) }
+    // The subscription being changed or removed. The dialog that adds one is kept by the view model (its address is not saved here).
+    var editingSubscription by rememberSaveable { mutableStateOf<String?>(null) }
+    var removingSubscription by rememberSaveable { mutableStateOf<String?>(null) }
+    val subscriptionDialog by viewModel.subscriptionDialog.collectAsStateWithLifecycle()
+    val addressShown by viewModel.addressShown.collectAsStateWithLifecycle()
     var settingsOpen by rememberSaveable { mutableStateOf(false) }
     var searchOpen by rememberSaveable { mutableStateOf(false) }
 
@@ -249,6 +254,14 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                 onNewLocal = { editingLocal = "" },
                 onEditLocal = { editingLocal = it },
                 onDeleteLocal = { deletingLocal = it },
+                onAddSubscription = {
+                    viewModel.openSubscriptionDialog()
+                    scope.launch { drawerState.close() }
+                },
+                onRefreshSubscription = viewModel::refreshSubscription,
+                onEditSubscription = { editingSubscription = it },
+                onShowSubscriptionAddress = { id -> viewModel.showSubscriptionAddress(id, state.subscriptions.firstOrNull { it.calendar.id == id }?.calendar?.name.orEmpty()) },
+                onRemoveSubscription = { removingSubscription = it },
                 onActiveAlarms = {
                     alarmsOpen = true
                     scope.launch { drawerState.close() }
@@ -438,6 +451,30 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
         if (current == null) deletingLocal = null
         else DeleteLocalCalendarDialog(current, onConfirm = { viewModel.deleteLocalCalendar(id); deletingLocal = null }, onDismiss = { deletingLocal = null })
     }
+    subscriptionDialog?.let { dialog ->
+        SubscriptionAddDialog(
+            dialog = dialog,
+            onCheck = viewModel::checkSubscription,
+            onAdd = viewModel::addSubscription,
+            onBack = viewModel::backToSubscriptionAddress,
+            onDismiss = viewModel::dismissSubscriptionDialog,
+        )
+    }
+    editingSubscription?.let { id ->
+        val current = state.subscriptions.firstOrNull { it.calendar.id == id }?.calendar
+        if (current == null) editingSubscription = null
+        else LocalCalendarDialog(
+            initial = current,
+            onConfirm = { name, color -> viewModel.updateSubscription(id, name, color); editingSubscription = null },
+            onDismiss = { editingSubscription = null },
+        )
+    }
+    removingSubscription?.let { id ->
+        val current = state.subscriptions.firstOrNull { it.calendar.id == id }?.calendar
+        if (current == null) removingSubscription = null
+        else RemoveSubscriptionDialog(current, onConfirm = { viewModel.deleteSubscription(id); removingSubscription = null }, onDismiss = { removingSubscription = null })
+    }
+    addressShown?.let { shown -> SubscriptionAddressDialog(shown, onReveal = viewModel::revealSubscriptionAddress, onDismiss = viewModel::hideSubscriptionAddress) }
     removing?.let { email ->
         // Off by default: the account leaves this app only. On, the access of the app is also taken away from the Google account.
         var revokeEverywhere by remember(email) { mutableStateOf(false) }
@@ -569,6 +606,11 @@ private fun CalendarDrawer(
     onNewLocal: () -> Unit,
     onEditLocal: (String) -> Unit,
     onDeleteLocal: (String) -> Unit,
+    onAddSubscription: () -> Unit,
+    onRefreshSubscription: (String) -> Unit,
+    onEditSubscription: (String) -> Unit,
+    onShowSubscriptionAddress: (String) -> Unit,
+    onRemoveSubscription: (String) -> Unit,
     onActiveAlarms: () -> Unit,
     onSettings: () -> Unit,
     onExport: () -> Unit,
@@ -623,6 +665,9 @@ private fun CalendarDrawer(
                 account.calendars.forEach { CalendarRow(it, onToggleCalendar) }
             }
             LocalCalendarsSection(state.localCalendars, onToggleCalendar, onNewLocal, onEditLocal, onDeleteLocal)
+            SubscriptionsSection(
+                state.subscriptions, onToggleCalendar, onAddSubscription, onRefreshSubscription, onEditSubscription, onShowSubscriptionAddress, onRemoveSubscription,
+            )
             state.birthdays?.let { birthdays ->
                 Row(Modifier.padding(16.dp, 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.Cake, contentDescription = null)
