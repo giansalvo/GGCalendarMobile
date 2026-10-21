@@ -1,6 +1,7 @@
 <?php
 // redirect.php?kind=ok | chain | to_http | to_other: the redirects the app must handle. The targets are fixed here (no open redirect).
-$base = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . dirname($_SERVER['SCRIPT_NAME']);
+// always https: behind the server of Altervista $_SERVER['HTTPS'] is not set, and a redirect to http would be refused by the app
+$base = 'https://' . $_SERVER['HTTP_HOST'] . dirname($_SERVER['SCRIPT_NAME']);
 $kind = isset($_GET['kind']) ? $_GET['kind'] : 'ok';
 switch ($kind) {
     case 'ok':       header('Location: ' . $base . '/ggcal_basic.ics', true, 302); break;           // one hop to a good file
