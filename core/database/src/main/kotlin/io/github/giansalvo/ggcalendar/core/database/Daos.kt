@@ -50,6 +50,17 @@ interface CalendarDao {
 
     @Query("SELECT COALESCE(MAX(sort_order), 0) FROM calendars WHERE kind = :kind")
     suspend fun maxSortOrder(kind: String): Int
+
+    @Query("SELECT * FROM calendars WHERE kind = :kind ORDER BY sort_order")
+    suspend fun getByKind(kind: String): List<CalendarEntity>
+
+    /** A subscription after a download that worked: the copy it holds now, when it was taken and when it was tried. */
+    @Query("UPDATE calendars SET source_hash = :hash, source_etag = :etag, last_fetched_at = :fetchedAt, last_synced_at = :attemptAt, last_error = NULL WHERE id = :id")
+    suspend fun setSourceFetched(id: String, hash: String?, etag: String?, fetchedAt: Long, attemptAt: Long)
+
+    /** A subscription after an attempt that failed: its events stay, only the time of the attempt and the reason change. */
+    @Query("UPDATE calendars SET last_synced_at = :attemptAt, last_error = :error WHERE id = :id")
+    suspend fun setSourceFailed(id: String, attemptAt: Long, error: String)
 }
 
 @Dao

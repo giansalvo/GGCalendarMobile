@@ -28,11 +28,13 @@ class SyncWorker @AssistedInject constructor(
     private val engine: SyncEngine,
     private val reminders: ReminderHooks,
     private val birthdays: BirthdaySync,
+    private val subscriptions: SubscriptionService,
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         Diag.log { "worker begin attempt=$runAttemptCount" }
         engine.syncAll()
         runCatching { birthdays.sync() }
+        runCatching { subscriptions.refreshDue() } // the subscriptions whose hour is up; a failure is noted on the calendar, not here
         reminders.changed()
         Diag.log { "worker end" }
         return Result.success()

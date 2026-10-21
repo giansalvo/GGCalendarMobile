@@ -15,6 +15,7 @@ import io.github.giansalvo.ggcalendar.core.database.keepObservingTables
 import io.github.giansalvo.ggcalendar.core.database.InstanceRow
 import io.github.giansalvo.ggcalendar.core.database.SyncMessageEntity
 import io.github.giansalvo.ggcalendar.core.model.CalendarInfo
+import io.github.giansalvo.ggcalendar.core.model.SubscriptionInfo
 import io.github.giansalvo.ggcalendar.core.model.Diag
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
 import kotlinx.coroutines.flow.Flow
@@ -40,6 +41,7 @@ class CalendarRepository @Inject constructor(
     private val birthdays: BirthdaySync,
     private val reminders: ReminderHooks,
     private val visibility: CalendarVisibility,
+    private val subscriptionService: SubscriptionService,
 ) {
     val syncing: StateFlow<Boolean> get() = engine.syncing
 
@@ -63,6 +65,33 @@ class CalendarRepository @Inject constructor(
         all.filter { it.kind == CalendarKind.LOCAL }.sortedBy { it.sortOrder }
             .map { CalendarInfo(it.id, null, it.name, it.color, it.isVisible, it.canWrite, false, local = true) }
     }
+
+    /** The calendars read from an address, in the order they were added, with how their last download went. */
+    val subscriptions: Flow<List<SubscriptionInfo>> = db.calendarDao().observeAll().map { all ->
+        all.filter { it.kind == CalendarKind.SUBSCRIPTION }.sortedBy { it.sortOrder }.map {
+            SubscriptionInfo(
+                CalendarInfo(it.id, null, it.name, it.color, it.isVisible, canWrite = false, isPrimary = false, subscription = true),
+                it.lastFetchedAt, it.lastSyncedAt, it.lastError,
+            )
+        }
+    }
+
+    suspend fun previewSubscription(address: String) = subscriptionService.preview(address)
+
+    suspend fun addSubscription(preview: SubscriptionPreview, name: String, colorHex: String) = subscriptionService.add(preview, name, colorHex)
+
+    suspend fun refreshSubscription(id: String) = subscriptionService.refresh(id)
+
+    /** Every subscription, now (the refresh button). */
+    suspend fun refreshSubscriptions() = subscriptionService.refreshAll()
+
+    suspend fun updateSubscription(id: String, name: String, colorHex: String) = subscriptionService.update(id, name, colorHex)
+
+    suspend fun deleteSubscription(id: String) = subscriptionService.delete(id)
+
+    suspend fun subscriptionAddress(id: String): String? = subscriptionService.maskedAddress(id)
+
+    suspend fun revealSubscriptionAddress(id: String): String? = subscriptionService.revealAddress(id)
 
     /** The "Birthdays" calendar of the phone's contacts, when turned on. */
     val birthdayCalendar: Flow<CalendarInfo?> = db.calendarDao().observeAll().map { all ->

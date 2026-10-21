@@ -250,6 +250,9 @@ class SyncEngine @Inject constructor(
     /** Rebuilds the instances of an event after a local change (see [EventWriter]). */
     suspend fun recompute(eventId: String) = db.withTransaction { recomputeInstances(eventId) }
 
+    /** Rebuilds the instances of many events in one transaction (a subscription that changed): the views are told once. */
+    suspend fun recomputeMany(eventIds: Collection<String>) = db.withTransaction { eventIds.forEach { recomputeInstances(it) } }
+
     /** Rebuilds the instances of an event and of its exceptions (a series' modified or cancelled occurrences). */
     private suspend fun recomputeInstances(eventId: String, newWindow: InstanceWindow? = null) {
         val event = events.get(eventId) ?: return
