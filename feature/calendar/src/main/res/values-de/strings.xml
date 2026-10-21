@@ -48,7 +48,7 @@
     <string name="back">Zurück</string>
     <string name="clear">Löschen</string>
     <string name="about">Info</string>
-    <string name="about_tagline">Ein Kalender für Android, synchron mit Google Kalender</string>
+    <string name="about_tagline">Eine Kalender-App, um deine Zeit besser zu organisieren</string>
     <string name="about_author">Autor</string>
     <string name="about_website">Website</string>
     <string name="about_version">Version</string>
@@ -84,11 +84,10 @@
     <string name="message_schema_reset">GGCalendar wurde aktualisiert und startet mit einer leeren Datenbank. Füge deine Google-Konten über das Menü erneut hinzu.</string>
     <!-- Subscriptions (calendars read from an address) -->
     <string name="subscriptions_title">Abonnements</string>
-    <string name="subscription_add">Kalender von einer Adresse hinzufügen</string>
+    <string name="subscription_add">Öffentlichen Kalender hinzufügen</string>
     <string name="subscription_address">Adresse</string>
     <string name="subscription_paste">Einfügen</string>
-    <string name="subscription_help_title">Wo finde ich sie?</string>
-    <string name="subscription_help">In Google Kalender im Web: Einstellungen, dann der Kalender, dann Kalender integrieren. Kopiere die öffentliche Adresse im iCal-Format oder bei einem privaten Kalender die geheime Adresse im iCal-Format (nicht weitergeben). Google kann Stunden brauchen, bis eine Änderung sichtbar ist.</string>
+    <string name="subscription_help">Kopiere die öffentliche Adresse im iCal-Format oder bei einem privaten Kalender die geheime Adresse im iCal-Format (nicht weitergeben). Google kann Stunden brauchen, bis eine Änderung sichtbar ist.</string>
     <string name="subscription_check">Prüfen</string>
     <string name="subscription_checking">Kalender wird gelesen …</string>
     <string name="subscription_range">Vom %1$s bis %2$s</string>

@@ -49,7 +49,7 @@
     <string name="back">Back</string>
     <string name="clear">Clear</string>
     <string name="about">About</string>
-    <string name="about_tagline">A calendar for Android, in sync with Google Calendar</string>
+    <string name="about_tagline">A calendar app to organize your time better</string>
     <string name="about_author">Author</string>
     <string name="about_website">Website</string>
     <string name="about_version">Version</string>
@@ -85,11 +85,10 @@
     <string name="message_schema_reset">GGCalendar was updated and started again with an empty database. Add your Google accounts again from the menu.</string>
     <!-- Subscriptions (calendars read from an address) -->
     <string name="subscriptions_title">Subscriptions</string>
-    <string name="subscription_add">Add a calendar from an address</string>
+    <string name="subscription_add">Add a public calendar</string>
     <string name="subscription_address">Address</string>
     <string name="subscription_paste">Paste</string>
-    <string name="subscription_help_title">Where do I find it?</string>
-    <string name="subscription_help">In Google Calendar on the web: Settings, then the calendar, then Integrate calendar. Copy the public address in iCal format, or the secret address in iCal format for a private calendar (keep it to yourself). Google can take hours to show a change.</string>
+    <string name="subscription_help">Copy the public address in iCal format, or the secret address in iCal format for a private calendar (keep it to yourself). Google can take hours to show a change.</string>
     <string name="subscription_check">Check</string>
     <string name="subscription_checking">Reading the calendar…</string>
     <string name="subscription_range">From %1$s to %2$s</string>

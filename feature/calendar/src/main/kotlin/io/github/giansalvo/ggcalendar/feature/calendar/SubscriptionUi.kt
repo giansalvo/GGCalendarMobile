@@ -200,7 +200,6 @@ internal fun SubscriptionAddDialog(
                         dialog.problem?.let {
                             Text(subscriptionProblemText(it), Modifier.testTag("subscription_problem"), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
                         }
-                        Text(stringResource(R.string.subscription_help_title), style = MaterialTheme.typography.labelLarge)
                         Text(stringResource(R.string.subscription_help), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
