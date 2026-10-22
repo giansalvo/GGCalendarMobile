@@ -146,6 +146,7 @@ fun SettingsScreen(onClose: () -> Unit, viewModel: SettingsViewModel = hiltViewM
                             Icons.Outlined.Lock, stringResource(R.string.settings_visibility), stringResource(R.string.settings_visibility_hint),
                             stringResource(R.string.settings_visibility_public), stringResource(R.string.settings_visibility_private), !draft.defaultPrivate, "settings_visibility",
                         ) { draft = draft.copy(defaultPrivate = !it) }
+                        DefaultReminderRow(draft.defaultReminderMinutes) { draft = draft.copy(defaultReminderMinutes = it) }
                         SecondZoneRows(draft) { draft = it }
                         SwitchRow(stringResource(R.string.settings_birthdays), stringResource(R.string.settings_birthdays_hint), draft.birthdays, tag = "settings_birthdays") { on ->
                             // The contacts are read only with the permission, asked when the user turns this on.
@@ -258,6 +259,36 @@ private fun SubscriptionRefreshRow(minutes: Int, onChange: (Int) -> Unit) {
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             choices.forEach { m ->
                 DropdownMenuItem(text = { Text(label(m)) }, modifier = Modifier.testTag("settings_subscription_refresh_$m"), onClick = {
+                    open = false
+                    onChange(m)
+                })
+            }
+        }
+    }
+}
+
+/** The reminder a new event starts with, in every calendar (local and Google); events and calendars that already exist do not change. */
+@Composable
+private fun DefaultReminderRow(minutes: Int, onChange: (Int) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    @Composable
+    fun label(m: Int) = when {
+        m < 0 -> stringResource(R.string.settings_default_reminder_none)
+        m == 1440 -> stringResource(R.string.settings_default_reminder_day)
+        m % 60 == 0 -> stringResource(R.string.settings_subscriptions_hours, m / 60)
+        else -> stringResource(R.string.settings_subscriptions_minutes, m)
+    }
+    Column {
+        Row(Modifier.testTag("settings_default_reminder").fillMaxWidth().clickable { open = true }.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.settings_default_reminder), style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.settings_default_reminder_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Text(label(minutes), Modifier.testTag("settings_default_reminder_value"), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            AppPreferences.REMINDER_CHOICES.forEach { m ->
+                DropdownMenuItem(text = { Text(label(m)) }, modifier = Modifier.testTag("settings_default_reminder_$m"), onClick = {
                     open = false
                     onChange(m)
                 })

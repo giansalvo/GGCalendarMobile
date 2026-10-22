@@ -41,4 +41,8 @@
     <string name="settings_second_zone_pick">Time zone</string>
     <string name="settings_second_zone_label">Name of the column</string>
     <string name="settings_second_zone_label_hint">Up to %1$d characters. Empty: %2$s</string>
+    <string name="settings_default_reminder">Default reminder</string>
+    <string name="settings_default_reminder_hint">For new events in every calendar, local and Google. Events and calendars that already exist do not change.</string>
+    <string name="settings_default_reminder_none">None</string>
+    <string name="settings_default_reminder_day">1 day</string>
 </resources>

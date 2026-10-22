@@ -383,7 +383,10 @@ class CalendarViewModel @Inject constructor(
         if (revokeEverywhere) authorizer.revoke(email)
     }
 
-    fun createLocalCalendar(name: String, colorHex: String) = viewModelScope.launch { localCalendars.create(name, colorHex) }
+    fun createLocalCalendar(name: String, colorHex: String) = viewModelScope.launch {
+        // The new calendar keeps the default reminder of this moment; the ones already there are never touched.
+        localCalendars.create(name, colorHex, repository.defaultReminderMinutes())
+    }
 
     fun updateLocalCalendar(id: String, name: String, colorHex: String) = viewModelScope.launch { localCalendars.update(id, name, colorHex) }
 

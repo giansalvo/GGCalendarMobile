@@ -70,6 +70,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         val dynamicColor = booleanPreferencesKey("dynamic_color")
         val permissionsIntroSeen = booleanPreferencesKey("permissions_intro_seen")
         val subscriptionMinutes = intPreferencesKey("subscription_refresh_minutes")
+        val defaultReminder = intPreferencesKey("default_reminder_minutes")
     }
 
     /** The "before you start" screen about the permissions of alarms has been shown (or closed) once. */
@@ -84,6 +85,17 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
 
     suspend fun setSubscriptionMinutes(minutes: Int) {
         context.dataStore.edit { it[Keys.subscriptionMinutes] = minutes.coerceIn(MIN_SUBSCRIPTION_MINUTES, MAX_SUBSCRIPTION_MINUTES) }
+    }
+
+    /**
+     * The reminder every NEW event starts with, in the calendars of the phone and in Google's: minutes before the start, or [NO_REMINDER].
+     * It is the only source of that default (the defaults of a calendar do not enter a new event) and it never changes an event or a
+     * calendar that already exists.
+     */
+    val defaultReminderMinutes: Flow<Int> = context.dataStore.data.map { normalizeReminder(it[Keys.defaultReminder]) }
+
+    suspend fun setDefaultReminderMinutes(minutes: Int) {
+        context.dataStore.edit { it[Keys.defaultReminder] = normalizeReminder(minutes) }
     }
 
     /** How long an alarm rings before it stops by itself and becomes a "missed alarm", in minutes (1 to 10). */
@@ -132,6 +144,19 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         val SUBSCRIPTION_CHOICES = listOf(15, 30, 60, 120, 360, 720, 1440)
 
         private fun Int?.asSubscriptionMinutes() = (this ?: DEFAULT_SUBSCRIPTION_MINUTES).coerceIn(MIN_SUBSCRIPTION_MINUTES, MAX_SUBSCRIPTION_MINUTES)
+
+        /** "No reminder" in the setting of the default reminder. */
+        const val NO_REMINDER = -1
+        const val DEFAULT_REMINDER_MINUTES = 30
+
+        /** The values the settings screen offers for the default reminder. */
+        val REMINDER_CHOICES = listOf(NO_REMINDER, 5, 10, 15, 30, 60, 1440)
+
+        private fun normalizeReminder(minutes: Int?): Int = minutes?.takeIf { it in REMINDER_CHOICES } ?: DEFAULT_REMINDER_MINUTES
+
+        /** The explicit list a new event gets for the setting: a notification before the start, or nothing. */
+        fun remindersFor(minutes: Int): List<io.github.giansalvo.ggcalendar.core.model.Reminder> =
+            if (minutes < 0) emptyList() else listOf(io.github.giansalvo.ggcalendar.core.model.Reminder(io.github.giansalvo.ggcalendar.core.model.ReminderMethod.POPUP, minutes))
 
         /** Snooze length offered first (5, 15 and 30 from a menu); a setting in M6. */
         const val DEFAULT_SNOOZE_MINUTES = 10

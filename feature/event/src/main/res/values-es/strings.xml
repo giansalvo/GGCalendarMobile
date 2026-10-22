@@ -205,4 +205,5 @@
     <string name="csv_status">Estado</string>
     <string name="csv_visibility">Visibilidad</string>
     <string name="time_there">%1$s: %2$s</string>
+    <string name="app_default_reminder">Predeterminado de la aplicación</string>
 </resources>

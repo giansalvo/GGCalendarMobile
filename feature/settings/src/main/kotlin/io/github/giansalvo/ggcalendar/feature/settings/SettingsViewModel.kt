@@ -34,6 +34,8 @@ data class SettingsDraft(
     val secondZoneOn: Boolean,
     val secondZoneId: String?,
     val secondZoneLabel: String,
+    /** The reminder a new event starts with, in minutes before, or [AppPreferences.NO_REMINDER]. */
+    val defaultReminderMinutes: Int,
 )
 
 @HiltViewModel
@@ -63,6 +65,7 @@ class SettingsViewModel @Inject constructor(
             secondZoneOn = view.secondZoneEnabled && view.secondZoneId != null,
             secondZoneId = view.secondZoneId,
             secondZoneLabel = view.secondZoneLabel.orEmpty(),
+            defaultReminderMinutes = prefs.defaultReminderMinutes.first(),
         )
     }
 
@@ -72,6 +75,7 @@ class SettingsViewModel @Inject constructor(
         prefs.setWeekStart(draft.weekStart)
         prefs.setDayStartHour(draft.dayStartHour)
         prefs.setDimPast(draft.dimPast)
+        prefs.setDefaultReminderMinutes(draft.defaultReminderMinutes)
         prefs.setSecondZone(draft.secondZoneOn, draft.secondZoneId, draft.secondZoneLabel)
         prefs.setDefaultBusy(draft.defaultBusy)
         prefs.setDefaultPrivate(draft.defaultPrivate)

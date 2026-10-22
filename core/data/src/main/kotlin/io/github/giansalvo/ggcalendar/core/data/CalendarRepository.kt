@@ -19,6 +19,7 @@ import io.github.giansalvo.ggcalendar.core.model.SubscriptionInfo
 import io.github.giansalvo.ggcalendar.core.model.Diag
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
@@ -163,6 +164,9 @@ class CalendarRepository @Inject constructor(
 
     /** How long the app waits before it reads a public calendar again (the setting), for the texts that say it. */
     val subscriptionMinutes: Flow<Int> = prefs.subscriptionMinutes
+
+    /** The setting of the default reminder (see [AppPreferences.defaultReminderMinutes]) as it is now. */
+    suspend fun defaultReminderMinutes(): Int = prefs.defaultReminderMinutes.first()
 
     suspend fun setLastView(view: String) = prefs.setLastView(view)
 

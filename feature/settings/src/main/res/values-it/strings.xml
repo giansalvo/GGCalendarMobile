@@ -41,4 +41,8 @@
     <string name="settings_second_zone_pick">Fuso orario</string>
     <string name="settings_second_zone_label">Nome della colonna</string>
     <string name="settings_second_zone_label_hint">Fino a %1$d caratteri. Vuoto: %2$s</string>
+    <string name="settings_default_reminder">Promemoria predefinito</string>
+    <string name="settings_default_reminder_hint">Per i nuovi eventi di ogni calendario, locale e Google. Gli eventi e i calendari già esistenti non cambiano.</string>
+    <string name="settings_default_reminder_none">Nessuno</string>
+    <string name="settings_default_reminder_day">1 giorno</string>
 </resources>

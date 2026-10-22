@@ -41,4 +41,8 @@
     <string name="settings_second_zone_pick">Zeitzone</string>
     <string name="settings_second_zone_label">Name der Spalte</string>
     <string name="settings_second_zone_label_hint">Bis zu %1$d Zeichen. Leer: %2$s</string>
+    <string name="settings_default_reminder">Standarderinnerung</string>
+    <string name="settings_default_reminder_hint">Für neue Termine in jedem Kalender, lokal und Google. Bestehende Termine und Kalender ändern sich nicht.</string>
+    <string name="settings_default_reminder_none">Keine</string>
+    <string name="settings_default_reminder_day">1 Tag</string>
 </resources>

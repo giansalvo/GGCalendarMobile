@@ -638,7 +638,10 @@ private fun Reminders(draft: Draft, calendar: CalendarEntity?, onAdd: () -> Unit
             }
         } else {
             list.sortedBy { it.minutes }.forEach { r ->
-                ReminderRow(r, res) { update { d -> d.copy(reminders = d.reminders.orEmpty() - r) } }
+                // A new event starts with the default reminder of the settings, and the row says so until the user touches the list.
+                ReminderRow(r, res, note = if (draft.reminderFromApp) stringResource(R.string.app_default_reminder) else null) {
+                    update { d -> d.copy(reminders = d.reminders.orEmpty() - r, reminderFromApp = false) }
+                }
             }
         }
         Text(
@@ -646,6 +649,7 @@ private fun Reminders(draft: Draft, calendar: CalendarEntity?, onAdd: () -> Unit
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.testTag("editor_add_reminder").fillMaxWidth().clickable {
                 if (list == null) update { d -> d.copy(reminders = calendar?.defaultReminders.orEmpty()) }
+                update { d -> d.copy(reminderFromApp = false) }
                 onAdd()
             }.padding(start = 56.dp, top = 12.dp, bottom = 12.dp),
         )

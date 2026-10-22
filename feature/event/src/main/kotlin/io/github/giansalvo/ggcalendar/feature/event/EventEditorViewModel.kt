@@ -48,8 +48,10 @@ data class Draft(
     val rrule: String? = null,
     val location: String = "",
     val description: String = "",
-    /** Null: the calendar's default reminders. */
+    /** Null: the calendar's default reminders (only an existing event can have none of its own). A new event always has its own list. */
     val reminders: List<Reminder>? = null,
+    /** The list is the default reminder of the settings, not touched by the user yet: the row says so. */
+    val reminderFromApp: Boolean = false,
     val color: String? = null,
     val availability: String = "BUSY",
     val visibility: String = "DEFAULT",
@@ -202,6 +204,9 @@ class EventEditorViewModel @Inject constructor(
             // The choice of the settings: Busy (the default) or Free.
             availability = if (prefs.defaultBusy.first()) "BUSY" else "FREE",
             visibility = if (prefs.defaultPrivate.first()) "PRIVATE" else "PUBLIC",
+            // The default reminder of the settings, the same in every calendar (the defaults of the calendar do not enter a new event).
+            reminders = io.github.giansalvo.ggcalendar.core.data.AppPreferences.remindersFor(prefs.defaultReminderMinutes.first()),
+            reminderFromApp = true,
         )
     }
 

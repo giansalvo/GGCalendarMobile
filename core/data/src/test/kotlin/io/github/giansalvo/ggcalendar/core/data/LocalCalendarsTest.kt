@@ -81,7 +81,26 @@ class LocalCalendarsTest {
         assertTrue(c.canWrite)
         assertTrue(c.isVisible)
         assertFalse(c.syncsWithGoogle)
-        assertEquals(listOf(Reminder(ReminderMethod.POPUP, 10)), c.defaultReminders)
+        assertEquals(listOf(Reminder(ReminderMethod.POPUP, 30)), c.defaultReminders)
+    }
+
+    @Test
+    fun aNewLocalCalendarKeepsTheDefaultReminderOfThatMoment() = runTest {
+        val a = locals.create("A", "#33B679", reminderMinutes = 15)
+        val b = locals.create("B", "#33B679", reminderMinutes = AppPreferences.NO_REMINDER)
+        assertEquals(listOf(Reminder(ReminderMethod.POPUP, 15)), db.calendarDao().get(a)!!.defaultReminders)
+        assertEquals(emptyList<Reminder>(), db.calendarDao().get(b)!!.defaultReminders)
+        // a calendar already there is never touched by the next ones
+        locals.create("C", "#33B679", reminderMinutes = 60)
+        assertEquals(listOf(Reminder(ReminderMethod.POPUP, 15)), db.calendarDao().get(a)!!.defaultReminders)
+    }
+
+    @Test
+    fun theDefaultReminderListOfTheSetting() {
+        assertEquals(emptyList<Reminder>(), AppPreferences.remindersFor(AppPreferences.NO_REMINDER))
+        assertEquals(listOf(Reminder(ReminderMethod.POPUP, 1440)), AppPreferences.remindersFor(1440))
+        assertEquals(30, AppPreferences.DEFAULT_REMINDER_MINUTES)
+        assertEquals(listOf(-1, 5, 10, 15, 30, 60, 1440), AppPreferences.REMINDER_CHOICES)
     }
 
     @Test

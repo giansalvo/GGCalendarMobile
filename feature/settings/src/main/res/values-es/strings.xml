@@ -41,4 +41,8 @@
     <string name="settings_second_zone_pick">Zona horaria</string>
     <string name="settings_second_zone_label">Nombre de la columna</string>
     <string name="settings_second_zone_label_hint">Hasta %1$d caracteres. Vacío: %2$s</string>
+    <string name="settings_default_reminder">Recordatorio predeterminado</string>
+    <string name="settings_default_reminder_hint">Para los eventos nuevos de cada calendario, local y de Google. Los eventos y calendarios que ya existen no cambian.</string>
+    <string name="settings_default_reminder_none">Ninguno</string>
+    <string name="settings_default_reminder_day">1 día</string>
 </resources>

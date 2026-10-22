@@ -19,13 +19,13 @@ class LocalCalendars @Inject constructor(
     private val db: GGCalendarDatabase,
     private val reminders: ReminderHooks,
 ) {
-    suspend fun create(name: String, colorHex: String): String {
-        val id = "local:" + UUID.randomUUID()
+    /** [reminderMinutes]: the setting of the default reminder at this moment, kept by the new calendar (it never follows the setting afterwards). */
+    suspend fun create(name: String, colorHex: String, reminderMinutes: Int = DEFAULT_REMINDER_MINUTES, id: String = "local:" + UUID.randomUUID()): String {
         val order = db.calendarDao().maxSortOrder(CalendarKind.LOCAL) + 1
         db.calendarDao().upsert(
             CalendarEntity(
                 id = id, accountEmail = null, remoteId = null, name = name.trim().take(MAX_NAME), color = colorHex,
-                accessRole = "owner", isVisible = true, defaultReminders = listOf(Reminder(ReminderMethod.POPUP, DEFAULT_REMINDER_MINUTES)),
+                accessRole = "owner", isVisible = true, defaultReminders = AppPreferences.remindersFor(reminderMinutes),
                 sortOrder = order, kind = CalendarKind.LOCAL,
             ),
         )
@@ -51,6 +51,6 @@ class LocalCalendars @Inject constructor(
 
     companion object {
         const val MAX_NAME = 100
-        const val DEFAULT_REMINDER_MINUTES = 10
+        const val DEFAULT_REMINDER_MINUTES = AppPreferences.DEFAULT_REMINDER_MINUTES
     }
 }
