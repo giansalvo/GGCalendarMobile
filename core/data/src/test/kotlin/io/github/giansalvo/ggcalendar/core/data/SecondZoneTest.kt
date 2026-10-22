@@ -124,4 +124,25 @@ class SecondZoneTest {
         assertNull(SecondZones.from(on.copy(secondZoneId = "Europe/Rome"), rome))
         assertNotNull(SecondZones.from(on, ZoneId.of("Europe/Berlin")))
     }
+
+    @Test fun `U187 two clock changes in opposite directions in one week, two hours of difference between the days`() {
+        // Sunday 29 March 2026 Rome moves forward (CET to CEST); Saturday 4 April Norfolk Island moves back (UTC+12 to UTC+11) at 15:00Z.
+        // Week Sunday 29 March - Saturday 4 April: the gap between the two columns goes from 10 hours to 9 and then to 8.
+        val norfolk = ZoneId.of("Pacific/Norfolk")
+        val before = rows("2026-03-28", norfolk) // Rome CET (+1), Norfolk +12: 00:00 is 11:00
+        val rome = rows("2026-03-30", norfolk) // Rome CEST (+2), Norfolk +12: 00:00 is 10:00
+        val saturday = rows("2026-04-04", norfolk)
+        assertEquals("11:00", before[0].time.toString())
+        assertEquals("10:00", rome[0].time.toString())
+        assertEquals("10:00", saturday[0].time.toString())
+        // the lines up to 16:00 (14:00Z) are still at +12; the line of 17:00 (15:00Z) is at +11 and reads the same hour again
+        assertEquals("02:00", saturday[16].time.toString())
+        assertEquals("02:00", saturday[17].time.toString())
+        assertEquals("03:00", saturday[18].time.toString())
+        assertFalse(SecondZones.sameHours(rome, saturday))
+        assertFalse(SecondZones.sameHours(before, rome))
+        // 23:00 on the Saturday is 21:00Z, 08:00 on the Sunday with +11: eight hours of difference instead of ten
+        assertEquals("08:00", saturday[23].time.toString())
+        assertEquals(LocalDate.parse("2026-04-05"), saturday[23].date)
+    }
 }

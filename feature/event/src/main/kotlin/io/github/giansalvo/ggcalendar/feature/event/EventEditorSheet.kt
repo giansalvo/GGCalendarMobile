@@ -718,8 +718,8 @@ fun ZonePickerDialog(current: ZoneId, onDismiss: () -> Unit, onPick: (ZoneId) ->
         zones.filter { query.isBlank() || it.id.contains(query, ignoreCase = true) || it.getDisplayName(TextStyle.FULL, locale).contains(query, ignoreCase = true) }
     }
     Dialog(onDismissRequest = onDismiss) {
-        Column(Modifier.fillMaxWidth().fillMaxHeight(0.85f).background(MaterialTheme.colorScheme.surfaceContainerHigh, MaterialTheme.shapes.extraLarge).padding(16.dp)) {
-            OutlinedTextField(query, { query = it }, placeholder = { Text(stringResource(R.string.search_time_zone)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        Column(Modifier.exposeTestTags().fillMaxWidth().fillMaxHeight(0.85f).background(MaterialTheme.colorScheme.surfaceContainerHigh, MaterialTheme.shapes.extraLarge).padding(16.dp)) {
+            OutlinedTextField(query, { query = it }, placeholder = { Text(stringResource(R.string.search_time_zone)) }, singleLine = true, modifier = Modifier.testTag("zone_search").fillMaxWidth())
             Spacer(Modifier.height(8.dp))
             androidx.compose.foundation.lazy.LazyColumn(Modifier.weight(1f)) {
                 items(shown, key = { it.id }) { z ->

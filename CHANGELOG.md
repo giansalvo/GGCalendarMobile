@@ -2,6 +2,13 @@
 
 Le modifiche di GGCalendar Mobile da una versione alla successiva, dalla più recente.
 
+## 1.0.3 (in preparazione)
+
+- Secondo fuso orario: nelle viste Giorno, 6 giorni e Settimana una seconda colonna di ore, con un nome a scelta (fino a 6 caratteri); le ore sono sempre quelle vere di quel fuso, con ora legale e mezze ore
+- Dettaglio evento: l'orario dell'evento anche nel secondo fuso
+- Tasto Indietro: nella schermata principale chiede di premerlo di nuovo per chiudere l'app; con il menu laterale aperto lo chiude
+- Data di build corretta nella scheda Informazioni e nella schermata iniziale
+
 ## 1.0.2 (22/10/2026)
 
 - Calendari locali: stanno solo sul telefono, senza account e senza rete
