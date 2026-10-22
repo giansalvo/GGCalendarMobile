@@ -22,6 +22,7 @@
 | `ggcal_change_v2.ics` | T154 T164: la versione 2 (B cambia titolo, C si sposta, D e F spariscono, G è nuovo, 5 eventi) |
 | `ggcal_utc.ics` | T165: orari in UTC; cambiano con il fuso del telefono |
 | `ggcal_rrule.ics` | T166: serie di un altro produttore (anche BYSETPOS e RDATE, non supportati e dichiarati) |
+| `ggcal_range.ics` | T260-T263: i giorni di un abbonamento (14 eventi: dieci singoli, tre serie, uno di tre giorni) |
 | `ggcal_windows_tz.ics` | fusi di Outlook (nomi Windows) e un fuso sconosciuto |
 | `ggcal_apple.ics` | file in stile Apple (con VALARM e proprietà X-APPLE) |
 | `ggcal_alarms.ics` | T161: un abbonamento non ha promemoria, anche se il file ha VALARM |
