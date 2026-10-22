@@ -128,6 +128,9 @@ sealed interface SubscriptionDialog {
         val address: String,
         val preview: SubscriptionPreview,
         val problem: io.github.giansalvo.ggcalendar.core.data.SubscriptionProblem? = null,
+        /** The days chosen (empty sides = from the first event, to the last one) and how many events they keep. */
+        val range: io.github.giansalvo.ggcalendar.core.data.SubscriptionRange = io.github.giansalvo.ggcalendar.core.data.SubscriptionRange(),
+        val kept: Int = preview.eventCount,
     ) : SubscriptionDialog {
         override fun toString() = "Preview"
     }
@@ -173,6 +176,10 @@ class CalendarViewModel @Inject constructor(
     private val navigation = MutableStateFlow(Navigation(CalendarView.SCHEDULE, LocalDate.now()))
     private val transient = MutableStateFlow(Transient())
     private val grid = repository.viewPreferences
+
+    /** The waiting time of the public calendars, as the dialog that adds one tells it. */
+    val subscriptionMinutes: StateFlow<Int> = repository.subscriptionMinutes
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), io.github.giansalvo.ggcalendar.core.data.AppPreferences.DEFAULT_SUBSCRIPTION_MINUTES)
     private val miniMonth = MutableStateFlow<YearMonth?>(null)
 
     private val eventDays = miniMonth.flatMapLatest { month ->
@@ -420,9 +427,9 @@ class CalendarViewModel @Inject constructor(
     fun addSubscription(name: String, colorHex: String) {
         val dialog = _subscriptionDialog.value as? SubscriptionDialog.Preview ?: return
         subscriptionJob = viewModelScope.launch {
-            when (val result = repository.addSubscription(dialog.preview, name, colorHex)) {
+            when (val result = repository.addSubscription(dialog.preview, name, colorHex, dialog.range)) {
                 is AddResult.Added -> _subscriptionDialog.value = null
-                is AddResult.Problem -> _subscriptionDialog.value = SubscriptionDialog.Preview(dialog.address, dialog.preview, result.problem)
+                is AddResult.Problem -> _subscriptionDialog.value = SubscriptionDialog.Preview(dialog.address, dialog.preview, result.problem, dialog.range, dialog.kept)
             }
         }
     }
@@ -435,6 +442,31 @@ class CalendarViewModel @Inject constructor(
     fun refreshSubscription(id: String) = viewModelScope.launch { repository.refreshSubscription(id) }
 
     fun updateSubscription(id: String, name: String, colorHex: String) = viewModelScope.launch { repository.updateSubscription(id, name, colorHex) }
+
+    /** The name, the color and the days of a subscription; new days read the address again (the row says why if that fails). */
+    fun updateSubscription(id: String, name: String, colorHex: String, range: io.github.giansalvo.ggcalendar.core.data.SubscriptionRange) = viewModelScope.launch {
+        repository.updateSubscription(id, name, colorHex)
+        repository.setSubscriptionRange(id, range)
+    }
+
+    suspend fun subscriptionRange(id: String) = repository.subscriptionRange(id)
+
+    private var countJob: Job? = null
+
+    /** The days chosen in the dialog of a new subscription: the count of events they keep is worked out again. */
+    fun setSubscriptionRange(range: io.github.giansalvo.ggcalendar.core.data.SubscriptionRange) {
+        val dialog = _subscriptionDialog.value as? SubscriptionDialog.Preview ?: return
+        _subscriptionDialog.value = SubscriptionDialog.Preview(dialog.address, dialog.preview, null, range, dialog.kept)
+        countJob?.cancel()
+        if (!range.isValid) return
+        countJob = viewModelScope.launch {
+            val kept = repository.countSubscriptionEvents(dialog.preview, range)
+            val now = _subscriptionDialog.value as? SubscriptionDialog.Preview
+            if (now != null && now.preview === dialog.preview && now.range == range) {
+                _subscriptionDialog.value = SubscriptionDialog.Preview(now.address, now.preview, now.problem, range, kept)
+            }
+        }
+    }
 
     fun deleteSubscription(id: String) = viewModelScope.launch { repository.deleteSubscription(id) }
 

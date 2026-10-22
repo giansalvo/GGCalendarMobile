@@ -73,10 +73,20 @@ internal fun subscriptionProblemText(problem: SubscriptionProblem): String = str
         SubscriptionProblem.TOO_MANY_EVENTS -> R.string.subscription_problem_too_many_events
         SubscriptionProblem.UNREADABLE -> R.string.subscription_problem_unreadable
         SubscriptionProblem.ALREADY_SUBSCRIBED -> R.string.subscription_problem_already
+        SubscriptionProblem.BAD_RANGE -> R.string.subscription_problem_bad_range
         SubscriptionProblem.TOO_MANY_SUBSCRIPTIONS -> R.string.subscription_problem_too_many
         SubscriptionProblem.ADDRESS_LOST -> R.string.subscription_problem_address_lost
     },
 )
+
+/** Whole hours are said in hours ("about every hour", "about every 2 hours"), the others in minutes. The real time can be up to 15 minutes later. */
+internal fun refreshUnit(minutes: Int): Pair<Boolean, Int> = if (minutes % 60 == 0) true to minutes / 60 else false to minutes
+
+@Composable
+internal fun subscriptionUpdatesText(minutes: Int): String {
+    val (inHours, count) = refreshUnit(minutes)
+    return pluralStringResource(if (inHours) R.plurals.subscription_updates_hours else R.plurals.subscription_updates_minutes, count, count)
+}
 
 /** The "Subscriptions" part of the side menu: the calendars read from an address, each with its state and its menu, and the way to add one. */
 @Composable
@@ -171,6 +181,8 @@ internal fun SubscriptionAddDialog(
     dialog: SubscriptionDialog,
     onCheck: (String) -> Unit,
     onAdd: (name: String, colorHex: String) -> Unit,
+    onRange: (io.github.giansalvo.ggcalendar.core.data.SubscriptionRange) -> Unit,
+    refreshMinutes: Int,
     onBack: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -253,16 +265,30 @@ internal fun SubscriptionAddDialog(
                             }
                         }
                         Text(
-                            pluralStringResource(R.plurals.subscription_events, preview.eventCount, preview.eventCount),
+                            if (dialog.kept == preview.eventCount) pluralStringResource(R.plurals.subscription_events, preview.eventCount, preview.eventCount)
+                            else stringResource(R.string.subscription_count_of, dialog.kept, preview.eventCount),
                             Modifier.testTag("subscription_count"),
                             style = MaterialTheme.typography.titleSmall,
                         )
                         if (preview.firstDay != null && preview.lastDay != null) {
                             Text(stringResource(R.string.subscription_range, dates.format(preview.firstDay), dates.format(preview.lastDay)), style = MaterialTheme.typography.bodyMedium)
                         }
+                        // The pickers open on today when it falls among the days of the calendar, else on its first day.
+                        val near = preview.firstDay?.let { first ->
+                            val last = preview.lastDay ?: first
+                            val today = java.time.LocalDate.now()
+                            if (today.isBefore(first)) first else if (today.isAfter(last)) last else today
+                        }
+                        DateRangeFields(dialog.range, near = near, onChange = onRange)
+                        if (dialog.kept > io.github.giansalvo.ggcalendar.core.data.SubscriptionService.MAX_EVENTS && dialog.range.isValid) {
+                            Text(
+                                subscriptionProblemText(SubscriptionProblem.TOO_MANY_EVENTS), Modifier.testTag("subscription_problem"),
+                                color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
                         if (preview.isSecretAddress) Text(stringResource(R.string.subscription_secret), style = MaterialTheme.typography.bodySmall)
                         Text("• " + stringResource(R.string.subscription_read_only), style = MaterialTheme.typography.bodySmall)
-                        Text("• " + stringResource(R.string.subscription_updates), style = MaterialTheme.typography.bodySmall)
+                        Text("• " + subscriptionUpdatesText(refreshMinutes), Modifier.testTag("subscription_updates"), style = MaterialTheme.typography.bodySmall)
                         Text("• " + stringResource(R.string.subscription_no_reminders), style = MaterialTheme.typography.bodySmall)
                         if (preview.ignored.isNotEmpty()) {
                             Text(
@@ -276,7 +302,11 @@ internal fun SubscriptionAddDialog(
                     }
                 },
                 confirmButton = {
-                    TextButton(modifier = Modifier.testTag("subscription_add_confirm"), enabled = name.isNotBlank(), onClick = { onAdd(name.trim(), color) }) {
+                    TextButton(
+                        modifier = Modifier.testTag("subscription_add_confirm"),
+                        enabled = name.isNotBlank() && dialog.range.isValid && dialog.kept <= io.github.giansalvo.ggcalendar.core.data.SubscriptionService.MAX_EVENTS,
+                        onClick = { onAdd(name.trim(), color) },
+                    ) {
                         Text(stringResource(R.string.subscription_add_button))
                     }
                 },

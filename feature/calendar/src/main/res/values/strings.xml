@@ -94,7 +94,6 @@
     <string name="subscription_range">From %1$s to %2$s</string>
     <string name="subscription_secret">This is a secret address: it is kept encrypted on this phone and never shown in full.</string>
     <string name="subscription_read_only">Read only: it cannot be changed here</string>
-    <string name="subscription_updates">It updates itself every hour</string>
     <string name="subscription_no_reminders">No reminders</string>
     <string name="subscription_ignored">Not read from the file: %1$s</string>
     <string name="subscription_name">Name</string>
@@ -116,7 +115,7 @@
     <string name="subscription_problem_empty">The address gave an empty answer.</string>
     <string name="subscription_problem_too_many_events">The calendar has more than 5000 events: too big to subscribe to.</string>
     <string name="subscription_problem_unreadable">The file cannot be read as a calendar.</string>
-    <string name="subscription_problem_already">You already follow this calendar.</string>
+    <string name="subscription_problem_already">This calendar is already in the app.</string>
     <string name="subscription_problem_too_many">You can follow at most 10 calendars.</string>
     <string name="subscription_problem_address_lost">The address can no longer be read: remove the calendar and add it again.</string>
     <string name="subscription_never">Not downloaded yet</string>
@@ -124,7 +123,7 @@
     <string name="subscription_not_updated">Not updated: %1$s Data of %2$s</string>
     <string name="subscription_options">Options of %1$s</string>
     <string name="subscription_refresh_now">Update now</string>
-    <string name="subscription_edit">Name and color</string>
+    <string name="subscription_edit">Name, color and days</string>
     <string name="subscription_show_address">Show address</string>
     <string name="subscription_remove">Remove subscription</string>
     <string name="subscription_remove_title">Remove \"%1$s\"?</string>
@@ -135,5 +134,22 @@
     <plurals name="subscription_events">
         <item quantity="one">%d event</item>
         <item quantity="other">%d events</item>
+    </plurals>
+    <string name="range_from">From</string>
+    <string name="range_to">Until</string>
+    <string name="range_from_hint">from the first event</string>
+    <string name="range_to_hint">to the last event</string>
+    <string name="range_title">Days to show</string>
+    <string name="range_clear">Clear</string>
+    <string name="range_reads_again">The address is read again and the days are applied to the new copy.</string>
+    <string name="subscription_count_of">%1$d of %2$d events</string>
+    <string name="subscription_problem_bad_range">The start date is after the end date.</string>
+    <plurals name="subscription_updates_minutes">
+        <item quantity="one">It updates about every %d minutes</item>
+        <item quantity="other">It updates about every %d minutes</item>
+    </plurals>
+    <plurals name="subscription_updates_hours">
+        <item quantity="one">It updates about every hour</item>
+        <item quantity="other">It updates about every %d hours</item>
     </plurals>
 </resources>

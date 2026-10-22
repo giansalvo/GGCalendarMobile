@@ -93,7 +93,6 @@
     <string name="subscription_range">Del %1$s al %2$s</string>
     <string name="subscription_secret">Es una dirección secreta: se guarda cifrada en este teléfono y nunca se muestra completa.</string>
     <string name="subscription_read_only">Solo lectura: no se puede cambiar aquí</string>
-    <string name="subscription_updates">Se actualiza sola cada hora</string>
     <string name="subscription_no_reminders">Sin recordatorios</string>
     <string name="subscription_ignored">No leído del archivo: %1$s</string>
     <string name="subscription_name">Nombre</string>
@@ -115,7 +114,7 @@
     <string name="subscription_problem_empty">La dirección dio una respuesta vacía.</string>
     <string name="subscription_problem_too_many_events">El calendario tiene más de 5000 eventos: es demasiado grande para suscribirse.</string>
     <string name="subscription_problem_unreadable">El archivo no se puede leer como calendario.</string>
-    <string name="subscription_problem_already">Ya sigues este calendario.</string>
+    <string name="subscription_problem_already">Este calendario ya está en la aplicación.</string>
     <string name="subscription_problem_too_many">Puedes seguir como máximo 10 calendarios.</string>
     <string name="subscription_problem_address_lost">La dirección ya no se puede leer: quita el calendario y añádelo de nuevo.</string>
     <string name="subscription_never">Aún sin descargar</string>
@@ -123,7 +122,7 @@
     <string name="subscription_not_updated">No actualizado: %1$s Datos de las %2$s</string>
     <string name="subscription_options">Opciones de %1$s</string>
     <string name="subscription_refresh_now">Actualizar ahora</string>
-    <string name="subscription_edit">Nombre y color</string>
+    <string name="subscription_edit">Nombre, color y días</string>
     <string name="subscription_show_address">Mostrar dirección</string>
     <string name="subscription_remove">Quitar suscripción</string>
     <string name="subscription_remove_title">¿Quitar \"%1$s\"?</string>
@@ -134,5 +133,22 @@
     <plurals name="subscription_events">
         <item quantity="one">%d evento</item>
         <item quantity="other">%d eventos</item>
+    </plurals>
+    <string name="range_from">Desde</string>
+    <string name="range_to">Hasta</string>
+    <string name="range_from_hint">desde el primer evento</string>
+    <string name="range_to_hint">hasta el último evento</string>
+    <string name="range_title">Días que se muestran</string>
+    <string name="range_clear">Borrar</string>
+    <string name="range_reads_again">La dirección se lee de nuevo y los días se aplican a la nueva copia.</string>
+    <string name="subscription_count_of">%1$d de %2$d eventos</string>
+    <string name="subscription_problem_bad_range">La fecha de inicio es posterior a la fecha de fin.</string>
+    <plurals name="subscription_updates_minutes">
+        <item quantity="one">Se actualiza aproximadamente cada %d minutos</item>
+        <item quantity="other">Se actualiza aproximadamente cada %d minutos</item>
+    </plurals>
+    <plurals name="subscription_updates_hours">
+        <item quantity="one">Se actualiza aproximadamente cada hora</item>
+        <item quantity="other">Se actualiza aproximadamente cada %d horas</item>
     </plurals>
 </resources>

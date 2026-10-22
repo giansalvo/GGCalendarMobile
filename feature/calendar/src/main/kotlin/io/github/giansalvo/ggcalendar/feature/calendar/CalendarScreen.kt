@@ -75,6 +75,7 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -456,18 +457,24 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
             dialog = dialog,
             onCheck = viewModel::checkSubscription,
             onAdd = viewModel::addSubscription,
+            onRange = viewModel::setSubscriptionRange,
+            refreshMinutes = viewModel.subscriptionMinutes.collectAsStateWithLifecycle().value,
             onBack = viewModel::backToSubscriptionAddress,
             onDismiss = viewModel::dismissSubscriptionDialog,
         )
     }
     editingSubscription?.let { id ->
         val current = state.subscriptions.firstOrNull { it.calendar.id == id }?.calendar
+        val range by produceState<io.github.giansalvo.ggcalendar.core.data.SubscriptionRange?>(null, id) { value = viewModel.subscriptionRange(id) }
         if (current == null) editingSubscription = null
-        else LocalCalendarDialog(
-            initial = current,
-            onConfirm = { name, color -> viewModel.updateSubscription(id, name, color); editingSubscription = null },
-            onDismiss = { editingSubscription = null },
-        )
+        else range?.let { days ->
+            SubscriptionEditDialog(
+                initial = current,
+                initialRange = days,
+                onConfirm = { name, color, chosen -> viewModel.updateSubscription(id, name, color, chosen); editingSubscription = null },
+                onDismiss = { editingSubscription = null },
+            )
+        }
     }
     removingSubscription?.let { id ->
         val current = state.subscriptions.firstOrNull { it.calendar.id == id }?.calendar

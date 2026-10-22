@@ -93,7 +93,6 @@
     <string name="subscription_range">Vom %1$s bis %2$s</string>
     <string name="subscription_secret">Das ist eine geheime Adresse: Sie wird verschlüsselt auf diesem Telefon gespeichert und nie vollständig angezeigt.</string>
     <string name="subscription_read_only">Nur Lesen: Hier kann nichts geändert werden</string>
-    <string name="subscription_updates">Wird jede Stunde automatisch aktualisiert</string>
     <string name="subscription_no_reminders">Keine Erinnerungen</string>
     <string name="subscription_ignored">Nicht aus der Datei gelesen: %1$s</string>
     <string name="subscription_name">Name</string>
@@ -115,7 +114,7 @@
     <string name="subscription_problem_empty">Die Adresse hat eine leere Antwort geliefert.</string>
     <string name="subscription_problem_too_many_events">Der Kalender hat mehr als 5000 Termine: zu groß zum Abonnieren.</string>
     <string name="subscription_problem_unreadable">Die Datei kann nicht als Kalender gelesen werden.</string>
-    <string name="subscription_problem_already">Du folgst diesem Kalender bereits.</string>
+    <string name="subscription_problem_already">Dieser Kalender ist bereits in der App vorhanden.</string>
     <string name="subscription_problem_too_many">Du kannst höchstens 10 Kalendern folgen.</string>
     <string name="subscription_problem_address_lost">Die Adresse kann nicht mehr gelesen werden: Entferne den Kalender und füge ihn erneut hinzu.</string>
     <string name="subscription_never">Noch nicht heruntergeladen</string>
@@ -123,7 +122,7 @@
     <string name="subscription_not_updated">Nicht aktualisiert: %1$s Daten von %2$s</string>
     <string name="subscription_options">Optionen von %1$s</string>
     <string name="subscription_refresh_now">Jetzt aktualisieren</string>
-    <string name="subscription_edit">Name und Farbe</string>
+    <string name="subscription_edit">Name, Farbe und Tage</string>
     <string name="subscription_show_address">Adresse anzeigen</string>
     <string name="subscription_remove">Abonnement entfernen</string>
     <string name="subscription_remove_title">\"%1$s\" entfernen?</string>
@@ -134,5 +133,22 @@
     <plurals name="subscription_events">
         <item quantity="one">%d Termin</item>
         <item quantity="other">%d Termine</item>
+    </plurals>
+    <string name="range_from">Von</string>
+    <string name="range_to">Bis</string>
+    <string name="range_from_hint">ab dem ersten Ereignis</string>
+    <string name="range_to_hint">bis zum letzten Ereignis</string>
+    <string name="range_title">Anzuzeigende Tage</string>
+    <string name="range_clear">Löschen</string>
+    <string name="range_reads_again">Die Adresse wird erneut gelesen und die Tage werden auf die neue Kopie angewendet.</string>
+    <string name="subscription_count_of">%1$d von %2$d Ereignissen</string>
+    <string name="subscription_problem_bad_range">Das Startdatum liegt nach dem Enddatum.</string>
+    <plurals name="subscription_updates_minutes">
+        <item quantity="one">Wird etwa alle %d Minuten aktualisiert</item>
+        <item quantity="other">Wird etwa alle %d Minuten aktualisiert</item>
+    </plurals>
+    <plurals name="subscription_updates_hours">
+        <item quantity="one">Wird etwa jede Stunde aktualisiert</item>
+        <item quantity="other">Wird etwa alle %d Stunden aktualisiert</item>
     </plurals>
 </resources>
