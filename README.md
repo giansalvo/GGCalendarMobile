@@ -13,12 +13,12 @@
 
 ---
 
-> **Stato:** versione 1.0.0. L'APK firmato è nella pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases).
-> **Status:** version 1.0.0. The signed APK is on the [Releases](https://github.com/giansalvo/GGCalendarMobile/releases) page.
+> **Stato:** ultima versione pubblicata 1.0.2. L'APK firmato è nella pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases).
+> **Status:** latest release 1.0.1. The signed APK is on the [Releases](https://github.com/giansalvo/GGCalendarMobile/releases) page.
 
 ## Installazione e primo accesso
 
-1. Scarica `GGCalendar-1.0.0.apk` dalla pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases) e, se vuoi, controlla l'impronta con il file `.sha256` (`certutil -hashfile GGCalendar-1.0.0.apk SHA256` su Windows, `sha256sum` su Linux e macOS).
+1. Scarica l'APK (`GGCalendar-<versione>.apk`) dalla pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases) e, se vuoi, controlla l'impronta con il file `.sha256` (`certutil -hashfile GGCalendar-<versione>.apk SHA256` su Windows, `sha256sum` su Linux e macOS).
 2. Apri il file sul telefono e consenti l'installazione da questa fonte quando Android lo chiede. Serve Android 8 o successivo.
 3. Aggiungi il tuo account Google dal menu dell'app.
 
@@ -33,8 +33,10 @@
 - Eventi ricorrenti, invitati, link Google Meet
 - Promemoria con notifica, sveglia (suona finché non la spegni, al massimo 2 minuti) ed email inviata da Google
 - Condivisione ed esportazione (`.ics`, CSV)
-- Calendari locali e importazione `.ics`
-- Italiano e inglese, tema chiaro e scuro
+- Calendari locali solo sul telefono: niente account, niente rete, con eventi, ricorrenze e promemoria come gli altri
+- Abbonamento a calendari pubblici  in sola lettura limiti di 10 MB e 5000 eventi
+- Lingue supportate: Italiano, inglese, spagnolo e tedesco
+- Temi: chiaro e scuro
 
 È la versione Android di [GGCalendar per Windows](https://github.com/giansalvo/GGCalendar): stessa logica di sincronizzazione e stesso progetto Google.
 
@@ -75,10 +77,15 @@ keyPassword=...
 | Modulo | Contenuto |
 |---|---|
 | `app` | Applicazione: attività, tema, icona, dependency injection |
-| `core/model` | Modelli di dominio |
-| `core/network` | Client delle Google Calendar API |
+| `core/model` | Modelli di dominio, lettura e scrittura iCalendar, indirizzi degli abbonamenti |
+| `core/network` | Client delle Google Calendar API e lettore degli indirizzi iCal (`https`, limiti, `ETag`) |
 | `core/auth` | Accesso Google (scelta dell'account e autorizzazione) |
-| `feature/calendar` | Schermata principale: menu laterale e viste |
+| `core/database` | Database Room (schema versione 7) |
+| `core/data` | Sincronizzazione, calendari locali, abbonamenti (cifratura dell'indirizzo, filtro dei giorni), ricorrenze |
+| `core/notifications` | Promemoria, sveglie e schermata di avvio |
+| `feature/calendar` | Schermata principale: menu laterale, viste, abbonamenti |
+| `feature/event` | Dettaglio e modifica di un evento |
+| `feature/settings` | Impostazioni |
 
 ## Privacy
 
