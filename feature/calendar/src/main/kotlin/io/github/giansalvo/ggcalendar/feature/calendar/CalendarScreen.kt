@@ -1,7 +1,13 @@
 package io.github.giansalvo.ggcalendar.feature.calendar
 
 import io.github.giansalvo.ggcalendar.core.notifications.exposeTestTags
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import android.app.Activity
+import android.content.ContextWrapper
+import android.os.SystemClock
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -232,6 +238,23 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
         if (result == SnackbarResult.ActionPerformed && isAuth) message.accountEmail?.let(viewModel::reauthorize)
         if (result == SnackbarResult.ActionPerformed && message.kind == "account_missing") pickAccount.launch(viewModel.chooseAccountIntent())
         viewModel.dismissMessage(message.id)
+    }
+
+    // Back on the main screen asks twice: the first press says the app will close at the next one (within two seconds).
+    // The screens and dialogs on top have their own back; this one counts only when none is open.
+    val context = LocalContext.current
+    val exitHint = stringResource(R.string.back_again_to_exit)
+    var lastBack by remember { mutableStateOf(0L) }
+    BackHandler(enabled = !settingsOpen && !searchOpen && state.editing == null && drawerState.currentValue == DrawerValue.Closed) {
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastBack < 2_000) {
+            var c = context
+            while (c is ContextWrapper && c !is Activity) c = c.baseContext
+            (c as? Activity)?.finish()
+        } else {
+            lastBack = now
+            Toast.makeText(context, exitHint, Toast.LENGTH_SHORT).show()
+        }
     }
 
     ModalNavigationDrawer(

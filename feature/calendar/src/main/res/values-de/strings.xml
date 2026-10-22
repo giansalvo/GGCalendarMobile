@@ -151,4 +151,5 @@
         <item quantity="one">Wird etwa jede Stunde aktualisiert</item>
         <item quantity="other">Wird etwa alle %d Stunden aktualisiert</item>
     </plurals>
+    <string name="back_again_to_exit">Zum Schließen der App noch einmal „Zurück“ drücken</string>
 </resources>

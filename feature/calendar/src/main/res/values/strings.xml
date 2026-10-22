@@ -152,4 +152,5 @@
         <item quantity="one">It updates about every hour</item>
         <item quantity="other">It updates about every %d hours</item>
     </plurals>
+    <string name="back_again_to_exit">Press Back again to close the app</string>
 </resources>

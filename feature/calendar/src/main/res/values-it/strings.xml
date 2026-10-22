@@ -151,4 +151,5 @@
         <item quantity="one">Si aggiorna circa ogni ora</item>
         <item quantity="other">Si aggiorna circa ogni %d ore</item>
     </plurals>
+    <string name="back_again_to_exit">Premi di nuovo Indietro per chiudere l\'app</string>
 </resources>
