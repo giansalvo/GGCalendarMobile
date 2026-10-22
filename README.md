@@ -20,7 +20,7 @@
 
 1. Scarica l'APK (`GGCalendar-<versione>.apk`) dalla pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases) e, se vuoi, controlla l'impronta con il file `.sha256` (`certutil -hashfile GGCalendar-<versione>.apk SHA256` su Windows, `sha256sum` su Linux e macOS).
 2. Apri il file sul telefono e consenti l'installazione da questa fonte quando Android lo chiede. Serve Android 8 o successivo.
-3. Aggiungi il tuo account Google dal menu dell'app.
+3. Se vuoi aggiungi il tuo account Google dal menu dell'app.
 
 > **Nota: "Google non ha verificato questa app".** L'accesso ai dati del calendario non ha ancora completato la verifica di Google, quindi al primo accesso Google mostra l'avviso *"Google non ha verificato questa app"*. È previsto e non indica un problema dell'app: tocca **Avanzate**, poi **Vai a GGCalendar (non sicuro)** e concedi l'accesso al calendario. Il codice è pubblico in questo repository e l'app non ha server propri (vedi la [privacy](https://profgusinu.altervista.org/GGCalendar/privacy.html)). Finché l'app non è verificata, Google limita a 100 il numero di utenti che possono autorizzarla.
 >
