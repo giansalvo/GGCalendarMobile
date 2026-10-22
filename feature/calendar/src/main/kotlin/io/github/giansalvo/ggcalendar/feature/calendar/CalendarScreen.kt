@@ -241,11 +241,16 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
     }
 
     // Back on the main screen asks twice: the first press says the app will close at the next one (within two seconds).
-    // The screens and dialogs on top have their own back; this one counts only when none is open.
+    // The screens and dialogs on top have their own back; this one counts only when none is open (the side menu is closed by it).
     val context = LocalContext.current
     val exitHint = stringResource(R.string.back_again_to_exit)
     var lastBack by remember { mutableStateOf(0L) }
-    BackHandler(enabled = !settingsOpen && !searchOpen && state.editing == null && drawerState.currentValue == DrawerValue.Closed) {
+    BackHandler(enabled = !settingsOpen && !searchOpen && state.editing == null) {
+        // With the side menu open, Back closes the menu and goes no further.
+        if (drawerState.currentValue != DrawerValue.Closed) {
+            scope.launch { drawerState.close() }
+            return@BackHandler
+        }
         val now = SystemClock.elapsedRealtime()
         if (now - lastBack < 2_000) {
             var c = context
