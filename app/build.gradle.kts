@@ -1,5 +1,7 @@
 import java.time.LocalDate
 import java.util.Properties
+import org.gradle.api.provider.ValueSource
+import org.gradle.api.provider.ValueSourceParameters
 
 plugins {
     alias(libs.plugins.android.application)
@@ -7,6 +9,12 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+}
+
+// Today's date. Gradle asks a ValueSource again at every build and, when the answer changed, throws the configuration cache away,
+// so the date shown in the About card and on the splash is the day of the last build, with or without the cache.
+abstract class BuildDate : ValueSource<String, ValueSourceParameters.None> {
+    override fun obtain(): String = LocalDate.now().toString()
 }
 
 // Release signing data lives outside the repository (keystore.properties is git-ignored).
@@ -29,8 +37,8 @@ android {
         val diag = providers.gradleProperty("diag").orNull == "true"
         buildConfigField("boolean", "DIAG", diag.toString())
         if (diag) versionNameSuffix = "-diag"
-        // Shown in the About card. Fixed when Gradle configures the build: a release is built with --no-configuration-cache.
-        manifestPlaceholders["buildDate"] = LocalDate.now().toString()
+        // Shown in the About card and on the splash: the day of the last build.
+        manifestPlaceholders["buildDate"] = providers.of(BuildDate::class.java) {}.get()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
