@@ -615,10 +615,10 @@ private fun CalendarTopBar(state: CalendarUiState, miniOpen: Boolean, onMenu: ()
                     }
                 }
             }
+            IconButton(onClick = onToday, modifier = Modifier.testTag("btn_today")) { TodayIcon(LocalDate.now().dayOfMonth) }
             IconButton(onClick = onSettings, modifier = Modifier.testTag("btn_settings")) {
                 Icon(Icons.Outlined.Settings, contentDescription = stringResource(R.string.settings))
             }
-            IconButton(onClick = onToday, modifier = Modifier.testTag("btn_today")) { TodayIcon(LocalDate.now().dayOfMonth) }
             Avatar(state.accounts.firstOrNull()?.email)
             Spacer(Modifier.width(8.dp))
         },
@@ -754,13 +754,6 @@ private fun CalendarDrawer(
             )
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             NavigationDrawerItem(
-                icon = { Icon(Icons.Outlined.Settings, contentDescription = null) },
-                label = { Text(stringResource(R.string.settings)) },
-                selected = false,
-                onClick = onSettings,
-                modifier = Modifier.testTag("drawer_settings"),
-            )
-            NavigationDrawerItem(
                 icon = { Icon(Icons.Outlined.FileDownload, contentDescription = null) },
                 label = { Text(stringResource(R.string.import_menu)) },
                 selected = false,
@@ -773,6 +766,13 @@ private fun CalendarDrawer(
                 selected = false,
                 onClick = onExport,
                 modifier = Modifier.testTag("drawer_export"),
+            )
+            NavigationDrawerItem(
+                icon = { Icon(Icons.Outlined.Settings, contentDescription = null) },
+                label = { Text(stringResource(R.string.settings)) },
+                selected = false,
+                onClick = onSettings,
+                modifier = Modifier.testTag("drawer_settings"),
             )
             NavigationDrawerItem(
                 icon = { Icon(Icons.Outlined.Info, contentDescription = null) },
