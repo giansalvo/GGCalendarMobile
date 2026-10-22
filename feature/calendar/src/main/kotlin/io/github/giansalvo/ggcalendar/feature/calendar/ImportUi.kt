@@ -254,7 +254,8 @@ private fun SummaryStage(state: ImportState, vm: ImportViewModel) {
         Button(onClick = { vm.startImport() }, enabled = ready, modifier = Modifier.testTag("import_confirm")) { Text(stringResource(R.string.import_do)) }
         TextButton(onClick = vm::close, modifier = Modifier.testTag("import_cancel")) { Text(stringResource(android.R.string.cancel)) }
     }
-    Spacer(Modifier.height(8.dp))
+    // Room under the buttons: they can scroll clear of the navigation bar.
+    Spacer(Modifier.height(72.dp))
 }
 
 @Composable
