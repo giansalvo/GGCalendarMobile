@@ -160,6 +160,24 @@ class IcsMapperTest {
         assertEquals(2, range.events.size)
     }
 
+    // The file the app itself exports for a series (UTC with a TZID, an excluded date, a moved occurrence) reads back the same
+    @Test
+    fun theSeriesThatTheAppExportsReadsBackWithItsExcludedDateAndItsException() {
+        val r = read(
+            *event(
+                "UID:ggi-serie", "DTSTART;TZID=UTC:20261023T090000", "DTEND;TZID=UTC:20261023T100000", "SUMMARY:Serie",
+                "RRULE:FREQ=DAILY;COUNT=5", "EXDATE;TZID=UTC:20261025T090000", "TRANSP:OPAQUE",
+            ).toTypedArray(),
+            *event(
+                "UID:ggi-serie", "RECURRENCE-ID:20261024T090000Z", "DTSTART:20261024T150000Z", "DTEND:20261024T160000Z", "SUMMARY:Spostata", "TRANSP:OPAQUE",
+            ).toTypedArray(),
+        )
+        assertEquals(2, r.events.size)
+        assertEquals(listOf("2026-10-25T09:00:00Z"), r.events[0].exdates)
+        assertEquals("2026-10-24T09:00:00Z", r.events[1].recurrenceId)
+        assertEquals("cal|ggi-serie", r.events[1].masterId)
+    }
+
     // U116
     @Test
     fun anOccurrenceWithoutItsSeriesIsASingleEventWithADistinctId() {

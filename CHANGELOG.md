@@ -4,12 +4,9 @@ Le modifiche di GGCalendar Mobile da una versione alla successiva, dalla più re
 
 ## 1.0.3 (in preparazione)
 
-- Secondo fuso orario: nelle viste Giorno, 6 giorni e Settimana una seconda colonna di ore, con un nome a scelta (fino a 6 caratteri); le ore sono sempre quelle vere di quel fuso, con ora legale e mezze ore
-- Importazione di file e indirizzi iCal in un calendario locale: voce "Importa file o indirizzo" nel menu, "Apri con" e condividi da altre app; riepilogo, giorni da importare, doppioni (salta, aggiorna, importa come nuovi), promemoria del file, predefiniti o nessuno; l'indirizzo non viene conservato
-- Impostazioni: "Promemoria predefinito" (30 minuti, modificabile) per i nuovi eventi nei calendari locali e Google e per l'importazione; non cambia ciò che esiste già
-- Dettaglio evento: l'orario dell'evento anche nel secondo fuso
+- Secondo fuso orario
+- Importazione di file e indirizzi iCal in un calendario locale
 - Tasto Indietro: nella schermata principale chiede di premerlo di nuovo per chiudere l'app; con il menu laterale aperto lo chiude
-- Data di build corretta nella scheda Informazioni e nella schermata iniziale
 
 ## 1.0.2 (22/10/2026)
 

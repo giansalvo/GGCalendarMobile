@@ -14,6 +14,7 @@ import io.github.giansalvo.ggcalendar.core.model.Reminder
 import io.github.giansalvo.ggcalendar.core.model.ReminderMethod
 import io.github.giansalvo.ggcalendar.core.network.GoogleCalendarApi
 import io.github.giansalvo.ggcalendar.core.network.IcsFetcher
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import mockwebserver3.MockResponse
@@ -176,6 +177,16 @@ class ImportServiceTest {
         assertTrue(db.outboxDao().pendingEventIds().isEmpty())
         val c = db.calendarDao().get(home)!!
         assertTrue(c.canWrite && !c.syncsWithGoogle)
+    }
+
+    @Test fun `a series as the app exports it keeps its excluded date and its moved occurrence`() = runTest {
+        // The export writes UTC with a TZID: reading it back must show the same occurrences (3 of the series and the moved one).
+        fun local(day: LocalDate, hour: Int) = "%04d%02d%02dT%02d0000".format(day.year, day.monthValue, day.dayOfMonth, hour)
+        val master = "BEGIN:VEVENT\r\nUID:s\r\nDTSTART;TZID=UTC:${local(soon, 9)}\r\nDTEND;TZID=UTC:${local(soon, 10)}\r\nSUMMARY:Serie\r\n" +
+            "RRULE:FREQ=DAILY;COUNT=5\r\nEXDATE;TZID=UTC:${local(soon.plusDays(2), 9)}\r\nEND:VEVENT\r\n"
+        run(ics(master, exceptionOf("s", soon.plusDays(1))))
+        val shown = db.instanceDao().observeRange(soon.toEpochDay() - 1, soon.toEpochDay() + 10).first()
+        assertEquals(listOf("Serie", "Spostata", "Serie", "Serie"), shown.map { it.title })
     }
 
     @Test fun `U204 guests and organizer never become guests`() = runTest {

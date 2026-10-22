@@ -126,13 +126,15 @@ class ReminderEngine @Inject constructor(
         private data class Parsed(val eventId: String, val begin: Long, val method: ReminderMethod, val minutes: Int)
 
         private fun parse(key: String): Parsed? {
+            // The last three parts are numbers and names without a bar; the event id may have bars of its own (imported events: calendar|UID).
             val parts = key.split('|')
-            if (parts.size != 4) return null
+            if (parts.size < 4) return null
+            val tail = parts.takeLast(3)
             return Parsed(
-                parts[0],
-                parts[1].toLongOrNull() ?: return null,
-                runCatching { ReminderMethod.valueOf(parts[2]) }.getOrNull() ?: return null,
-                parts[3].toIntOrNull() ?: return null,
+                parts.dropLast(3).joinToString("|"),
+                tail[0].toLongOrNull() ?: return null,
+                runCatching { ReminderMethod.valueOf(tail[1]) }.getOrNull() ?: return null,
+                tail[2].toIntOrNull() ?: return null,
             )
         }
 

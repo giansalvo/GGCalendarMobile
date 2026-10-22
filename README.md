@@ -13,8 +13,8 @@
 
 ---
 
-> **Stato:** ultima versione pubblicata 1.0.2. L'APK firmato è nella pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases).
-> **Status:** latest release 1.0.1. The signed APK is on the [Releases](https://github.com/giansalvo/GGCalendarMobile/releases) page.
+> **Stato:** ultima versione pubblicata 1.0.3. L'APK firmato è nella pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases).
+> **Status:** latest release 1.0.3. The signed APK is on the [Releases](https://github.com/giansalvo/GGCalendarMobile/releases) page.
 
 ## Installazione e primo accesso
 
@@ -31,10 +31,12 @@
 - Viste programma, giorno, 6 giorni, settimana e mese
 - Sincronizzazione bidirezionale con uno o più account Google Calendar, anche offline, con gestione dei conflitti
 - Eventi ricorrenti, invitati, link Google Meet
-- Promemoria con notifica, sveglia (suona finché non la spegni, al massimo 2 minuti) ed email inviata da Google
+- Promemoria con notifica, sveglia ed email inviata da Google
 - Condivisione ed esportazione (`.ics`, CSV)
-- Calendari locali solo sul telefono: niente account, niente rete, con eventi, ricorrenze e promemoria come gli altri
-- Abbonamento a calendari pubblici  in sola lettura limiti di 10 MB e 5000 eventi
+- Calendari locali sul telefono con eventi, ricorrenze e promemoria come gli altri
+- Abbonamento a calendari pubblici in sola lettura
+- Importazione di un file `.ics` o di un indirizzo iCal in un calendario locale
+- Secondo fuso orario
 - Lingue supportate: Italiano, inglese, spagnolo e tedesco
 - Temi: chiaro e scuro
 
@@ -81,9 +83,9 @@ keyPassword=...
 | `core/network` | Client delle Google Calendar API e lettore degli indirizzi iCal (`https`, limiti, `ETag`) |
 | `core/auth` | Accesso Google (scelta dell'account e autorizzazione) |
 | `core/database` | Database Room (schema versione 7) |
-| `core/data` | Sincronizzazione, calendari locali, abbonamenti (cifratura dell'indirizzo, filtro dei giorni), ricorrenze |
+| `core/data` | Sincronizzazione, calendari locali, abbonamenti (cifratura dell'indirizzo, filtro dei giorni), importazione di file e indirizzi iCal, secondo fuso orario, ricorrenze |
 | `core/notifications` | Promemoria, sveglie e schermata di avvio |
-| `feature/calendar` | Schermata principale: menu laterale, viste, abbonamenti |
+| `feature/calendar` | Schermata principale: menu laterale, viste, colonna del secondo fuso, abbonamenti, finestra di importazione |
 | `feature/event` | Dettaglio e modifica di un evento |
 | `feature/settings` | Impostazioni |
 

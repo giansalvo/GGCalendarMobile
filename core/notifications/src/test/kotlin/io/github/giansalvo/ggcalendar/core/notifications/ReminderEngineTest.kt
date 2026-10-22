@@ -90,6 +90,16 @@ class ReminderEngineTest {
     }
 
     @Test
+    fun anAlarmOfAnEventWhoseIdHasBarsShowsItsPopup() = runTest {
+        val now = System.currentTimeMillis()
+        // An imported event has the id calendar|UID: the key of its reminder has more bars than the four parts it is made of.
+        val id = "local:abc|uid-1"
+        addEvent(id, now + 10 * minute, now + 40 * minute, Reminder(ReminderMethod.POPUP, 5))
+        engine.onAlarm(DueReminder.keyOf(id, now + 10 * minute, Reminder(ReminderMethod.POPUP, 5)))
+        assertEquals(1, shown().size)
+    }
+
+    @Test
     fun remindersOfEndedEventsAreNotCaughtUp() = runTest {
         val now = System.currentTimeMillis()
         addEvent("old", now - 3 * 60 * minute, now - 2 * 60 * minute, Reminder(ReminderMethod.POPUP, 10))
