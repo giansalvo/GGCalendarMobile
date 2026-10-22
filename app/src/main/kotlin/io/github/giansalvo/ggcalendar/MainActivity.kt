@@ -34,6 +34,9 @@ class MainActivity : ComponentActivity() {
     // The occurrence a tapped reminder notification asks to show.
     private val link = MutableStateFlow<EventLink?>(null)
 
+    // A calendar file another app opened or shared with us: the import shows its summary and writes nothing until the user says so.
+    private val importUri = MutableStateFlow<android.net.Uri?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -43,6 +46,7 @@ class MainActivity : ComponentActivity() {
         // a fresh install goes straight to the calendar. A normal start never has the extra.
         if (intent.getBooleanExtra(EXTRA_SKIP_INTRO, false)) lifecycleScope.launch { prefs.setPermissionsIntroSeen() }
         readLink(intent)
+        readImport(intent)
         // Read once before the first frame so that a chosen dark or light theme does not flash the other one.
         val first = runBlocking { prefs.appearance.first() }
         setContent {
@@ -62,7 +66,8 @@ class MainActivity : ComponentActivity() {
             }
             GGCalendarTheme(darkTheme = dark, dynamicColor = appearance.dynamicColor) {
                 val open by link.collectAsState()
-                CalendarScreen(link = open, onLinkHandled = { link.value = null })
+                val file by importUri.collectAsState()
+                CalendarScreen(link = open, onLinkHandled = { link.value = null }, importUri = file, onImportHandled = { importUri.value = null })
             }
         }
     }
@@ -102,10 +107,26 @@ class MainActivity : ComponentActivity() {
         Diag.log { "activity onNewIntent action=${intent.action}" }
         setIntent(intent)
         readLink(intent)
+        readImport(intent)
     }
 
     private companion object {
         const val EXTRA_SKIP_INTRO = "skip_intro"
+    }
+
+    /** `VIEW` (open with) and `SEND` (share) of a calendar file: only a content Uri, read once by the import. */
+    private fun readImport(intent: Intent) {
+        val uri = when (intent.action) {
+            Intent.ACTION_VIEW -> intent.data
+            Intent.ACTION_SEND -> if (android.os.Build.VERSION.SDK_INT >= 33) intent.getParcelableExtra(Intent.EXTRA_STREAM, android.net.Uri::class.java)
+            else @Suppress("DEPRECATION") intent.getParcelableExtra(Intent.EXTRA_STREAM)
+            else -> null
+        } ?: return
+        if (uri.scheme != "content") return
+        importUri.value = uri
+        // The same intent must not import again when the activity is recreated.
+        intent.data = null
+        intent.action = Intent.ACTION_MAIN
     }
 
     private fun readLink(intent: Intent) {

@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.Cake
 import androidx.compose.material.icons.outlined.FileUpload
+import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.PersonAdd
@@ -120,7 +121,15 @@ import java.util.Locale
 data class EventLink(val eventId: String, val beginUtc: Long)
 
 @Composable
-fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, viewModel: CalendarViewModel = hiltViewModel()) {
+fun CalendarScreen(
+    link: EventLink? = null,
+    onLinkHandled: () -> Unit = {},
+    /** A calendar file another app sent (open with, share): the window of the import opens on its summary. */
+    importUri: android.net.Uri? = null,
+    onImportHandled: () -> Unit = {},
+    viewModel: CalendarViewModel = hiltViewModel(),
+    importViewModel: ImportViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     // Diag build only (see Diag): what the screen sees of the accounts, and when its lifecycle moves.
     LaunchedEffect(state.instances) { Diag.log { "ui instances n=${state.instances.size} view=${state.view} date=${state.date}" } }
@@ -133,6 +142,12 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
         val observer = LifecycleEventObserver { _, event -> Diag.log { "ui lifecycle $event" } }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    LaunchedEffect(importUri) {
+        if (importUri != null) {
+            importViewModel.readFile(importUri)
+            onImportHandled()
+        }
     }
     LaunchedEffect(link) {
         if (link != null) {
@@ -297,6 +312,10 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                 },
                 onSettings = {
                     settingsOpen = true
+                    scope.launch { drawerState.close() }
+                },
+                onImport = {
+                    importViewModel.open()
                     scope.launch { drawerState.close() }
                 },
                 onExport = {
@@ -464,6 +483,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
     if (settingsOpen) {
         SettingsScreen(onClose = { settingsOpen = false })
     }
+    ImportScreen(importViewModel, onShow = { day -> if (day != null) viewModel.goTo(day) })
     if (exportOpen) ExportDialog(accounts = state.accounts, locals = state.localCalendars, onDismiss = { exportOpen = false })
     editingLocal?.let { id ->
         val current = state.localCalendars.firstOrNull { it.id == id }
@@ -649,6 +669,7 @@ private fun CalendarDrawer(
     onRemoveSubscription: (String) -> Unit,
     onActiveAlarms: () -> Unit,
     onSettings: () -> Unit,
+    onImport: () -> Unit,
     onExport: () -> Unit,
     onAbout: () -> Unit,
 ) {
@@ -738,6 +759,13 @@ private fun CalendarDrawer(
                 selected = false,
                 onClick = onSettings,
                 modifier = Modifier.testTag("drawer_settings"),
+            )
+            NavigationDrawerItem(
+                icon = { Icon(Icons.Outlined.FileDownload, contentDescription = null) },
+                label = { Text(stringResource(R.string.import_menu)) },
+                selected = false,
+                onClick = onImport,
+                modifier = Modifier.testTag("drawer_import"),
             )
             NavigationDrawerItem(
                 icon = { Icon(Icons.Outlined.FileUpload, contentDescription = null) },
