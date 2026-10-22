@@ -56,6 +56,9 @@ data class CalendarEntity(
     @ColumnInfo(name = "last_fetched_at") val lastFetchedAt: Long? = null,
     @ColumnInfo(name = "last_error") val lastError: String? = null,
     @ColumnInfo(name = "refresh_minutes") val refreshMinutes: Int? = null,
+    /** Subscriptions: only the events from this day (epoch day) and up to this day, included; null = from the first / to the last event. */
+    @ColumnInfo(name = "range_from") val rangeFrom: Long? = null,
+    @ColumnInfo(name = "range_to") val rangeTo: Long? = null,
 ) {
     val canWrite: Boolean get() = accessRole == "owner" || accessRole == "writer"
 

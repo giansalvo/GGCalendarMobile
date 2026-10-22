@@ -24,7 +24,7 @@ import kotlinx.serialization.json.Json
         ReminderFiredEntity::class,
         ReminderSnoozedEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -41,14 +41,14 @@ abstract class GGCalendarDatabase : RoomDatabase() {
         const val NAME = "ggcalendar.db"
 
         /**
-         * Version 6 starts again from a clean schema (calendar kinds, local calendars and subscriptions): databases of versions 1 to 5
-         * are dropped, and the accounts are added again. From here on a change of schema needs a real migration.
+         * Version 7 starts again from a clean schema (calendar kinds, local calendars, subscriptions with their days): databases of
+         * versions 1 to 6 are dropped, and the accounts are added again. The choice is not to write migrations before the 1.0.2 is out.
          */
-        const val OLDEST_KEPT_VERSION = 6
+        const val OLDEST_KEPT_VERSION = 7
 
-        /** The schema rules of the app: versions 1-5 are dropped ([onReset] is told when that happens), later ones will migrate. */
+        /** The schema rules of the app: versions 1-6 are dropped ([onReset] is told when that happens). */
         fun configure(builder: Builder<GGCalendarDatabase>, onReset: () -> Unit): Builder<GGCalendarDatabase> =
-            builder.fallbackToDestructiveMigrationFrom(true, 1, 2, 3, 4, 5)
+            builder.fallbackToDestructiveMigrationFrom(true, 1, 2, 3, 4, 5, 6)
                 .addCallback(object : Callback() {
                     override fun onDestructiveMigration(db: SupportSQLiteDatabase) = onReset()
                 })

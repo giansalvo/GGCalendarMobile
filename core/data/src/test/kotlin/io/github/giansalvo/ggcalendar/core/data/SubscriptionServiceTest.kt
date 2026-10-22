@@ -108,10 +108,10 @@ class SubscriptionServiceTest {
     private val address get() = server.url("/calendar/ical/someone%40example.org/public/basic.ics").toString()
     private val secretAddress get() = server.url("/calendar/ical/someone%40example.org/private-0123456789abcdef0123456789abcdef/basic.ics").toString()
 
-    private suspend fun add(body: String, url: String = address, name: String = ""): String {
+    private suspend fun add(body: String, range: SubscriptionRange = SubscriptionRange(), url: String = address, name: String = ""): String {
         serve(body)
         val preview = (service.preview(url) as PreviewResult.Ok).preview
-        return (service.add(preview, name, "#0B8043") as AddResult.Added).calendarId
+        return (service.add(preview, name, "#0B8043", range) as AddResult.Added).calendarId
     }
 
     private suspend fun events(calendarId: String) = db.eventDao().getForCalendar(calendarId).associateBy { it.id }
@@ -149,9 +149,120 @@ class SubscriptionServiceTest {
     }
 
     @Test
-    fun `more than 5000 events are refused`() = runTest {
+    fun `more than 5000 events are refused when all of them are kept`() = runTest {
         serve(ics(*Array(SubscriptionService.MAX_EVENTS + 1) { vevent("e$it@x", "E$it") }))
-        assertEquals(PreviewResult.Problem(SubscriptionProblem.TOO_MANY_EVENTS), service.preview(address))
+        val preview = (service.preview(address) as PreviewResult.Ok).preview // the days may bring the count under the limit
+        assertEquals(SubscriptionService.MAX_EVENTS + 1, preview.eventCount)
+        assertEquals(AddResult.Problem(SubscriptionProblem.TOO_MANY_EVENTS), service.add(preview, "", "#0B8043"))
+        assertTrue(db.calendarDao().getByKind(CalendarKind.SUBSCRIPTION).isEmpty())
+    }
+
+    // ---- U167-U172: the days of a subscription
+
+    private fun days(from: LocalDate?, to: LocalDate?) = SubscriptionRange(from, to)
+
+    @Test
+    fun `the count of the dialog follows the days chosen`() = runTest {
+        val d = soon
+        serve(ics(vevent("a@x", "Uno", d), vevent("b@x", "Due", d.plusDays(5)), vevent("c@x", "Tre", d.plusDays(10))))
+        val preview = (service.preview(address) as PreviewResult.Ok).preview
+        assertEquals(3, service.countIn(preview, SubscriptionRange()))
+        assertEquals(2, service.countIn(preview, days(d.plusDays(5), null)))
+        assertEquals(2, service.countIn(preview, days(null, d.plusDays(5))))
+        assertEquals(1, service.countIn(preview, days(d.plusDays(5), d.plusDays(5))))
+        assertEquals(0, service.countIn(preview, days(d.plusDays(11), null)))
+    }
+
+    @Test
+    fun `a subscription keeps only the events of its days and remembers the days`() = runTest {
+        val d = soon
+        serve(ics(vevent("a@x", "Uno", d), vevent("b@x", "Due", d.plusDays(5)), vevent("c@x", "Tre", d.plusDays(10))))
+        val preview = (service.preview(address) as PreviewResult.Ok).preview
+        val id = (service.add(preview, "", "#0B8043", days(d.plusDays(4), d.plusDays(6))) as AddResult.Added).calendarId
+        assertEquals(listOf("Due"), events(id).values.map { it.title })
+        assertEquals(days(d.plusDays(4), d.plusDays(6)), service.rangeOf(id))
+        assertEquals(1, instancesOf(d.plusDays(5)).size)
+        assertTrue(instancesOf(d).isEmpty())
+    }
+
+    @Test
+    fun `the days still apply when the calendar is read again`() = runTest {
+        val d = soon
+        serve(ics(vevent("a@x", "Uno", d), vevent("b@x", "Due", d.plusDays(5))))
+        val preview = (service.preview(address) as PreviewResult.Ok).preview
+        val id = (service.add(preview, "", "#0B8043", days(d.plusDays(4), null)) as AddResult.Added).calendarId
+        now += 3_600_000
+        serve(ics(vevent("a@x", "Uno", d), vevent("b@x", "Due", d.plusDays(5)), vevent("n@x", "Nuovo", d.plusDays(6)), vevent("o@x", "Vecchio", d.plusDays(1))))
+        service.refresh(id)
+        assertEquals(setOf("Due", "Nuovo"), events(id).values.map { it.title }.toSet())
+    }
+
+    @Test
+    fun `the limit of events counts the events kept and not the file`() = runTest {
+        val d = soon
+        val many = Array(SubscriptionService.MAX_EVENTS + 1) { vevent("e$it@x", "E$it", if (it == 0) d else d.plusDays(30)) }
+        serve(ics(*many))
+        val preview = (service.preview(address) as PreviewResult.Ok).preview
+        assertEquals(AddResult.Problem(SubscriptionProblem.TOO_MANY_EVENTS), service.add(preview, "", "#0B8043"))
+        val id = (service.add(preview, "", "#0B8043", days(null, d.plusDays(1))) as AddResult.Added).calendarId
+        assertEquals(1, events(id).size)
+    }
+
+    @Test
+    fun `a series that goes on is drawn only inside the days`() = runTest {
+        val d = soon
+        serve(ics(vevent("s@x", "Serie", d.minusDays(20), extra = "RRULE:FREQ=DAILY\r\n")))
+        val preview = (service.preview(address) as PreviewResult.Ok).preview
+        val id = (service.add(preview, "", "#0B8043", days(d, d.plusDays(2))) as AddResult.Added).calendarId
+        assertEquals(1, events(id).size) // the series is saved once
+        assertTrue(instancesOf(d.minusDays(1)).isEmpty())
+        assertEquals(1, instancesOf(d).size)
+        assertEquals(1, instancesOf(d.plusDays(2)).size)
+        assertTrue(instancesOf(d.plusDays(3)).isEmpty())
+    }
+
+    @Test
+    fun `changing the days reads the address again and applies them to the new copy`() = runTest {
+        val d = soon
+        val body = ics(vevent("a@x", "Uno", d), vevent("b@x", "Due", d.plusDays(5)), vevent("c@x", "Tre", d.plusDays(10)))
+        val id = add(body, days(d.plusDays(5), d.plusDays(5)))
+        assertEquals(listOf("Due"), events(id).values.map { it.title })
+        val requests = server.requestCount
+        // the same content at the other end: the old copy is not used, the days are applied to the new one
+        serve(body)
+        val result = service.setRange(id, days(null, d.plusDays(5)))
+        assertTrue(result is RefreshResult.Updated)
+        assertEquals(requests + 1, server.requestCount)
+        assertEquals(setOf("Uno", "Due"), events(id).values.map { it.title }.toSet())
+        assertEquals(days(null, d.plusDays(5)), service.rangeOf(id))
+        assertEquals(1, instancesOf(d).size)
+        assertTrue(instancesOf(d.plusDays(10)).isEmpty())
+    }
+
+    @Test
+    fun `the same days do nothing and a failed reading keeps the old days and events`() = runTest {
+        val d = soon
+        val body = ics(vevent("a@x", "Uno", d), vevent("b@x", "Due", d.plusDays(5)))
+        val id = add(body, days(d.plusDays(5), null))
+        val requests = server.requestCount
+        assertEquals(RefreshResult.Unchanged, service.setRange(id, days(d.plusDays(5), null)))
+        assertEquals(requests, server.requestCount)
+        server.enqueue(MockResponse.Builder().code(500).body("no").build())
+        assertEquals(RefreshResult.Failed(SubscriptionProblem.SERVER), service.setRange(id, SubscriptionRange()))
+        assertEquals(days(d.plusDays(5), null), service.rangeOf(id))
+        assertEquals(listOf("Due"), events(id).values.map { it.title })
+        assertEquals(SubscriptionProblem.SERVER.name, db.calendarDao().get(id)!!.lastError)
+    }
+
+    @Test
+    fun `days with the last before the first are refused`() = runTest {
+        val d = soon
+        serve(ics(vevent("a@x", "Uno", d)))
+        val preview = (service.preview(address) as PreviewResult.Ok).preview
+        assertEquals(AddResult.Problem(SubscriptionProblem.BAD_RANGE), service.add(preview, "", "#0B8043", days(d.plusDays(2), d)))
+        assertTrue(db.calendarDao().getByKind(CalendarKind.SUBSCRIPTION).isEmpty())
+        val id = add(ics(vevent("a@x", "Uno", d)), url = address + "?n=2")
+        assertEquals(RefreshResult.Failed(SubscriptionProblem.BAD_RANGE), service.setRange(id, days(d.plusDays(2), d)))
     }
 
     // ---- U155: what a subscription is

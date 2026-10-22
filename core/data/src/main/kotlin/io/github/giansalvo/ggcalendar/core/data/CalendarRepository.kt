@@ -78,7 +78,15 @@ class CalendarRepository @Inject constructor(
 
     suspend fun previewSubscription(address: String) = subscriptionService.preview(address)
 
-    suspend fun addSubscription(preview: SubscriptionPreview, name: String, colorHex: String) = subscriptionService.add(preview, name, colorHex)
+    suspend fun addSubscription(preview: SubscriptionPreview, name: String, colorHex: String, range: SubscriptionRange = SubscriptionRange()) =
+        subscriptionService.add(preview, name, colorHex, range)
+
+    /** How many events the days chosen keep (the count of the dialog). */
+    suspend fun countSubscriptionEvents(preview: SubscriptionPreview, range: SubscriptionRange) = subscriptionService.countIn(preview, range)
+
+    suspend fun subscriptionRange(id: String) = subscriptionService.rangeOf(id)
+
+    suspend fun setSubscriptionRange(id: String, range: SubscriptionRange) = subscriptionService.setRange(id, range)
 
     suspend fun refreshSubscription(id: String) = subscriptionService.refresh(id)
 
@@ -153,6 +161,9 @@ class CalendarRepository @Inject constructor(
 
     val viewPreferences: Flow<ViewPreferences> = prefs.view
 
+    /** How long the app waits before it reads a public calendar again (the setting), for the texts that say it. */
+    val subscriptionMinutes: Flow<Int> = prefs.subscriptionMinutes
+
     suspend fun setLastView(view: String) = prefs.setLastView(view)
 
     suspend fun setHourHeight(height: Float) = prefs.setHourHeight(height)
@@ -199,7 +210,7 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun database(@ApplicationContext context: Context): GGCalendarDatabase =
-        // Versions 1-5 (up to the 1.0.x releases) are dropped, not migrated: see GGCalendarDatabase.OLDEST_KEPT_VERSION.
+        // Versions 1-6 (up to the 1.0.x releases and the first 1.0.2 builds) are dropped, not migrated: see GGCalendarDatabase.OLDEST_KEPT_VERSION.
         GGCalendarDatabase.configure(Room.databaseBuilder(context, GGCalendarDatabase::class.java, GGCalendarDatabase.NAME)) { SchemaReset.mark(context) }
             .build()
             // Always on, not only in a diag build: see keepObservingTables. The log line is written by a diag build only.

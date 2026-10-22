@@ -61,6 +61,10 @@ interface CalendarDao {
     /** A subscription after an attempt that failed: its events stay, only the time of the attempt and the reason change. */
     @Query("UPDATE calendars SET last_synced_at = :attemptAt, last_error = :error WHERE id = :id")
     suspend fun setSourceFailed(id: String, attemptAt: Long, error: String)
+
+    /** The days of a subscription: the events outside them are not kept (see SubscriptionRange). */
+    @Query("UPDATE calendars SET range_from = :from, range_to = :to WHERE id = :id")
+    suspend fun setRange(id: String, from: Long?, to: Long?)
 }
 
 @Dao

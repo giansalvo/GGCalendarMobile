@@ -261,12 +261,14 @@ class SyncEngine @Inject constructor(
         val range = RecurrenceExpander.Window(days.from.atStartOfDay(zone).toInstant(), days.to.atStartOfDay(zone).toInstant())
         val exceptions = if (event.rrule != null) events.getExceptions(eventId) else emptyList()
         instances.deleteForEvent(eventId)
-        val expanded = RecurrenceExpander.expand(event, exceptions, range, zone)
+        // A subscription shows only the days chosen for it: what falls outside is never drawn.
+        val shownDays = if (event.calendarId.startsWith("sub:")) calendars.get(event.calendarId)?.let { SubscriptionRange.ofDays(it.rangeFrom, it.rangeTo) } else null
+        val expanded = RecurrenceExpander.expand(event, exceptions, range, zone).let { all -> if (shownDays == null) all else DateRangeFilter.clip(all, shownDays, zone) }
         instances.insert(expanded)
         Diag.log { "engine recompute event=${eventId.take(8)} window=${days.from}..${days.to} rows=${expanded.size} first=${expanded.firstOrNull()?.let { "${it.startDay}/${it.beginUtc}" }}" }
         exceptions.forEach { ex ->
             instances.deleteForEvent(ex.id)
-            RecurrenceExpander.single(ex, zone)?.let { instances.insert(listOf(it)) }
+            RecurrenceExpander.single(ex, zone)?.takeIf { shownDays == null || DateRangeFilter.intersects(it, shownDays, zone) }?.let { instances.insert(listOf(it)) }
         }
     }
 }
