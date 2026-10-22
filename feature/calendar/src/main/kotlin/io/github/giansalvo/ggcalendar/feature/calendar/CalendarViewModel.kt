@@ -68,6 +68,8 @@ data class CalendarUiState(
     /** First hour shown when a time grid opens on a period without today. */
     val dayStartHour: Int = 7,
     val dimPast: Boolean = true,
+    /** The second column of hours of the time grids, when turned on. */
+    val secondZone: io.github.giansalvo.ggcalendar.core.data.SecondZone? = null,
     val firstDay: java.time.DayOfWeek = WeekSettings.firstDay,
     /** Days with events around the month shown by the mini calendar (empty while it is closed). */
     val eventDays: Set<LocalDate> = emptySet(),
@@ -210,7 +212,7 @@ class CalendarViewModel @Inject constructor(
         WeekSettings.firstDay = g.weekStart ?: WeekSettings.localeDefault()
         CalendarUiState(
             view = nav.view, date = nav.date, scheduleFrom = nav.scheduleFrom, scheduleTo = nav.scheduleTo, accounts = accounts, birthdays = birthdays, localCalendars = locals, subscriptions = subscriptions, instances = list, syncing = syncing,
-            hourHeight = g.hourHeight, dayStartHour = g.dayStartHour, dimPast = g.dimPast, firstDay = WeekSettings.firstDay, eventDays = days, pending = pending,
+            hourHeight = g.hourHeight, dayStartHour = g.dayStartHour, dimPast = g.dimPast, secondZone = io.github.giansalvo.ggcalendar.core.data.SecondZones.from(g), firstDay = WeekSettings.firstDay, eventDays = days, pending = pending,
             selected = t.selected, editing = t.editing, pendingMove = t.pendingMove, busy = t.busy, addingAccount = t.addingAccount, accountTimeout = t.accountTimeout, consent = t.consent, error = t.error, noCalendar = t.noCalendar, message = message,
         )
     }.onStart { Diag.log { "vm state upstream START" } }

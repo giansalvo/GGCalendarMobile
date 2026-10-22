@@ -201,4 +201,5 @@
     <string name="move_calendar_to_local">Invitati e collegamenti Google Meet non vengono salvati in un calendario locale: si perdono e l\'evento viene rimosso da Google Calendar.</string>
     <string name="csv_status">Stato</string>
     <string name="csv_visibility">Visibilità</string>
+    <string name="time_there">%1$s: %2$s</string>
 </resources>

@@ -413,6 +413,7 @@ fun CalendarScreen(link: EventLink? = null, onLinkHandled: () -> Unit = {}, view
                             hourHeight = state.hourHeight,
                             dayStartHour = state.dayStartHour,
                             dimPast = state.dimPast,
+                            secondZone = state.secondZone,
                             onHourHeightChange = viewModel::setHourHeight,
                             onPageChange = viewModel::showDays,
                             onDayClick = viewModel::openDay,

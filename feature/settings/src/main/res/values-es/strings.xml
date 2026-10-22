@@ -36,4 +36,9 @@
     <string name="settings_subscriptions_refresh_hint">Cuánto espera la app antes de volver a leer un calendario público. Respecto al tiempo elegido en el menú puede haber un retraso de hasta 15 minutos.</string>
     <string name="settings_subscriptions_minutes">%1$d min</string>
     <string name="settings_subscriptions_hours">%1$d h</string>
+    <string name="settings_second_zone">Segunda zona horaria</string>
+    <string name="settings_second_zone_hint">Una segunda columna de horas en las vistas Día, 6 días y Semana</string>
+    <string name="settings_second_zone_pick">Zona horaria</string>
+    <string name="settings_second_zone_label">Nombre de la columna</string>
+    <string name="settings_second_zone_label_hint">Hasta %1$d caracteres. Vacío: %2$s</string>
 </resources>

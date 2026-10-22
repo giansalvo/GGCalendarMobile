@@ -1,5 +1,10 @@
 package io.github.giansalvo.ggcalendar.feature.settings
 
+import io.github.giansalvo.ggcalendar.core.data.SecondZones
+import io.github.giansalvo.ggcalendar.feature.event.ZonePickerDialog
+import io.github.giansalvo.ggcalendar.feature.event.zoneLabel
+import androidx.compose.material3.OutlinedTextField
+import java.time.ZoneId
 import io.github.giansalvo.ggcalendar.core.notifications.NotificationSettingsSection
 import io.github.giansalvo.ggcalendar.core.notifications.exposeTestTags
 import androidx.compose.ui.platform.LocalConfiguration
@@ -141,6 +146,7 @@ fun SettingsScreen(onClose: () -> Unit, viewModel: SettingsViewModel = hiltViewM
                             Icons.Outlined.Lock, stringResource(R.string.settings_visibility), stringResource(R.string.settings_visibility_hint),
                             stringResource(R.string.settings_visibility_public), stringResource(R.string.settings_visibility_private), !draft.defaultPrivate, "settings_visibility",
                         ) { draft = draft.copy(defaultPrivate = !it) }
+                        SecondZoneRows(draft) { draft = it }
                         SwitchRow(stringResource(R.string.settings_birthdays), stringResource(R.string.settings_birthdays_hint), draft.birthdays, tag = "settings_birthdays") { on ->
                             // The contacts are read only with the permission, asked when the user turns this on.
                             if (on && !viewModel.contactsGranted) askContacts.launch(Manifest.permission.READ_CONTACTS) else draft = draft.copy(birthdays = on)
@@ -258,6 +264,53 @@ private fun SubscriptionRefreshRow(minutes: Int, onChange: (Int) -> Unit) {
             }
         }
     }
+}
+
+/**
+ * The second column of hours of the time grids: a switch, the zone to show and a short name for the column (6 characters at most;
+ * empty, it takes the name of the zone).
+ */
+@Composable
+private fun SecondZoneRows(draft: SettingsDraft, onChange: (SettingsDraft) -> Unit) {
+    var picking by remember { mutableStateOf(false) }
+    val locale = Locale.getDefault()
+    SwitchRow(stringResource(R.string.settings_second_zone), stringResource(R.string.settings_second_zone_hint), draft.secondZoneOn, tag = "settings_second_zone") { on ->
+        // The first time it is turned on, it starts from a zone that is not the one of the phone.
+        val id = draft.secondZoneId ?: if (ZoneId.systemDefault().id == "America/New_York") "Europe/London" else "America/New_York"
+        onChange(draft.copy(secondZoneOn = on, secondZoneId = id))
+    }
+    val id = draft.secondZoneId
+    if (draft.secondZoneOn && id != null) {
+        val zone = runCatching { ZoneId.of(id) }.getOrNull()
+        Row(Modifier.testTag("settings_second_zone_pick").fillMaxWidth().clickable { picking = true }.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.settings_second_zone_pick), style = MaterialTheme.typography.bodyLarge)
+                Text(zone?.let { zoneLabel(it, locale) } ?: id, Modifier.testTag("settings_second_zone_value"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        val default = SecondZones.defaultLabel(id)
+        OutlinedTextField(
+            value = draft.secondZoneLabel,
+            onValueChange = { onChange(draft.copy(secondZoneLabel = limitLabel(it))) },
+            label = { Text(stringResource(R.string.settings_second_zone_label)) },
+            placeholder = { Text(default) },
+            supportingText = { Text(stringResource(R.string.settings_second_zone_label_hint, SecondZones.MAX_LABEL, default)) },
+            singleLine = true,
+            modifier = Modifier.testTag("settings_second_zone_label").fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        )
+    }
+    if (picking) {
+        ZonePickerDialog(draft.secondZoneId?.let { runCatching { ZoneId.of(it) }.getOrNull() } ?: ZoneId.of("UTC"), { picking = false }) { z ->
+            // A name left empty follows the zone; a name typed stays.
+            onChange(draft.copy(secondZoneId = z.id))
+        }
+    }
+}
+
+/** The text of the name field, cut to the longest name the column has room for. */
+internal fun limitLabel(text: String): String {
+    val end = text.offsetByCodePoints(0, minOf(SecondZones.MAX_LABEL, text.codePointCount(0, text.length)))
+    return text.substring(0, end)
 }
 
 /** Only Monday, Saturday or Sunday start a week anywhere; the language of the phone may say another day. */

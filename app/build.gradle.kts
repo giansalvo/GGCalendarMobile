@@ -30,8 +30,8 @@ android {
         applicationId = "io.github.giansalvo.ggcalendar"
         minSdk = 26
         targetSdk = 36
-        versionCode = 15
-        versionName = "1.0.2"
+        versionCode = 16
+        versionName = "1.0.3"
         // A diagnostic build (-Pdiag=true, with --no-configuration-cache) writes log lines tagged GGCalDiag about the accounts and
         // the side menu; a normal build writes none.
         val diag = providers.gradleProperty("diag").orNull == "true"

@@ -96,6 +96,7 @@ fun EventDetailSheet(
     viewModel: EventDetailViewModel = hiltViewModel(key = "detail-${instance.eventId}"),
 ) {
     val detail by remember(instance.eventId) { viewModel.observe(instance.eventId) }.collectAsStateWithLifecycle(null)
+    val secondZone by viewModel.secondZone.collectAsStateWithLifecycle(null)
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     var sharing by remember { mutableStateOf(false) }
     // A deletion that waits for the answer on telling the guests; the scope is null for an event that does not repeat.
@@ -135,6 +136,7 @@ fun EventDetailSheet(
             DetailContent(
                 instance = instance,
                 detail = d,
+                secondZone = secondZone,
                 onClose = onDismiss,
                 onShare = { sharing = true },
                 onEdit = { onEdit(d, instance) },
@@ -152,7 +154,7 @@ fun EventDetailSheet(
 }
 
 @Composable
-private fun DetailContent(instance: EventInstance, detail: EventDetail, onClose: () -> Unit, onShare: () -> Unit, onEdit: () -> Unit, onDelete: (SeriesScope?) -> Unit) {
+private fun DetailContent(instance: EventInstance, detail: EventDetail, secondZone: io.github.giansalvo.ggcalendar.core.data.SecondZone?, onClose: () -> Unit, onShare: () -> Unit, onEdit: () -> Unit, onDelete: (SeriesScope?) -> Unit) {
     val event = detail.event
     val res = LocalContext.current.resources
     val uri = LocalUriHandler.current
@@ -195,6 +197,17 @@ private fun DetailContent(instance: EventInstance, detail: EventDetail, onClose:
                 // Only when it differs from the phone's (Europe/Rome and Europe/Berlin are both "Central European Time").
                 if (!event.allDay && name != null && name != ZoneId.systemDefault().getDisplayName(TextStyle.FULL, Locale.getDefault())) {
                     Text(stringResource(R.string.time_zone_of, name), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                // The same hours in the second time zone of the settings (summer time and half hours as they are there on that day).
+                secondZone?.takeIf { !event.allDay }?.let { second ->
+                    second.zone?.let { z ->
+                        Text(
+                            stringResource(R.string.time_there, second.label, whenText(false, instance.begin, instance.end, instance.startDay, instance.endDay, z)),
+                            Modifier.testTag("detail_second_zone"),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
                 describe(event.rrule ?: detail.series?.rrule, res)?.let {
                     Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

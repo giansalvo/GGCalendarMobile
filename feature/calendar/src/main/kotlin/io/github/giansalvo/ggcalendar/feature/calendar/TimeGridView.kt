@@ -64,9 +64,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.giansalvo.ggcalendar.core.data.SecondZone
+import io.github.giansalvo.ggcalendar.core.data.SecondZones
+import io.github.giansalvo.ggcalendar.core.data.ZoneRow
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
 import java.time.Instant
 import java.time.LocalDate
@@ -87,6 +91,9 @@ const val MAX_HOUR_HEIGHT = 120f
 const val DEFAULT_HOUR_HEIGHT = 48f
 
 private val HOUR_COLUMN = 48.dp
+
+/** The second column of hours (see [SecondZone]) and the room it takes next to the hours of the phone. */
+private val ZONE_COLUMN = 44.dp
 private val BAR_HEIGHT = 20.dp
 private val BAR_ROW = 22.dp
 private val MIN_EVENT_HEIGHT = 18.dp
@@ -122,8 +129,14 @@ internal fun TimeGridView(
     /** A drag ended: the event's new start and end. */
     onEventMoved: (EventInstance, Instant, Instant) -> Unit,
     modifier: Modifier = Modifier,
+    /** A second column of hours, in another time zone, next to the hours of the phone; null = off. */
+    secondZone: SecondZone? = null,
 ) {
     val firstDay = firstDayOfWeek()
+    val phoneZone = ZoneId.systemDefault()
+    val otherZone = secondZone?.zone
+    // Where the hours start: one column of hours for the whole page, and the room it takes.
+    val axis = if (otherZone != null) HOUR_COLUMN + ZONE_COLUMN else HOUR_COLUMN
     fun aligned(d: LocalDate) = if (dayCount == 7) weekStart(d, firstDay) else d
 
     var anchor by remember { mutableStateOf(aligned(date)) }
@@ -185,12 +198,15 @@ internal fun TimeGridView(
         }
 
         Column(Modifier.fillMaxSize()) {
-            DayHeader(days, today, onDayClick)
-            AllDayStrip(days, instances, now, dimPast, onEventClick)
+            // The line of every hour in the second zone. The column on the left is read for the first day of the page; a day whose
+            // hours are not the same (a zone changed its clock that week) carries its own labels, so that no hour is ever wrong.
+            val dayRows = remember(days, otherZone) { otherZone?.let { z -> days.map { d -> SecondZones.rows(d, phoneZone, z) } } }
+            DayHeader(days, today, onDayClick, axis, secondZone?.label)
+            AllDayStrip(days, instances, now, dimPast, axis, onEventClick)
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             var gridWidth by remember { mutableIntStateOf(0) }
             val hourPx = with(density) { hourDp.toPx() }
-            val columnPx = (gridWidth - with(density) { HOUR_COLUMN.toPx() }) / dayCount
+            val columnPx = (gridWidth - with(density) { axis.toPx() }) / dayCount
             // Snapped move of the drag: minutes and days.
             fun snapped(d: Drag): Pair<Int, Int> {
                 val minutes = ((d.dy / hourPx * 60) / SNAP_MINUTES).roundToInt() * SNAP_MINUTES
@@ -219,6 +235,7 @@ internal fun TimeGridView(
               // Room below the last hour, so that it can scroll above the "+" button.
               Row(Modifier.padding(bottom = 88.dp)) {
                 HourLabels(hourDp)
+                if (dayRows != null) SecondHourLabels(hourDp, dayRows.first())
                 days.forEachIndexed { index, day ->
                     DayColumn(
                         day = day,
@@ -228,6 +245,7 @@ internal fun TimeGridView(
                         isToday = day == today,
                         dimPast = dimPast,
                         showTime = dayCount == 1,
+                        zoneRows = dayRows?.get(index)?.takeIf { !SecondZones.sameHours(dayRows.first(), it) },
                         placeholder = pendingStart?.takeIf { it.toLocalDate() == day }?.let { it.hour * 60 + it.minute },
                         onEmptyTap = { minute -> onCreateAt(day.atStartOfDay().plusMinutes(minute.toLong())) },
                         onEventClick = onEventClick,
@@ -261,7 +279,7 @@ internal fun TimeGridView(
                     val color = parseColor(d.instance.colorHex)
                     Box(
                         Modifier
-                            .offset(x = HOUR_COLUMN + columnDp * (d.dayIndex + shiftDays), y = hourDp * from / 60)
+                            .offset(x = axis + columnDp * (d.dayIndex + shiftDays), y = hourDp * from / 60)
                             .width(columnDp - 2.dp)
                             .height(maxOf(hourDp * (to - from) / 60, MIN_EVENT_HEIGHT))
                             .shadow(8.dp, RoundedCornerShape(6.dp))
@@ -299,10 +317,24 @@ private fun Modifier.pinchToZoom(onZoom: (factor: Float, focusY: Float) -> Unit,
     }
 
 @Composable
-private fun DayHeader(days: List<LocalDate>, today: LocalDate, onDayClick: (LocalDate) -> Unit) {
+private fun DayHeader(days: List<LocalDate>, today: LocalDate, onDayClick: (LocalDate) -> Unit, axis: Dp, zoneLabel: String?) {
     val locale = Locale.getDefault()
     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Spacer(Modifier.width(HOUR_COLUMN))
+        Row(Modifier.width(axis), verticalAlignment = Alignment.Bottom) {
+            Spacer(Modifier.width(HOUR_COLUMN))
+            // The short name of the second zone, over its column of hours.
+            if (zoneLabel != null) {
+                Text(
+                    zoneLabel,
+                    Modifier.width(ZONE_COLUMN).testTag("zone_label"),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+            }
+        }
         days.forEach { day ->
             val isToday = day == today
             val color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
@@ -332,7 +364,7 @@ private fun DayHeader(days: List<LocalDate>, today: LocalDate, onDayClick: (Loca
 
 /** All-day and multi-day events as continuous bars; two rows and "+N" until tapped. */
 @Composable
-private fun AllDayStrip(days: List<LocalDate>, instances: List<EventInstance>, now: Instant, dimPast: Boolean, onEventClick: (EventInstance) -> Unit) {
+private fun AllDayStrip(days: List<LocalDate>, instances: List<EventInstance>, now: Instant, dimPast: Boolean, axis: Dp, onEventClick: (EventInstance) -> Unit) {
     val lanes = remember(days.first(), instances) { Lanes.assign(barSpans(instances, days.first(), days.size)) }
     if (lanes.isEmpty()) return
     var expanded by remember { mutableStateOf(false) }
@@ -342,7 +374,7 @@ private fun AllDayStrip(days: List<LocalDate>, instances: List<EventInstance>, n
 
     Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
         Box(
-            Modifier.width(HOUR_COLUMN).height(BAR_ROW * rows).clickable(enabled = laneCount > 2) { expanded = !expanded },
+            Modifier.width(axis).height(BAR_ROW * rows).clickable(enabled = laneCount > 2) { expanded = !expanded },
             contentAlignment = Alignment.TopCenter,
         ) {
             if (laneCount > 2) {
@@ -437,6 +469,37 @@ private fun HourLabels(hour: Dp) {
     }
 }
 
+/** "8 AM" or "08:00"; the minutes are written only when the zone has them (India is half an hour off). */
+private fun zoneTime(time: LocalTime, is24: Boolean): String =
+    time.format(DateTimeFormatter.ofPattern(if (is24) "HH:mm" else if (time.minute == 0) "h a" else "h:mm a"))
+
+/** The hours of the second zone, one for each line of the grid; the day is written on the first line and where the date changes. */
+@Composable
+private fun SecondHourLabels(hour: Dp, rows: List<ZoneRow>) {
+    val is24 = android.text.format.DateFormat.is24HourFormat(LocalContext.current)
+    val locale = Locale.getDefault()
+    Box(Modifier.width(ZONE_COLUMN).height(hour * 24)) {
+        rows.forEachIndexed { h, row ->
+            ZoneRowLabel(row, h, hour, is24, locale, Modifier.width(ZONE_COLUMN - 6.dp).offset(x = 0.dp), "zone_row_", TextAlign.End)
+        }
+    }
+}
+
+/** One hour of the second zone at the line [h]; with the day above it (below it on the first line) when [ZoneRow.showDate]. */
+@Composable
+private fun ZoneRowLabel(row: ZoneRow, h: Int, hour: Dp, is24: Boolean, locale: Locale, modifier: Modifier, tag: String, align: TextAlign) {
+    val color = MaterialTheme.colorScheme.onSurfaceVariant
+    val time = zoneTime(row.time, is24)
+    val day = row.date.dayOfWeek.getDisplayName(TextStyle.SHORT, locale).replaceFirstChar { it.titlecase(locale) } + " " + row.date.dayOfMonth
+    // The hour is centered on its line; the first line has nothing above it, so its hour is just under it.
+    val top = if (h == 0) 1.dp else hour * h - 7.dp - (if (row.showDate) 11.dp else 0.dp)
+    Column(modifier.offset(y = top)) {
+        if (row.showDate && h != 0) Text(day, Modifier.testTag("zone_date_" + h), fontSize = 9.sp, lineHeight = 11.sp, color = MaterialTheme.colorScheme.primary, textAlign = align, maxLines = 1, softWrap = false)
+        Text(time, Modifier.testTag(tag + h), style = MaterialTheme.typography.labelSmall, color = color, textAlign = align, maxLines = 1, softWrap = false)
+        if (row.showDate && h == 0) Text(day, Modifier.testTag("zone_date_0"), fontSize = 9.sp, lineHeight = 11.sp, color = MaterialTheme.colorScheme.primary, textAlign = align, maxLines = 1, softWrap = false)
+    }
+}
+
 @Composable
 private fun DayColumn(
     day: LocalDate,
@@ -446,6 +509,8 @@ private fun DayColumn(
     isToday: Boolean,
     dimPast: Boolean,
     showTime: Boolean,
+    /** The hours of the second zone, when this day's are not the ones of the column on the left. */
+    zoneRows: List<ZoneRow>?,
     placeholder: Int?,
     onEmptyTap: (minute: Int) -> Unit,
     onEventClick: (EventInstance) -> Unit,
@@ -485,6 +550,13 @@ private fun DayColumn(
             },
     ) {
         val width = maxWidth
+        if (zoneRows != null) {
+            val is24 = android.text.format.DateFormat.is24HourFormat(LocalContext.current)
+            val locale = Locale.getDefault()
+            zoneRows.forEachIndexed { h, row ->
+                ZoneRowLabel(row, h, hour, is24, locale, Modifier.padding(start = 3.dp).width(ZONE_COLUMN), "zone_day_row_", TextAlign.Start)
+            }
+        }
         placed.forEach { p ->
             val s = p.item
             EventBlock(

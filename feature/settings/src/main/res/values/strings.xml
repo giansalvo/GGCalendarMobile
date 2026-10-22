@@ -36,4 +36,9 @@
     <string name="settings_subscriptions_refresh_hint">How long the app waits before it reads a public calendar again. Compared with the time chosen in the menu there can be a delay of up to 15 minutes.</string>
     <string name="settings_subscriptions_minutes">%1$d min</string>
     <string name="settings_subscriptions_hours">%1$d h</string>
+    <string name="settings_second_zone">Second time zone</string>
+    <string name="settings_second_zone_hint">A second column of hours in the Day, 6 days and Week views</string>
+    <string name="settings_second_zone_pick">Time zone</string>
+    <string name="settings_second_zone_label">Name of the column</string>
+    <string name="settings_second_zone_label_hint">Up to %1$d characters. Empty: %2$s</string>
 </resources>

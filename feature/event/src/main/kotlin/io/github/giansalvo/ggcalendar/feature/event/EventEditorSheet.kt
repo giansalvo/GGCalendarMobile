@@ -357,7 +357,7 @@ private fun EditorFields(
         Picker.EndDate -> DateDialog(draft.endDate, { picking = null }) { d -> update { it.withEnd(date = d) } }
         Picker.StartTime -> TimeDialog(draft.startTime, { picking = null }) { t -> update { it.withStart(time = t) } }
         Picker.EndTime -> TimeDialog(draft.endTime, { picking = null }) { t -> update { it.withEnd(time = t) } }
-        Picker.Zone -> ZoneDialog(draft.zone, { picking = null }) { z -> update { it.copy(zoneId = z.id) } }
+        Picker.Zone -> ZonePickerDialog(draft.zone, { picking = null }) { z -> update { it.copy(zoneId = z.id) } }
         Picker.Recurrence -> RecurrenceDialog(draft, { picking = null }) { r -> update { it.copy(rrule = r) } }
         Picker.Reminder -> ReminderDialog({ picking = null }) { r -> update { it.copy(reminders = (it.reminders.orEmpty() + r).distinct()) } }
         Picker.Color -> ColorDialog(draft.color, { picking = null }) { c -> update { it.copy(color = c) } }
@@ -471,7 +471,8 @@ private fun DateTimeRow(date: LocalDate, time: LocalTime, allDay: Boolean, onDat
     }
 }
 
-private fun zoneLabel(zone: ZoneId, locale: Locale): String {
+/** "Central European Time (GMT+01:00)", the offset of today. */
+fun zoneLabel(zone: ZoneId, locale: Locale): String {
     val offset = zone.rules.getOffset(Instant.now()).id.let { if (it == "Z") "" else it }
     return "${zone.getDisplayName(TextStyle.FULL, locale)} (GMT$offset)"
 }
@@ -705,7 +706,7 @@ private fun TimeDialog(initial: LocalTime, onDismiss: () -> Unit, onPick: (Local
 }
 
 @Composable
-private fun ZoneDialog(current: ZoneId, onDismiss: () -> Unit, onPick: (ZoneId) -> Unit) {
+fun ZonePickerDialog(current: ZoneId, onDismiss: () -> Unit, onPick: (ZoneId) -> Unit) {
     val locale = Locale.getDefault()
     var query by remember { mutableStateOf("") }
     val zones = remember {

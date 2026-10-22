@@ -28,6 +28,11 @@ data class ViewPreferences(
     val dimPast: Boolean = true,
     /** The first day of the week; null follows the language of the phone. */
     val weekStart: java.time.DayOfWeek? = null,
+    /** A second column of hours in the time grids, in another time zone (see [SecondZones]). */
+    val secondZoneEnabled: Boolean = false,
+    val secondZoneId: String? = null,
+    /** The short name of the column; null = the default one. */
+    val secondZoneLabel: String? = null,
 )
 
 /** How the app looks: light, dark or as the system, and the wallpaper colors of Android 12 and later. */
@@ -59,6 +64,9 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         val theme = stringPreferencesKey("theme")
         val birthdays = booleanPreferencesKey("birthdays_from_contacts")
         val weekStart = stringPreferencesKey("week_start")
+        val secondZoneOn = booleanPreferencesKey("second_zone_on")
+        val secondZoneId = stringPreferencesKey("second_zone_id")
+        val secondZoneLabel = stringPreferencesKey("second_zone_label")
         val dynamicColor = booleanPreferencesKey("dynamic_color")
         val permissionsIntroSeen = booleanPreferencesKey("permissions_intro_seen")
         val subscriptionMinutes = intPreferencesKey("subscription_refresh_minutes")
@@ -137,6 +145,9 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
             dayStartHour = it[Keys.dayStartHour] ?: defaults.dayStartHour,
             dimPast = it[Keys.dimPast] ?: defaults.dimPast,
             weekStart = it[Keys.weekStart]?.let { name -> java.time.DayOfWeek.entries.firstOrNull { d -> d.name == name } },
+            secondZoneEnabled = it[Keys.secondZoneOn] ?: false,
+            secondZoneId = it[Keys.secondZoneId],
+            secondZoneLabel = it[Keys.secondZoneLabel],
         )
     }
 
@@ -164,6 +175,16 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
 
     suspend fun setDayStartHour(hour: Int) {
         context.dataStore.edit { it[Keys.dayStartHour] = hour.coerceIn(0, 12) }
+    }
+
+    /** The second time zone of the time grids; an empty or default [label] is kept as no name, so that it follows the zone chosen. */
+    suspend fun setSecondZone(enabled: Boolean, zoneId: String?, label: String?) {
+        context.dataStore.edit {
+            it[Keys.secondZoneOn] = enabled
+            if (zoneId != null) it[Keys.secondZoneId] = zoneId else it.remove(Keys.secondZoneId)
+            val custom = label?.let(SecondZones::clampLabel)?.takeIf { l -> l.isNotEmpty() && zoneId != null && l != SecondZones.defaultLabel(zoneId) }
+            if (custom != null) it[Keys.secondZoneLabel] = custom else it.remove(Keys.secondZoneLabel)
+        }
     }
 
     suspend fun setWeekStart(day: java.time.DayOfWeek) {

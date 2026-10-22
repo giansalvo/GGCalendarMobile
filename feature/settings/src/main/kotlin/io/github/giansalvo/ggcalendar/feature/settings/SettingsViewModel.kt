@@ -30,6 +30,10 @@ data class SettingsDraft(
     val alarmMinutes: Int,
     /** The sound of the alarms (a Uri as text); null = the alarm sound of the phone. */
     val alarmSound: String?,
+    /** A second column of hours in the time grids: on or off, the zone (an id like Asia/Tokyo) and the name typed for it (empty = the default). */
+    val secondZoneOn: Boolean,
+    val secondZoneId: String?,
+    val secondZoneLabel: String,
 )
 
 @HiltViewModel
@@ -56,6 +60,9 @@ class SettingsViewModel @Inject constructor(
             subscriptionMinutes = prefs.subscriptionMinutes.first(),
             alarmMinutes = prefs.alarmMinutes.first(),
             alarmSound = prefs.alarmSound.first(),
+            secondZoneOn = view.secondZoneEnabled && view.secondZoneId != null,
+            secondZoneId = view.secondZoneId,
+            secondZoneLabel = view.secondZoneLabel.orEmpty(),
         )
     }
 
@@ -65,6 +72,7 @@ class SettingsViewModel @Inject constructor(
         prefs.setWeekStart(draft.weekStart)
         prefs.setDayStartHour(draft.dayStartHour)
         prefs.setDimPast(draft.dimPast)
+        prefs.setSecondZone(draft.secondZoneOn, draft.secondZoneId, draft.secondZoneLabel)
         prefs.setDefaultBusy(draft.defaultBusy)
         prefs.setDefaultPrivate(draft.defaultPrivate)
         prefs.setBirthdaysEnabled(draft.birthdays)

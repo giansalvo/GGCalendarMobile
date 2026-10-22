@@ -36,4 +36,9 @@
     <string name="settings_subscriptions_refresh_hint">Quanto aspetta l\'app prima di rileggere un calendario pubblico. Rispetto al tempo selezionato in tendina ci può essere un ritardo di 15 minuti.</string>
     <string name="settings_subscriptions_minutes">%1$d min</string>
     <string name="settings_subscriptions_hours">%1$d h</string>
+    <string name="settings_second_zone">Secondo fuso orario</string>
+    <string name="settings_second_zone_hint">Una seconda colonna di ore nelle viste Giorno, 6 giorni e Settimana</string>
+    <string name="settings_second_zone_pick">Fuso orario</string>
+    <string name="settings_second_zone_label">Nome della colonna</string>
+    <string name="settings_second_zone_label_hint">Fino a %1$d caratteri. Vuoto: %2$s</string>
 </resources>
