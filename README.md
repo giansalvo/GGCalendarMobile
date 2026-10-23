@@ -2,6 +2,8 @@
 
 <h1 align="center">GGCalendar Mobile</h1>
 
+<p align="center"><a href="https://github.com/giansalvo/GGCalendarMobile/actions/workflows/ci.yml"><img src="https://github.com/giansalvo/GGCalendarMobile/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a></p>
+
 <p align="center">Calendario per Android con sincronizzazione Google Calendar · <em>Android calendar with Google Calendar sync</em></p>
 
 <p align="center">
