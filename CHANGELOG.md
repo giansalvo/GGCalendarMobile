@@ -2,7 +2,7 @@
 
 Le modifiche di GGCalendar Mobile da una versione alla successiva, dalla più recente.
 
-## 1.0.3 (in preparazione)
+## 1.0.3 (23/10/2026)
 
 - Registro diagnostico: scrive un file di registro con i titoli degli eventi; la voce «Invia registro diagnostico» nel menu laterale lo spedisce per mail
 - Secondo fuso orario
