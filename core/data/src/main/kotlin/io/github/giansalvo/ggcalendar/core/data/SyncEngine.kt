@@ -138,6 +138,7 @@ class SyncEngine @Inject constructor(
                 calendars.upsert(entity)
                 entity
             }
+            Diag.log { "sync of ${Diag.who(email)} wrote the calendars: " + current.joinToString("; ") { "'${it.name}' " + if (it.isVisible) "visible" else "HIDDEN" } }
             // Calendars removed or unsubscribed on Google.
             (existing.keys - current.map { it.id }.toSet()).forEach { calendars.delete(it) }
 

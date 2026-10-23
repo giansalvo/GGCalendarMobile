@@ -6,6 +6,7 @@ import io.github.giansalvo.ggcalendar.core.data.AppPreferences
 import io.github.giansalvo.ggcalendar.core.data.BirthdaySync
 import io.github.giansalvo.ggcalendar.core.data.ContactsSource
 import io.github.giansalvo.ggcalendar.core.data.ThemeMode
+import io.github.giansalvo.ggcalendar.core.notifications.DiagnosticLog
 import io.github.giansalvo.ggcalendar.core.notifications.DirectBootStore
 import io.github.giansalvo.ggcalendar.feature.event.WeekSettings
 import kotlinx.coroutines.flow.first
@@ -36,6 +37,8 @@ data class SettingsDraft(
     val secondZoneLabel: String,
     /** The reminder a new event starts with, in minutes before, or [AppPreferences.NO_REMINDER]. */
     val defaultReminderMinutes: Int,
+    /** The diagnostic log (Advanced): lines written to a file, sent by mail from the menu; turning it off deletes the file. */
+    val logEnabled: Boolean,
 )
 
 @HiltViewModel
@@ -44,6 +47,7 @@ class SettingsViewModel @Inject constructor(
     private val birthdays: BirthdaySync,
     private val contacts: ContactsSource,
     private val alarmStore: DirectBootStore,
+    private val diagnosticLog: DiagnosticLog,
 ) : ViewModel() {
     val contactsGranted: Boolean get() = contacts.granted
 
@@ -66,6 +70,7 @@ class SettingsViewModel @Inject constructor(
             secondZoneId = view.secondZoneId,
             secondZoneLabel = view.secondZoneLabel.orEmpty(),
             defaultReminderMinutes = prefs.defaultReminderMinutes.first(),
+            logEnabled = diagnosticLog.isEnabled(),
         )
     }
 
@@ -86,6 +91,7 @@ class SettingsViewModel @Inject constructor(
         prefs.setAlarmMinutes(draft.alarmMinutes)
         alarmStore.setAlarmSound(draft.alarmSound)
         prefs.setAlarmSound(draft.alarmSound)
+        diagnosticLog.setEnabled(draft.logEnabled)
         // The calendar appears (or goes away) as soon as the choice is saved.
         birthdays.sync()
     }

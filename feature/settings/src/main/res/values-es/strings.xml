@@ -45,4 +45,7 @@
     <string name="settings_default_reminder_hint">Para los eventos nuevos de cada calendario, local y de Google. Los eventos y calendarios que ya existen no cambian.</string>
     <string name="settings_default_reminder_none">Ninguno</string>
     <string name="settings_default_reminder_day">1 día</string>
+    <string name="settings_advanced">Avanzado</string>
+    <string name="settings_log">Registro de diagnóstico</string>
+    <string name="settings_log_hint">Escribe un archivo de registro mientras usas la app, para ayudar a encontrar problemas. Incluye los títulos de tus eventos. Envíalo por correo desde el menú. Al desactivarlo, se borra el registro.</string>
 </resources>

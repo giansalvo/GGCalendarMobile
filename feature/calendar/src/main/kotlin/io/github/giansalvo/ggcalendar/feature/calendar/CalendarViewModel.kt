@@ -174,7 +174,17 @@ class CalendarViewModel @Inject constructor(
     private val repository: CalendarRepository,
     private val events: EventRepository,
     private val localCalendars: LocalCalendars,
+    private val diagnosticLog: io.github.giansalvo.ggcalendar.core.notifications.DiagnosticLog,
 ) : ViewModel() {
+    /** Whether the diagnostic log is on: the menu entry that sends it is shown only then. */
+    val logEnabled: StateFlow<Boolean> get() = diagnosticLog.enabled
+
+    fun logMail(context: android.content.Context) = diagnosticLog.mailIntent(context)
+
+    fun saveLog(target: android.net.Uri) = diagnosticLog.saveTo(target)
+
+    fun logFileName() = diagnosticLog.suggestedFileName()
+
     private val navigation = MutableStateFlow(Navigation(CalendarView.SCHEDULE, LocalDate.now()))
     private val transient = MutableStateFlow(Transient())
     private val grid = repository.viewPreferences

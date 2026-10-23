@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import io.github.giansalvo.ggcalendar.core.data.AppPreferences
+import io.github.giansalvo.ggcalendar.core.model.Diag
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -19,6 +20,7 @@ import kotlinx.coroutines.launch
 class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val app = context.applicationContext
+        Diag.log { "receiver: ${intent.action} data=${intent.data} unlocked=${ReminderActions.isUnlocked(app)}" }
         val pending = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
             try {

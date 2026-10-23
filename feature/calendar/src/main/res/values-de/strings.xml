@@ -200,4 +200,11 @@
     <string name="import_problem_no_events">In dieser Datei gibt es keine Termine zum Importieren.</string>
     <string name="import_problem_not_local">Termine können nur in einen Kalender dieses Telefons importiert werden.</string>
     <string name="import_problem_unreadable">Die Datei kann nicht gelesen werden.</string>
+    <string name="send_log">Diagnoseprotokoll senden</string>
+    <string name="log_no_mail_title">Keine E-Mail-App</string>
+    <string name="log_no_mail_text">Es wurde keine E-Mail-App gefunden. Speichere die Protokolldatei und sende sie über die Kontaktseite der Website.</string>
+    <string name="log_save_file">Datei speichern</string>
+    <string name="log_contact_page">Kontaktseite</string>
+    <string name="log_saved">Protokoll gespeichert</string>
+    <string name="log_save_failed">Die Datei konnte nicht gespeichert werden</string>
 </resources>

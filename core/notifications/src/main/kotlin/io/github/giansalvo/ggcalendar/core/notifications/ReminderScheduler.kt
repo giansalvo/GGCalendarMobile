@@ -5,6 +5,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.giansalvo.ggcalendar.core.data.AppPreferences
 import io.github.giansalvo.ggcalendar.core.data.ReminderCalculator
 import io.github.giansalvo.ggcalendar.core.database.GGCalendarDatabase
+import io.github.giansalvo.ggcalendar.core.model.Diag
 import io.github.giansalvo.ggcalendar.core.model.Reminder
 import io.github.giansalvo.ggcalendar.core.model.ReminderMethod
 import kotlinx.coroutines.flow.first
@@ -57,6 +58,11 @@ class ReminderScheduler @Inject constructor(
         store.setAlarmMinutes(prefs.alarmMinutes.first())
         store.setAlarmSound(prefs.alarmSound.first())
         store.writeSnapshot(Snapshot(now, entries))
+        Diag.log {
+            val cancelled = store.scheduledKeys() - wanted.keys
+            "reschedule: ${rows.size} occurrences of visible calendars, ${wanted.size} alarms wanted, ${cancelled.size} cancelled; next: " +
+                entries.sortedBy { it.fireAt }.take(5).joinToString("; ") { "'${it.alert.title}' at ${Diag.time(it.fireAt)}" }
+        }
         registrar.sync(wanted)
     }
 

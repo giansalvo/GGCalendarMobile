@@ -71,4 +71,5 @@
     <string name="alarm_sound_help">Se non si può riprodurre, suona un suono incluso nell\'app.</string>
     <string name="alarm_sound_default">Predefinito del sistema</string>
     <string name="alarm_sound_reset">Usa il suono predefinito del sistema</string>
+    <string name="log_mail_body">Descrivi cosa è successo e quando. Lascia allegato il registro.</string>
 </resources>

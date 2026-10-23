@@ -9,6 +9,7 @@ import io.github.giansalvo.ggcalendar.core.data.ReminderCalculator
 import io.github.giansalvo.ggcalendar.core.database.GGCalendarDatabase
 import io.github.giansalvo.ggcalendar.core.database.ReminderFiredEntity
 import io.github.giansalvo.ggcalendar.core.database.ReminderSnoozedEntity
+import io.github.giansalvo.ggcalendar.core.model.Diag
 import io.github.giansalvo.ggcalendar.core.model.Reminder
 import io.github.giansalvo.ggcalendar.core.model.ReminderMethod
 import javax.inject.Inject
@@ -34,6 +35,7 @@ class ReminderEngine @Inject constructor(
     suspend fun onAlarm(key: String) {
         reconciler.reconcile()
         val now = System.currentTimeMillis()
+        Diag.log { "reminder alarm went off: key=$key" }
         if (key.startsWith(SNOOZE_PREFIX)) {
             val snoozed = dao.snoozed().firstOrNull { it.id == key.removePrefix(SNOOZE_PREFIX).toLongOrNull() }
             // A snooze made while the phone was locked has a Room id only after the reconciliation above: catch it up.
@@ -41,11 +43,30 @@ class ReminderEngine @Inject constructor(
             return
         }
         val (eventId, begin, method, minutes) = parse(key) ?: return
-        if (dao.fired(listOf(key)).isNotEmpty()) return
+        if (dao.fired(listOf(key)).isNotEmpty()) {
+            Diag.log { "reminder skipped (already shown): key=$key" }
+            return
+        }
         // A calendar hidden since the alarm was registered rings no more.
-        val row = dao.visibleRow(eventId, begin) ?: return
-        val reminder = ReminderCalculator.remindersOf(row).firstOrNull { it.method == method && it.minutes == minutes } ?: return
-        if (row.endUtc <= now) return
+        val row = dao.visibleRow(eventId, begin)
+        if (row == null) {
+            Diag.log {
+                val any = dao.row(eventId, begin)
+                if (any == null) "reminder skipped (no such occurrence any more): key=$key"
+                else "reminder skipped (calendar '${any.calendarName}' is HIDDEN): '${any.title}' key=$key"
+            }
+            return
+        }
+        val reminder = ReminderCalculator.remindersOf(row).firstOrNull { it.method == method && it.minutes == minutes }
+        if (reminder == null) {
+            Diag.log { "reminder skipped (the event no longer has this reminder): '${row.title}' key=$key" }
+            return
+        }
+        if (row.endUtc <= now) {
+            Diag.log { "reminder skipped (the event is over): '${row.title}' key=$key" }
+            return
+        }
+        Diag.log { "reminder SHOWN by alarm: '${row.title}' calendar='${row.calendarName}' (visible=${row.calendarVisible}) $method $minutes min before ${Diag.time(row.beginUtc)}" }
         dao.insertFired(ReminderFiredEntity(key, row.beginUtc - minutes * 60_000L))
         present(ReminderAlert.of(row, reminder))
     }
@@ -70,6 +91,7 @@ class ReminderEngine @Inject constructor(
         val rows = dao.rows(now, now + Reminders.MAX_MINUTES_BEFORE * 60_000)
         val due = ReminderCalculator.due(rows, after, now)
         val fired = due.map { it.key }.chunked(500).flatMap { dao.fired(it) }.toSet()
+        Diag.log { "catch-up: ${rows.size} occurrences of visible calendars, ${due.size} due since ${Diag.time(after)}, ${due.count { it.key !in fired }} not shown yet" }
         due.filter { it.key !in fired }.forEach { reminder -> fire(reminder) }
         dao.snoozed().filter { it.fireAt <= now }.forEach { fireSnoozed(it, now) }
         prefs.setReminderLastCheck(now)
@@ -78,6 +100,7 @@ class ReminderEngine @Inject constructor(
     }
 
     private suspend fun fire(due: DueReminder) {
+        Diag.log { "reminder SHOWN by catch-up: '${due.row.title}' calendar='${due.row.calendarName}' (visible=${due.row.calendarVisible}) key=${due.key}" }
         dao.insertFired(ReminderFiredEntity(due.key, due.fireAt))
         present(ReminderAlert.of(due))
     }
@@ -86,6 +109,7 @@ class ReminderEngine @Inject constructor(
         dao.deleteSnoozed(snoozed.id)
         val row = dao.row(snoozed.eventId, snoozed.beginUtc) ?: return
         if (row.endUtc <= now) return
+        Diag.log { "reminder SHOWN after snooze: '${row.title}' calendar='${row.calendarName}' (visible=${row.calendarVisible}${if (row.calendarVisible) "" else ", HIDDEN: a snooze rings anyway"})" }
         val method = runCatching { ReminderMethod.valueOf(snoozed.method) }.getOrDefault(ReminderMethod.POPUP)
         present(ReminderAlert.of(row, Reminder(method, snoozed.minutes)))
     }
@@ -94,6 +118,7 @@ class ReminderEngine @Inject constructor(
 
     /** "Snooze": the reminder comes back in [minutes], also after a restart. */
     suspend fun snooze(alert: ReminderAlert, minutes: Int) {
+        Diag.log { "snooze $minutes min: '${alert.title}' key=${alert.key}" }
         dao.insertSnoozed(
             ReminderSnoozedEntity(
                 fireAt = System.currentTimeMillis() + minutes * 60_000L,

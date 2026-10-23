@@ -45,4 +45,7 @@
     <string name="settings_default_reminder_hint">For new events in every calendar, local and Google. Events and calendars that already exist do not change.</string>
     <string name="settings_default_reminder_none">None</string>
     <string name="settings_default_reminder_day">1 day</string>
+    <string name="settings_advanced">Advanced</string>
+    <string name="settings_log">Diagnostic log</string>
+    <string name="settings_log_hint">Writes a log file while you use the app, to help find problems. It includes the titles of your events. Send it by mail from the menu. Turning this off deletes the log.</string>
 </resources>

@@ -71,4 +71,5 @@
     <string name="alarm_sound_help">Lässt er sich nicht abspielen, klingelt ein Ton der App.</string>
     <string name="alarm_sound_default">Systemstandard</string>
     <string name="alarm_sound_reset">Systemstandard verwenden</string>
+    <string name="log_mail_body">Beschreibe, was passiert ist und wann. Bitte lass das angehängte Protokoll dabei.</string>
 </resources>

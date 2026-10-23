@@ -55,7 +55,7 @@ class EventWriter @Inject constructor(
         engine.recompute(saved.seriesMasterId ?: saved.id)
         if (toGoogle) scheduler.syncNow()
         reminders.changed()
-        Diag.log { "writer save done event=${event.id.take(8)}" }
+        Diag.log { "writer save done: '${event.title}' event=${event.id.take(8)} calendar=${event.calendarId}" }
     }
 
     /**

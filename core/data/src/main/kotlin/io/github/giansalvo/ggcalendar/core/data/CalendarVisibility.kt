@@ -3,6 +3,7 @@ package io.github.giansalvo.ggcalendar.core.data
 import androidx.room.withTransaction
 import io.github.giansalvo.ggcalendar.core.database.GGCalendarDatabase
 import io.github.giansalvo.ggcalendar.core.database.ReminderFiredEntity
+import io.github.giansalvo.ggcalendar.core.model.Diag
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -26,5 +27,6 @@ class CalendarVisibility @Inject constructor(private val db: GGCalendarDatabase)
             reminders.deleteSnoozedOfCalendar(calendarId)
         }
         db.calendarDao().setVisible(calendarId, visible)
+        Diag.log { "calendar visibility set by the user: '${db.calendarDao().get(calendarId)?.name}' ($calendarId) visible=$visible" }
     }
 }

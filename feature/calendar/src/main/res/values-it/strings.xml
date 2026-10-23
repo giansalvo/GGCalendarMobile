@@ -200,4 +200,11 @@
     <string name="import_problem_no_events">In questo file non ci sono eventi da importare.</string>
     <string name="import_problem_not_local">Gli eventi si importano solo in un calendario di questo telefono.</string>
     <string name="import_problem_unreadable">Non riesco a leggere il file.</string>
+    <string name="send_log">Invia registro diagnostico</string>
+    <string name="log_no_mail_title">Nessuna app di posta</string>
+    <string name="log_no_mail_text">Non è stata trovata nessuna app di posta. Salva il file del registro e invialo dalla pagina dei contatti del sito.</string>
+    <string name="log_save_file">Salva file</string>
+    <string name="log_contact_page">Pagina dei contatti</string>
+    <string name="log_saved">Registro salvato</string>
+    <string name="log_save_failed">Non è stato possibile salvare il file</string>
 </resources>

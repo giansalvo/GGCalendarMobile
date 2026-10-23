@@ -7,6 +7,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import io.github.giansalvo.ggcalendar.core.data.CalendarRepository
+import io.github.giansalvo.ggcalendar.core.model.Diag
 
 /**
  * The reminders in direct boot, from the reboot to the first unlock: no Hilt, no Room, no DataStore, only the
@@ -23,6 +24,7 @@ class LightReminders(private val context: Context, private val store: DirectBoot
      * went off while the phone was off (the last 24 hours, event not over), as the full layer does.
      */
     fun restore(now: Long = System.currentTimeMillis()) {
+        Diag.log { "direct boot restore: ${pending().size} reminders in the snapshot" }
         notifier.createChannels()
         val wanted = LinkedHashMap<String, ReminderSlot>()
         for (entry in pending()) {
@@ -58,6 +60,7 @@ class LightReminders(private val context: Context, private val store: DirectBoot
     }
 
     private fun show(entry: SnapshotEntry) {
+        Diag.log { "reminder SHOWN in direct boot (from the snapshot, the visibility of the calendar is not checked here): '${entry.alert.title}' key=${entry.key}" }
         store.appendJournal(JournalEntry.Shown(entry.key, entry.fireAt))
         presentAlert(context, notifier, entry.alert)
     }
@@ -70,6 +73,7 @@ class LightReminders(private val context: Context, private val store: DirectBoot
 
 /** Shows a reminder: an alarm rings through the service, anything else is a notification. */
 internal fun presentAlert(context: Context, notifier: ReminderNotifier, alert: ReminderAlert) {
+    Diag.log { "present ${if (alert.isAlarm) "alarm" else "popup"}: '${alert.title}' key=${alert.key}" }
     if (alert.isAlarm) {
         if (!AlarmService.start(context, alert)) notifier.showPopup(alert)
     } else {

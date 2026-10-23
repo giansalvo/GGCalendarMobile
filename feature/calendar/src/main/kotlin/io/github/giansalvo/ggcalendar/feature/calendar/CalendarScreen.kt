@@ -5,6 +5,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import android.app.Activity
 import android.content.ContextWrapper
+import android.content.Intent
+import android.net.Uri
 import android.os.SystemClock
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -41,6 +43,7 @@ import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.Cake
 import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.FileDownload
+import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.PersonAdd
@@ -87,6 +90,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -155,6 +159,7 @@ fun CalendarScreen(
             onLinkHandled()
         }
     }
+    val context0 = LocalContext.current
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     LaunchedEffect(drawerState) { snapshotFlow { drawerState.currentValue }.collect { Diag.log { "ui drawer=$it" } } }
     val scope = rememberCoroutineScope()
@@ -175,6 +180,13 @@ fun CalendarScreen(
     val addressShown by viewModel.addressShown.collectAsStateWithLifecycle()
     var settingsOpen by rememberSaveable { mutableStateOf(false) }
     var searchOpen by rememberSaveable { mutableStateOf(false) }
+    var logDialog by rememberSaveable { mutableStateOf(false) }
+    val logOn by viewModel.logEnabled.collectAsStateWithLifecycle()
+    val logSavedText = stringResource(R.string.log_saved)
+    val logFailedText = stringResource(R.string.log_save_failed)
+    val saveLog = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+        if (uri != null) Toast.makeText(context0, if (viewModel.saveLog(uri)) logSavedText else logFailedText, Toast.LENGTH_SHORT).show()
+    }
 
     val pickAccount = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         Diag.log { "ui pickAccount result=${it.resultCode}" }
@@ -277,6 +289,20 @@ fun CalendarScreen(
         }
     }
 
+    // The "window" column of the diagnostic log: the screen in front.
+    val drawerOpen = drawerState.currentValue == DrawerValue.Open
+    val windowName = when {
+        settingsOpen -> "settings"
+        aboutOpen -> "about"
+        exportOpen -> "export"
+        alarmsOpen -> "active alarms"
+        searchOpen -> "search"
+        state.editing != null -> "event editor"
+        drawerOpen -> "menu"
+        else -> "calendar " + state.view.name.lowercase()
+    }
+    SideEffect { Diag.screen = windowName }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         modifier = Modifier.exposeTestTags(),
@@ -321,6 +347,11 @@ fun CalendarScreen(
                 onExport = {
                     exportOpen = true
                     scope.launch { drawerState.close() }
+                },
+                logOn = logOn,
+                onSendLog = {
+                    scope.launch { drawerState.close() }
+                    runCatching { context.startActivity(viewModel.logMail(context)) }.onFailure { logDialog = true }
                 },
                 onAbout = {
                     aboutOpen = true
@@ -567,6 +598,28 @@ fun CalendarScreen(
         )
     }
     if (aboutOpen) AboutSheet(onDismiss = { aboutOpen = false })
+    if (logDialog) {
+        AlertDialog(
+            modifier = Modifier.exposeTestTags(),
+            onDismissRequest = { logDialog = false },
+            title = { Text(stringResource(R.string.log_no_mail_title)) },
+            text = { Text(stringResource(R.string.log_no_mail_text)) },
+            confirmButton = {
+                TextButton(modifier = Modifier.testTag("log_save"), onClick = {
+                    logDialog = false
+                    saveLog.launch(viewModel.logFileName())
+                }) { Text(stringResource(R.string.log_save_file)) }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(modifier = Modifier.testTag("log_contact"), onClick = {
+                        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(io.github.giansalvo.ggcalendar.core.notifications.DiagnosticLog.CONTACT_PAGE))) }
+                    }) { Text(stringResource(R.string.log_contact_page)) }
+                    TextButton(modifier = Modifier.testTag("log_close"), onClick = { logDialog = false }) { Text(stringResource(android.R.string.cancel)) }
+                }
+            },
+        )
+    }
     if (searchOpen) {
         SearchScreen(search = viewModel::search, refreshKey = state.selected, onOpen = viewModel::openEvent, onClose = { searchOpen = false })
     }
@@ -671,6 +724,8 @@ private fun CalendarDrawer(
     onSettings: () -> Unit,
     onImport: () -> Unit,
     onExport: () -> Unit,
+    logOn: Boolean,
+    onSendLog: () -> Unit,
     onAbout: () -> Unit,
 ) {
     LaunchedEffect(state.accounts) {
@@ -774,6 +829,15 @@ private fun CalendarDrawer(
                 onClick = onSettings,
                 modifier = Modifier.testTag("drawer_settings"),
             )
+            if (logOn) {
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Outlined.BugReport, contentDescription = null) },
+                    label = { Text(stringResource(R.string.send_log)) },
+                    selected = false,
+                    onClick = onSendLog,
+                    modifier = Modifier.testTag("drawer_send_log"),
+                )
+            }
             NavigationDrawerItem(
                 icon = { Icon(Icons.Outlined.Info, contentDescription = null) },
                 label = { Text(stringResource(R.string.about)) },

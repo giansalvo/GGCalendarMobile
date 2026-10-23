@@ -167,7 +167,8 @@ private const val REMINDER_ROW = """
     SELECT i.event_id AS eventId, i.begin_utc AS beginUtc, i.end_utc AS endUtc, i.all_day AS allDay, e.title AS title,
            e.location AS location, e.description AS description, e.meet_link AS meetLink, e.ical_uid AS iCalUid, e.reminders AS reminders,
            e.has_alarm AS hasAlarm, e.organizer_email AS organizerEmail, e.attendees AS attendees,
-           c.default_reminders AS defaultReminders, c.account_email AS accountEmail, c.remote_id AS calendarRemoteId
+           c.default_reminders AS defaultReminders, c.account_email AS accountEmail, c.remote_id AS calendarRemoteId,
+           c.id AS calendarId, c.name AS calendarName, c.is_visible AS calendarVisible
     FROM instances i
     JOIN events e ON e.id = i.event_id
     JOIN calendars c ON c.id = e.calendar_id

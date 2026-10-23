@@ -157,6 +157,9 @@ fun SettingsScreen(onClose: () -> Unit, viewModel: SettingsViewModel = hiltViewM
 
                         Section(stringResource(R.string.settings_notifications))
                         NotificationSettingsSection(draft.alarmMinutes, { draft = draft.copy(alarmMinutes = it) }, draft.alarmSound) { draft = draft.copy(alarmSound = it) }
+
+                        Section(stringResource(R.string.settings_advanced))
+                        SwitchRow(stringResource(R.string.settings_log), stringResource(R.string.settings_log_hint), draft.logEnabled, tag = "settings_log") { draft = draft.copy(logEnabled = it) }
                         Spacer(Modifier.height(24.dp))
                     }
                 }

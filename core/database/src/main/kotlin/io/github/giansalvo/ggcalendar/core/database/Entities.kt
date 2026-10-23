@@ -211,6 +211,10 @@ data class ReminderRow(
     val defaultReminders: List<Reminder>,
     val accountEmail: String?,
     val calendarRemoteId: String?,
+    /** The calendar of the occurrence, for the diagnostic log (which calendar a reminder comes from, and whether it is shown). */
+    val calendarId: String = "",
+    val calendarName: String = "",
+    val calendarVisible: Boolean = true,
 )
 
 /** Row of the views' query: an instance joined with its event and calendar. */
