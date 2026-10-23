@@ -4,6 +4,7 @@ Le modifiche di GGCalendar Mobile da una versione alla successiva, dalla più re
 
 ## 1.0.3 (in preparazione)
 
+- Registro diagnostico: scrive un file di registro con i titoli degli eventi; la voce «Invia registro diagnostico» nel menu laterale lo spedisce per mail
 - Secondo fuso orario
 - Importazione di file e indirizzi iCal in un calendario locale
 - Tasto Indietro: nella schermata principale chiede di premerlo di nuovo per chiudere l'app; con il menu laterale aperto lo chiude

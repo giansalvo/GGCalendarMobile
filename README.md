@@ -37,6 +37,7 @@
 - Abbonamento a calendari pubblici in sola lettura
 - Importazione di un file `.ics` o di un indirizzo iCal in un calendario locale
 - Secondo fuso orario
+- Registro diagnostico facoltativo inviabile per mail dal menu laterale
 - Lingue supportate: Italiano, inglese, spagnolo e tedesco
 - Temi: chiaro e scuro
 
@@ -79,12 +80,12 @@ keyPassword=...
 | Modulo | Contenuto |
 |---|---|
 | `app` | Applicazione: attività, tema, icona, dependency injection |
-| `core/model` | Modelli di dominio, lettura e scrittura iCalendar, indirizzi degli abbonamenti |
+| `core/model` | Modelli di dominio, lettura e scrittura iCalendar, indirizzi degli abbonamenti, scrittore del file di registro (`FileLog`) |
 | `core/network` | Client delle Google Calendar API e lettore degli indirizzi iCal (`https`, limiti, `ETag`) |
 | `core/auth` | Accesso Google (scelta dell'account e autorizzazione) |
 | `core/database` | Database Room (schema versione 7) |
 | `core/data` | Sincronizzazione, calendari locali, abbonamenti (cifratura dell'indirizzo, filtro dei giorni), importazione di file e indirizzi iCal, secondo fuso orario, ricorrenze |
-| `core/notifications` | Promemoria, sveglie e schermata di avvio |
+| `core/notifications` | Promemoria, sveglie, schermata di avvio e registro diagnostico (file di registro, invio per mail) |
 | `feature/calendar` | Schermata principale: menu laterale, viste, colonna del secondo fuso, abbonamenti, finestra di importazione |
 | `feature/event` | Dettaglio e modifica di un evento |
 | `feature/settings` | Impostazioni |
