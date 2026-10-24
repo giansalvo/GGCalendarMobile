@@ -2,7 +2,7 @@
 
 Le modifiche di GGCalendar Mobile da una versione alla successiva, dalla più recente.
 
-## 1.0.4 (24/10/2026)
+## 1.0.5 (24/10/2026)
 
 - Versione per la pubblicazione su Google Play, firmata con la stessa chiave dell'APK: nessuna modifica alle funzioni rispetto alla 1.0.3
 

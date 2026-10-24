@@ -15,8 +15,8 @@
 
 ---
 
-> **Stato:** ultima versione pubblicata 1.0.4. L'APK firmato è nella pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases).
-> **Status:** latest release 1.0.4. The signed APK is on the [Releases](https://github.com/giansalvo/GGCalendarMobile/releases) page.
+> **Stato:** ultima versione pubblicata 1.0.5. L'APK firmato è nella pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases).
+> **Status:** latest release 1.0.5. The signed APK is on the [Releases](https://github.com/giansalvo/GGCalendarMobile/releases) page.
 
 ## Installazione e primo accesso
 
