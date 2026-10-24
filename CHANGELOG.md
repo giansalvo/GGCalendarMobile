@@ -2,6 +2,10 @@
 
 Le modifiche di GGCalendar Mobile da una versione alla successiva, dalla più recente.
 
+## 1.0.4 (24/10/2026)
+
+- Versione per la pubblicazione su Google Play, firmata con la stessa chiave dell'APK: nessuna modifica alle funzioni rispetto alla 1.0.3
+
 ## 1.0.3 (23/10/2026)
 
 - Registro diagnostico: scrive un file di registro con i titoli degli eventi; la voce «Invia registro diagnostico» nel menu laterale lo spedisce per mail
