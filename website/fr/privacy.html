@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Politique de confidentialité – GGCalendar</title>
+<meta name="description" content="Politique de confidentialité de l’application GGCalendar pour Android : quelles données elle utilise, où elles restent, avec qui elles sont partagées et comment les supprimer.">
+<link rel="canonical" href="https://profgusinu.altervista.org/GGCalendarAndroid/fr/privacy.html">
+<link rel="alternate" hreflang="de" href="../de/privacy.html">
+<link rel="alternate" hreflang="en" href="../en/privacy.html">
+<link rel="alternate" hreflang="es" href="../es/privacy.html">
+<link rel="alternate" hreflang="fr" href="privacy.html">
+<link rel="alternate" hreflang="it" href="../privacy.html">
+<link rel="icon" type="image/png" href="../favicon.png">
+<meta name="theme-color" content="#0b4a9c">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site"><div class="wrap">
+  <a class="brand" href="./"><img src="../img/logo.jpg" alt="" width="34" height="34"> GGCalendar Mobile</a>
+  <nav class="main" aria-label="Principale"><a href="./">Accueil</a><a href="privacy.html">Confidentialité</a><a href="terms.html">Conditions</a></nav>
+    <div class="langs" aria-label="Language"><a href="../de/privacy.html" hreflang="de" lang="de">Deutsch</a><a href="../en/privacy.html" hreflang="en" lang="en">English</a><a href="../es/privacy.html" hreflang="es" lang="es">Español</a><a class="on" href="privacy.html" hreflang="fr" lang="fr">Français</a><a href="../privacy.html" hreflang="it" lang="it">Italiano</a></div>
+</div></header>
+
+<main class="wrap doc">
+<h1>Politique de confidentialité</h1>
+<p class="upd">Application GGCalendar pour Android (<code>io.github.giansalvo.ggcalendar</code>) · Dernière mise à jour : 23 octobre 2026</p>
+
+<h2>1. Responsable du traitement</h2>
+<p>Giansalvo Gusinu, Sassari (Italie), développeur indépendant. Contact : <span class="mail" data-u="profgusinu+ggcalendar" data-d="gmail" data-t="com">profgusinu+ggcalendar [arobase] gmail [point] com</span>.</p>
+
+<h2>2. En bref</h2>
+<ul>
+  <li>L’application n’a pas de serveurs de l’auteur. Je ne collecte, ne reçois et ne conserve pas vos données.</li>
+  <li>Aucune publicité, aucun outil d’analyse ou de signalement des plantages, aucun suivi.</li>
+  <li>Les événements, les agendas et les réglages restent sur votre téléphone. Si vous connectez un compte Google, les données ne circulent qu’entre le téléphone et Google.</li>
+  <li>Je ne vends ni ne partage aucune donnée avec des tiers.</li>
+  <li>Le journal de diagnostic est désactivé par défaut : si vous l’activez, il reste sur le téléphone et n’en sort que lorsque vous l’envoyez (voir le point 3).</li>
+</ul>
+
+<h2>3. Données traitées par l’application</h2>
+<ul>
+  <li><strong>Compte Google et Google Agenda.</strong> Si vous ajoutez un compte, l’application demande à Google l’autorisation pour le périmètre <code>https://www.googleapis.com/auth/calendar</code> (lecture et modification des agendas et des événements). Via les API de Google Agenda, l’application télécharge et enregistre sur le téléphone les agendas, les événements (titre, dates, lieu, description, invités, lien Meet, rappels, couleurs) et, pour reconnaître le compte, son adresse e-mail. Les modifications que vous faites dans l’application sont envoyées à Google. Le consentement est la base juridique du traitement (art. 6.1.a et 6.1.b du RGPD).</li>
+  <li><strong>Autorisation.</strong> L’accès est géré par Google Play Services : l’application ne voit ni n’enregistre votre mot de passe et ne conserve aucun jeton d’accès à long terme.</li>
+  <li><strong>Contacts (facultatif).</strong> Si vous accordez l’autorisation, l’application lit le répertoire du téléphone pour suggérer des invités et pour afficher les anniversaires dans un agenda local. Les contacts ne sont envoyés à personne et ne sont pas copiés sur Google. Les adresses e-mail des invités que vous choisissez d’ajouter à un événement sont envoyées à Google avec l’événement.</li>
+  <li><strong>Agendas locaux, réglages, rappels.</strong> Ils sont enregistrés uniquement sur le téléphone, dans une base de données locale de l’application. L’application désactive la sauvegarde automatique d’Android (<code>allowBackup=false</code>).</li>
+  <li><strong>Journal de diagnostic (facultatif, désactivé par défaut).</strong> Si vous activez l’option « Journal de diagnostic » dans les Paramètres (section Avancé), l’application écrit un fichier journal dans la mémoire privée du téléphone, pour aider à trouver les problèmes. Chaque ligne comporte la date et l’heure, le nom du thread et de l’écran, et une description de ce que fait l’application ; il contient aussi les <strong>titres des événements</strong> des rappels et les noms des agendas, avec des adresses e-mail abrégées (par exemple « pro*@gmail.com »), mais ni descriptions, ni lieux, ni participants, ni liens. Le fichier reste sur le téléphone, ne conserve qu’environ 2 Mo au maximum (les avertissements les plus anciens sont écartés) et est supprimé lorsque vous désactivez l’option. Il n’est jamais envoyé automatiquement : il part seulement si vous choisissez « Envoyer le journal de diagnostic » dans le menu latéral, ce qui ouvre votre application de messagerie avec le fichier en pièce jointe, adressé à l’auteur, que vous voyez et pouvez modifier ou annuler avant l’envoi. Si vous n’avez pas d’application de messagerie, vous pouvez enregistrer le fichier et l’envoyer depuis la page de contact.</li>
+  <li><strong>Fichiers exportés.</strong> Lorsque vous exportez ou partagez un événement (.ics, CSV), le fichier est transmis à l’application que vous choisissez. À partir de ce moment, le traitement dépend de cette application.</li>
+</ul>
+
+<h2>4. Comment nous utilisons les données</h2>
+<p>Uniquement pour faire fonctionner les fonctions que vous voyez : afficher et modifier l’agenda, le synchroniser avec Google, même hors ligne, et déclencher notifications et alarmes. Nous n’utilisons pas les données pour la publicité, le profilage, l’entraînement de modèles ou d’autres finalités.</p>
+
+<h2>5. Utilisation limitée des données Google</h2>
+<p>L’utilisation et le transfert par GGCalendar des informations reçues des API Google respectent la <a href="https://developers.google.com/terms/api-services-user-data-policy" rel="noopener">Google API Services User Data Policy</a>, y compris les exigences d’utilisation limitée (Limited Use). En particulier : les données de Google Agenda ne servent qu’à offrir les fonctions visibles dans l’application ; elles ne sont pas transférées à des tiers, sauf lorsque cela est nécessaire pour fournir la fonction que vous demandez, en raison d’une obligation légale ou pour la sécurité ; elles ne sont pas utilisées pour la publicité ; aucune personne ne les lit, sauf avec votre consentement explicite, pour des raisons de sécurité ou en raison d’une obligation légale. De toute façon, vu la manière dont l’application est conçue, l’auteur n’a pas accès à ces données.</p>
+
+<h2>6. Destinataires et transferts</h2>
+<p>Le seul destinataire est Google (Google LLC et ses sociétés affiliées), qui traite les données de votre compte selon <a href="https://policies.google.com/privacy" rel="noopener">sa propre politique de confidentialité</a>, y compris pour l’envoi des e-mails de rappel et des invitations. Aucun autre service tiers n’est présent dans l’application. Google peut traiter les données en dehors de l’Espace économique européen, avec les garanties prévues par Google.</p>
+
+<h2>7. Conservation et suppression</h2>
+<ul>
+  <li><strong>Journal de diagnostic :</strong> il se supprime en désactivant l’option dans les Paramètres ; un journal envoyé par e-mail reste dans votre messagerie et chez l’auteur, qui l’utilise uniquement pour comprendre le problème signalé et le supprime lorsqu’il n’est plus utile.</li>
+  <li><strong>Sur le téléphone :</strong> les données restent tant que vous ne supprimez pas le compte ou ne désinstallez pas l’application. Supprimer un compte depuis le menu de l’application efface ses agendas et ses événements du téléphone. Désinstaller l’application efface tout.</li>
+  <li><strong>Révocation de l’accès :</strong> à tout moment depuis <a href="https://myaccount.google.com/permissions" rel="noopener">myaccount.google.com/permissions</a>, en sélectionnant GGCalendar.</li>
+  <li><strong>Chez Google :</strong> les événements de votre Google Agenda restent tant que vous ne les supprimez pas ; ils se gèrent depuis Google Agenda.</li>
+  <li><strong>Chez l’auteur :</strong> il n’existe aucune donnée à supprimer, car aucune n’est collectée.</li>
+</ul>
+
+<h2>8. Vos droits</h2>
+<p>Vous avez le droit d’accès, de rectification, d’effacement, de limitation, de portabilité et d’opposition (art. 15 à 22 du RGPD), et d’introduire une réclamation auprès de l’<a href="https://www.garanteprivacy.it" rel="noopener">autorité italienne de protection des données (Garante per la protezione dei dati personali)</a>. Comme l’auteur ne détient pas vos données, exercez vos droits directement dans l’application et dans votre compte Google. Pour toute demande, écrivez à l’adresse indiquée ci-dessus.</p>
+
+<h2>9. Sécurité</h2>
+<p>La communication avec Google se fait en HTTPS. Les données locales se trouvent dans la zone privée de l’application, inaccessible aux autres applications. La sécurité dépend aussi du verrouillage de l’écran et des mises à jour de votre appareil.</p>
+
+<h2>10. Mineurs</h2>
+<p>L’application ne s’adresse pas aux enfants de moins de 14 ans et ne collecte pas sciemment de données les concernant. L’utilisation d’un compte Google par un mineur est soumise aux règles de Google.</p>
+
+<h2>11. Modifications</h2>
+<p>Si la politique change, la date en haut sera mise à jour et, pour les modifications importantes, l’application ou cette page le signaleront.</p>
+
+</main>
+
+<footer><div class="wrap">
+  <div class="cols">
+    <div><strong>GGCalendar</strong><br>© <span data-year>2026</span> Giansalvo Gusinu</div>
+    <ul><li><a href="./">Accueil</a></li><li><a href="privacy.html">Politique de confidentialité</a></li><li><a href="terms.html">Conditions d’utilisation</a></li></ul>
+  </div>
+  <p class="legal">Google, Google Agenda, Google Meet et Google Play sont des marques de Google LLC. GGCalendar est une application indépendante, non affiliée à Google ni approuvée par Google.</p>
+</div></footer>
+<script src="../app.js" defer></script>
+</body>
+</html>
