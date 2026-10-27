@@ -15,12 +15,12 @@
 
 ---
 
-> **Stato:** ultima versione pubblicata 1.0.5. L'APK firmato è nella pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases).
-> **Status:** latest release 1.0.5. The signed APK is on the [Releases](https://github.com/giansalvo/GGCalendarMobile/releases) page.
+> **Stato:** ultima versione pubblicata 1.0.5, disponibile su [Google Play](https://play.google.com/store/apps/details?id=io.github.giansalvo.ggcalendar). L'APK firmato è nella pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases).
+> **Status:** latest release 1.0.5, available on [Google Play](https://play.google.com/store/apps/details?id=io.github.giansalvo.ggcalendar). The signed APK is on the [Releases](https://github.com/giansalvo/GGCalendarMobile/releases) page.
 
 ## Installazione e primo accesso
 
-1. Scarica l'APK (`GGCalendar-<versione>.apk`) dalla pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases) e, se vuoi, controlla l'impronta con il file `.sha256` (`certutil -hashfile GGCalendar-<versione>.apk SHA256` su Windows, `sha256sum` su Linux e macOS).
+1. Installa l'app da [Google Play](https://play.google.com/store/apps/details?id=io.github.giansalvo.ggcalendar), oppure scarica l'APK (`GGCalendar-<versione>.apk`) dalla pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases) e, se vuoi, controlla l'impronta con il file `.sha256` (`certutil -hashfile GGCalendar-<versione>.apk SHA256` su Windows, `sha256sum` su Linux e macOS).
 2. Apri il file sul telefono e consenti l'installazione da questa fonte quando Android lo chiede. Serve Android 8 o successivo.
 3. Se vuoi aggiungi il tuo account Google dal menu dell'app.
 
