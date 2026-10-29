@@ -175,10 +175,11 @@ private fun AlarmScreen(alert: ReminderAlert, durationMinutes: Int, onStop: () -
             Spacer(Modifier.height(8.dp))
             Text(alert.location, fontSize = 20.sp, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        if (alert.description.isNotBlank()) {
+        val description = remember(alert.description) { DescriptionPlainText.of(alert.description).trim() }
+        if (description.isNotEmpty()) {
             Spacer(Modifier.height(16.dp))
             Text(
-                alert.description.replace(Regex("<[^>]*>"), " ").trim(),
+                description,
                 fontSize = 18.sp,
                 lineHeight = 24.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

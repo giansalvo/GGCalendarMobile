@@ -15,6 +15,14 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures { compose = true }
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        // Robolectric downloads Android at test time: on Windows trust the system certificates (HTTPS inspection
+        // by antivirus software would otherwise fail the download).
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            unitTests.all { it.systemProperty("javax.net.ssl.trustStoreType", "Windows-ROOT") }
+        }
+    }
 }
 
 kotlin {
@@ -43,4 +51,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
 }

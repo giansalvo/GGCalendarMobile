@@ -12,6 +12,7 @@ import io.github.giansalvo.ggcalendar.core.model.EventTime
 import io.github.giansalvo.ggcalendar.core.model.IcsEvent
 import io.github.giansalvo.ggcalendar.core.model.IcsWriter
 import io.github.giansalvo.ggcalendar.core.model.Visibility
+import io.github.giansalvo.ggcalendar.core.notifications.DescriptionPlainText
 import java.io.File
 import java.time.Instant
 import java.time.LocalDate
@@ -91,7 +92,7 @@ internal object EventShare {
         return (base.ifEmpty { "evento" }) + ".ics"
     }
 
-    /** Plain text for any messaging or notes app: title, when, repetition, place, Meet link, description. */
+    /** Plain text for any messaging or notes app: title, when, repetition, place, Meet link, description (an HTML one turned into text). */
     fun text(detail: EventDetail, instance: EventInstance, res: Resources): String {
         val e = detail.event
         val parts = mutableListOf<String>()
@@ -100,7 +101,7 @@ internal object EventShare {
         master(detail)?.rrule?.let { rule -> describe(rule, res)?.let { parts += res.getString(R.string.share_repeats, it) } }
         if (e.location.isNotBlank()) parts += e.location.trim()
         e.meetLink?.takeIf { it.isNotBlank() }?.let { parts += "Google Meet: $it" }
-        if (e.description.isNotBlank()) parts += "\n" + e.description.trim()
+        DescriptionPlainText.of(e.description).trim().takeIf { it.isNotEmpty() }?.let { parts += "\n" + it }
         return parts.joinToString("\n")
     }
 
