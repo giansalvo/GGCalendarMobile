@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -20,6 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Alarm
+import androidx.compose.material.icons.outlined.AttachFile
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.CheckCircle
@@ -69,6 +71,7 @@ import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -76,6 +79,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.giansalvo.ggcalendar.core.data.EventDetail
 import io.github.giansalvo.ggcalendar.core.data.SeriesScope
 import io.github.giansalvo.ggcalendar.core.model.Attendee
+import io.github.giansalvo.ggcalendar.core.model.EventAttachment
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
 import io.github.giansalvo.ggcalendar.core.model.ReminderMethod
 import io.github.giansalvo.ggcalendar.core.notifications.ReminderPermissionWarning
@@ -268,6 +272,9 @@ private fun DetailContent(instance: EventInstance, detail: EventDetail, secondZo
             InfoRow(Icons.Outlined.Notes) { Text(descriptionText(event.description), style = MaterialTheme.typography.bodyMedium) }
         }
 
+        // Not read yet (null) shows nothing, like no attachments at all.
+        event.attachments?.takeIf { it.isNotEmpty() }?.let { Attachments(it) }
+
         InfoRow(Icons.Outlined.CalendarToday) {
             Column {
                 Text(detail.calendar.name)
@@ -298,6 +305,45 @@ private fun DetailContent(instance: EventInstance, detail: EventDetail, secondZo
         )
     }
 }
+
+/** The links of the event (mockup 1): five rows, then "show N more"; a tap asks before opening, a link that is not https is grey and does nothing. */
+@Composable
+private fun Attachments(attachments: List<EventAttachment>) {
+    var all by remember { mutableStateOf(false) }
+    var opening by remember { mutableStateOf<EventAttachment?>(null) }
+    val shown = if (all || attachments.size <= SHOWN_ATTACHMENTS + 1) attachments else attachments.take(SHOWN_ATTACHMENTS)
+    InfoRow(Icons.Outlined.AttachFile) {
+        Column(Modifier.testTag("detail_attachments")) {
+            Text(stringResource(R.string.attachments_count, attachments.size), style = MaterialTheme.typography.titleSmall)
+            shown.forEachIndexed { i, a ->
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = 48.dp).then(if (a.canOpen) Modifier.clickable { opening = a } else Modifier).testTag("detail_attachment_$i"),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    AttachmentBadge(a)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(a.displayName, maxLines = 1, overflow = TextOverflow.Ellipsis, color = if (a.canOpen) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
+                        val note = when {
+                            !a.canOpen -> stringResource(R.string.attachment_not_openable)
+                            a.isDrive -> stringResource(R.string.attachment_drive)
+                            else -> null
+                        }
+                        if (note != null) Text(note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+            if (shown.size < attachments.size) {
+                TextButton(onClick = { all = true }, modifier = Modifier.testTag("detail_attachments_more"), contentPadding = PaddingValues(horizontal = 0.dp)) {
+                    Text(stringResource(R.string.attachments_show_more, attachments.size - shown.size))
+                }
+            }
+        }
+    }
+    opening?.let { OpenAttachmentDialog(it) { opening = null } }
+}
+
+private const val SHOWN_ATTACHMENTS = 5
 
 @Composable
 private fun Guests(attendees: List<Attendee>, organizer: String?, onWrite: (() -> Unit)?) {

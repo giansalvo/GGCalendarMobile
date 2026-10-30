@@ -208,4 +208,22 @@
     <string name="csv_visibility">Visibility</string>
     <string name="time_there">%1$s: %2$s</string>
     <string name="app_default_reminder">App default</string>
+
+    <!-- Attachments -->
+    <string name="attachments">Attachments</string>
+    <string name="attachments_count">Attachments (%1$d)</string>
+    <string name="attachments_show_more">Show %1$d more</string>
+    <string name="attachment_address_hint">Paste a link (https)</string>
+    <string name="attachment_title_hint">Title (optional)</string>
+    <string name="attachment_add">Add attachment</string>
+    <string name="attachment_remove">Remove %1$s</string>
+    <string name="attachment_invalid_named">“%1$s” is not a valid https link</string>
+    <string name="attachment_limit">Limit of %1$d attachments reached</string>
+    <string name="attachments_unread">The attachments of this event have not been read yet. They will update at the next sync.</string>
+    <string name="attachment_open_title">Open this link?</string>
+    <string name="attachment_open_goes_to">The link goes to:</string>
+    <string name="attachment_open_trust">Open it only if you trust it.</string>
+    <string name="attachment_open">Open</string>
+    <string name="attachment_not_openable">Cannot be opened (not https)</string>
+    <string name="attachment_drive">Google Drive</string>
 </resources>

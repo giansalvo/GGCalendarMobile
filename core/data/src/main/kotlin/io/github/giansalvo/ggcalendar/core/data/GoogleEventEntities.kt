@@ -41,6 +41,7 @@ internal fun GoogleEvent.toEntity(id: String, calendarId: String, masterId: Stri
         guestsCanSeeList = guestsCanSeeList,
         organizerEmail = organizerEmail,
         attendees = attendees,
+        attachments = attachments,
         reminders = local,
         hasAlarm = effective.any { it.method == ReminderMethod.POPUP && it.minutes in alarmMinutes },
         eventType = eventType,
@@ -92,6 +93,7 @@ internal fun EventEntity.toGoogleEvent(masterRemoteId: String?): GoogleEvent {
             runCatching { if ('T' in iso) OriginalStart.Timed(Instant.parse(iso)) else OriginalStart.AllDay(LocalDate.parse(iso)) }.getOrNull()
         },
         attendees = attendees,
+        attachments = attachments,
         organizerEmail = organizerEmail,
         reminders = reminders?.map { if (it.method == ReminderMethod.ALARM) it.copy(method = ReminderMethod.POPUP, soundUri = null) else it }?.distinct(),
         availability = runCatching { Availability.valueOf(availability) }.getOrDefault(Availability.BUSY),

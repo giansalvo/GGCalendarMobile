@@ -7,6 +7,7 @@ import io.github.giansalvo.ggcalendar.core.database.CalendarEntity
 import io.github.giansalvo.ggcalendar.core.database.EventEntity
 import io.github.giansalvo.ggcalendar.core.database.GGCalendarDatabase
 import io.github.giansalvo.ggcalendar.core.database.SyncMessageEntity
+import io.github.giansalvo.ggcalendar.core.model.AttachmentLink
 import io.github.giansalvo.ggcalendar.core.model.CalendarInfo
 import io.github.giansalvo.ggcalendar.core.model.Diag
 import io.github.giansalvo.ggcalendar.core.network.GoogleApiException
@@ -210,6 +211,11 @@ class SyncEngine @Inject constructor(
             val apply = upserts.filter { it.id !in pending }
             val drop = deletes.filter { it !in pending }
             if (apply.isNotEmpty()) events.upsert(apply)
+            // An event with a change of its own waiting keeps its local version, but still learns the attachments it never read: it would
+            // otherwise stay "not read" until Google changes it again.
+            upserts.filter { it.id in pending && it.attachments != null }.forEach {
+                events.setAttachmentsIfUnread(it.id, OutboxPusher.JSON.encodeToString(it.attachments), AttachmentLink.searchText(it.attachments))
+            }
             if (drop.isNotEmpty()) events.deleteWithSeries(drop)
             calendars.setSyncToken(cal.id, page.nextSyncToken)
             val affected = if (syncToken == null) {

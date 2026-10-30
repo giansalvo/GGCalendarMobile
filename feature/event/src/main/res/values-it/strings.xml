@@ -205,4 +205,22 @@
     <string name="csv_visibility">Visibilità</string>
     <string name="time_there">%1$s: %2$s</string>
     <string name="app_default_reminder">Predefinito dell\'applicazione</string>
+
+    <!-- Attachments -->
+    <string name="attachments">Allegati</string>
+    <string name="attachments_count">Allegati (%1$d)</string>
+    <string name="attachments_show_more">Mostra altri %1$d</string>
+    <string name="attachment_address_hint">Incolla un link (https)</string>
+    <string name="attachment_title_hint">Titolo (facoltativo)</string>
+    <string name="attachment_add">Aggiungi allegato</string>
+    <string name="attachment_remove">Rimuovi %1$s</string>
+    <string name="attachment_invalid_named">«%1$s» non è un link https valido</string>
+    <string name="attachment_limit">Raggiunto il limite di %1$d allegati</string>
+    <string name="attachments_unread">Gli allegati di questo evento non sono ancora stati letti. Si aggiorneranno alla prossima sincronizzazione.</string>
+    <string name="attachment_open_title">Aprire questo link?</string>
+    <string name="attachment_open_goes_to">Il link porta a:</string>
+    <string name="attachment_open_trust">Aprilo solo se ti fidi.</string>
+    <string name="attachment_open">Apri</string>
+    <string name="attachment_not_openable">Non apribile (non è https)</string>
+    <string name="attachment_drive">Google Drive</string>
 </resources>

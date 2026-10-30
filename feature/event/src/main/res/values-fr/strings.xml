@@ -209,4 +209,22 @@
     <string name="csv_visibility">Visibilité</string>
     <string name="time_there">%1$s&#160;: %2$s</string>
     <string name="app_default_reminder">Valeur par défaut de l\'application</string>
+
+    <!-- Attachments -->
+    <string name="attachments">Pièces jointes</string>
+    <string name="attachments_count">Pièces jointes (%1$d)</string>
+    <string name="attachments_show_more">Afficher %1$d de plus</string>
+    <string name="attachment_address_hint">Coller un lien (https)</string>
+    <string name="attachment_title_hint">Titre (facultatif)</string>
+    <string name="attachment_add">Ajouter une pièce jointe</string>
+    <string name="attachment_remove">Retirer %1$s</string>
+    <string name="attachment_invalid_named">«&#160;%1$s&#160;» n\'est pas un lien https valide</string>
+    <string name="attachment_limit">Limite de %1$d pièces jointes atteinte</string>
+    <string name="attachments_unread">Les pièces jointes de cet événement n\'ont pas encore été lues. Elles seront mises à jour à la prochaine synchronisation.</string>
+    <string name="attachment_open_title">Ouvrir ce lien&#160;?</string>
+    <string name="attachment_open_goes_to">Le lien mène à&#160;:</string>
+    <string name="attachment_open_trust">Ouvrez-le uniquement si vous lui faites confiance.</string>
+    <string name="attachment_open">Ouvrir</string>
+    <string name="attachment_not_openable">Impossible à ouvrir (pas en https)</string>
+    <string name="attachment_drive">Google Drive</string>
 </resources>

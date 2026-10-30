@@ -222,7 +222,7 @@ class LocalCalendarsTest {
         try {
             kotlinx.coroutines.runBlocking { assertTrue(reopened.accountDao().getAll().isEmpty()) }
             assertTrue(told)
-            assertEquals(GGCalendarDatabase.OLDEST_KEPT_VERSION, reopened.openHelper.readableDatabase.version)
+            assertEquals(GGCalendarDatabase.CURRENT_VERSION, reopened.openHelper.readableDatabase.version)
         } finally {
             reopened.close()
         }

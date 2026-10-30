@@ -51,4 +51,6 @@ data class EventInstance(
     val isBirthday: Boolean = false,
     /** The calendar can be written and the event is an ordinary one (not a birthday): it can be edited and dragged. */
     val canWrite: Boolean = false,
+    /** Search results: the name of the attachment that holds the words, when they are only there. */
+    val attachmentHit: String? = null,
 )

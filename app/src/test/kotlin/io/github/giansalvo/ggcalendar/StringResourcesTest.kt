@@ -42,7 +42,7 @@ class StringResourcesTest(private val language: String) {
         )
 
         /** Names and formats that are the same in every language. */
-        private val SAME_EVERYWHERE = Regex("Google Meet|Google|GGCalendar|iCal|\\.ics|\\.csv|CSV|OK|https?://|webcal://|\\b(?:min|h|d)\\b")
+        private val SAME_EVERYWHERE = Regex("Google Meet|Google Drive|Google|GGCalendar|iCal|\\.ics|\\.csv|CSV|OK|https?://|webcal://|\\b(?:min|h|d)\\b")
         private val PLACEHOLDER = Regex("%(?:\\d+\\$)?[-#+ 0,(]*\\d*(?:\\.\\d+)?[a-zA-Z]|%%")
     }
 

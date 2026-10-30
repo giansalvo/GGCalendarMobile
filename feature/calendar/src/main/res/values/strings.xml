@@ -208,4 +208,7 @@
     <string name="log_contact_page">Contact page</string>
     <string name="log_saved">Log saved</string>
     <string name="log_save_failed">The file couldn\'t be saved</string>
+
+    <!-- Attachments -->
+    <string name="search_in_attachments">In attachments: %1$s</string>
 </resources>

@@ -7,6 +7,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import kotlinx.serialization.Serializable
 import io.github.giansalvo.ggcalendar.core.model.Attendee
+import io.github.giansalvo.ggcalendar.core.model.EventAttachment
 import io.github.giansalvo.ggcalendar.core.model.Reminder
 
 @Entity(tableName = "accounts")
@@ -111,6 +112,13 @@ data class EventEntity(
     @ColumnInfo(name = "guests_can_see_list") val guestsCanSeeList: Boolean = true,
     @ColumnInfo(name = "organizer_email") val organizerEmail: String? = null,
     val attendees: List<Attendee> = emptyList(),
+    /**
+     * The links attached to the event. Null = not read yet (an event of Google synced before version 8): not shown and never sent to Google,
+     * because an empty list in a PATCH removes the attachments that Google has.
+     */
+    val attachments: List<EventAttachment>? = null,
+    /** Title and file name of the attachments without accents or capitals, for the search (never the addresses); kept by [EventDao.upsert]. */
+    @ColumnInfo(name = "attachment_text") val attachmentText: String? = null,
     /** Null = the calendar's default reminders. */
     val reminders: List<Reminder>? = null,
     @ColumnInfo(name = "has_alarm") val hasAlarm: Boolean = false,
@@ -234,4 +242,7 @@ data class InstanceRow(
     val isRecurring: Boolean,
     val isBirthday: Boolean,
     val canWrite: Boolean,
+    /** Search only: the attachments (JSON) and whether the words are also in title, place, description or guests. */
+    val attachmentsJson: String? = null,
+    val inOther: Boolean = true,
 )

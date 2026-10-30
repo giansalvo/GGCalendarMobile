@@ -207,4 +207,7 @@
     <string name="log_contact_page">Página de contacto</string>
     <string name="log_saved">Registro guardado</string>
     <string name="log_save_failed">No se pudo guardar el archivo</string>
+
+    <!-- Attachments -->
+    <string name="search_in_attachments">En los adjuntos: %1$s</string>
 </resources>

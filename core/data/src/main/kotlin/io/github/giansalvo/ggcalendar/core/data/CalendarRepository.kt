@@ -14,7 +14,9 @@ import io.github.giansalvo.ggcalendar.core.database.GGCalendarDatabase
 import io.github.giansalvo.ggcalendar.core.database.keepObservingTables
 import io.github.giansalvo.ggcalendar.core.database.InstanceRow
 import io.github.giansalvo.ggcalendar.core.database.SyncMessageEntity
+import io.github.giansalvo.ggcalendar.core.model.AttachmentLink
 import io.github.giansalvo.ggcalendar.core.model.CalendarInfo
+import io.github.giansalvo.ggcalendar.core.model.EventAttachment
 import io.github.giansalvo.ggcalendar.core.model.SubscriptionInfo
 import io.github.giansalvo.ggcalendar.core.model.Diag
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
@@ -138,12 +140,18 @@ class CalendarRepository @Inject constructor(
         }
     }
 
-    /** Occurrences matching [query] in title, place, description or guests (visible calendars, works offline). */
+    /** Occurrences matching [query] in title, place, description, guests or the title and file name of the attachments (visible calendars, works offline). */
     suspend fun search(query: String, limit: Int = 300): List<EventInstance> {
         val text = query.trim()
         if (text.isEmpty()) return emptyList()
-        val escaped = text.replace("!", "!!").replace("%", "!%").replace("_", "!_")
-        return db.instanceDao().search("%$escaped%", limit).map { it.toInstance() }
+        fun escape(t: String) = t.replace("!", "!!").replace("%", "!%").replace("_", "!_")
+        val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+        return db.instanceDao().search("%${escape(text)}%", "%${escape(AttachmentLink.normalize(text))}%", limit).map { row ->
+            // The line "in the attachments" only when that is where the words are (and not also in title, place, description or guests).
+            val hit = if (row.inOther) null else row.attachmentsJson?.let { runCatching { json.decodeFromString<List<EventAttachment>>(it) }.getOrNull() }
+                ?.let { AttachmentLink.firstMatch(it, text) }?.displayName
+            row.toInstance().copy(attachmentHit = hit)
+        }
     }
 
     /** The occurrence of [eventId] starting at [beginUtc], from any calendar (a reminder notification opens it). */

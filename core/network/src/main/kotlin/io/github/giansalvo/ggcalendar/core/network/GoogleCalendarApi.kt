@@ -157,6 +157,7 @@ class GoogleCalendarApi(
 
     private fun writeUrl(sendUpdates: Boolean, vararg segments: String): HttpUrl = url(*segments).newBuilder()
         .addQueryParameter("conferenceDataVersion", "1")
+        .addQueryParameter("supportsAttachments", "true")
         .addQueryParameter("sendUpdates", if (sendUpdates) "all" else "none")
         .build()
 

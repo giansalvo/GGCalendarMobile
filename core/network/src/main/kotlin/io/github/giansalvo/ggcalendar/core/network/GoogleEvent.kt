@@ -1,6 +1,8 @@
 package io.github.giansalvo.ggcalendar.core.network
 
+import io.github.giansalvo.ggcalendar.core.model.AttachmentLink
 import io.github.giansalvo.ggcalendar.core.model.Attendee
+import io.github.giansalvo.ggcalendar.core.model.EventAttachment
 import io.github.giansalvo.ggcalendar.core.model.Availability
 import io.github.giansalvo.ggcalendar.core.model.EventTime
 import io.github.giansalvo.ggcalendar.core.model.Reminder
@@ -72,6 +74,12 @@ data class GoogleEvent(
     val alarmMinutes: Set<Int> = emptySet(),
     /** "default", "birthday", "focusTime", "outOfOffice", "workingLocation" or "fromGmail". */
     val eventType: String = "default",
+    /**
+     * The links of the event. A normal event of Google always has a known list (empty when the field is missing); null only for an event
+     * that was not read (the local row of an event synced before version 8): it is then not sent, because an empty list in a PATCH
+     * removes the attachments that Google has.
+     */
+    val attachments: List<EventAttachment>? = null,
 )
 
 /** Conversion of Google Calendar v3 event resources, ported from the desktop app's GoogleEventMapper. */
@@ -155,8 +163,17 @@ object GoogleEventMapper {
             guestsCanSeeList = e.bool("guestsCanSeeOtherGuests") ?: true,
             alarmMinutes = alarms,
             eventType = e.str("eventType") ?: "default",
+            attachments = parseAttachments(e),
         )
     }
+
+    /** `attachments` as Google sends it (fileUrl, title, mimeType, fileId, iconLink); a missing field means none. */
+    private fun parseAttachments(e: JsonObject): List<EventAttachment> =
+        e.arr("attachments")?.mapNotNull { a ->
+            val o = a as? JsonObject ?: return@mapNotNull null
+            val url = o.str("fileUrl")?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+            EventAttachment(url, o.str("title").orEmpty(), o.str("mimeType")?.ifEmpty { null }, o.str("fileId")?.ifEmpty { null }, o.str("iconLink")?.ifEmpty { null })
+        } ?: emptyList()
 
     /** The colorId of one of [EVENT_COLORS], or null for the calendar color. */
     fun colorIdOf(hex: String?): String? = hex?.let { h -> EVENT_COLORS.entries.firstOrNull { it.value.equals(h, ignoreCase = true) }?.key }
@@ -253,6 +270,19 @@ object GoogleEventMapper {
             } else if (patch && ev.recurringEventId == null) {
                 // A former series becoming a single event; occurrences of a series never carry a recurrence.
                 put("recurrence", JsonArray(emptyList()))
+            }
+            // Only when they were read. A new event with none sends nothing; a patch with an empty list removes what Google has (the
+            // person took them all away).
+            ev.attachments?.takeIf { it.isNotEmpty() || patch }?.let { list ->
+                putJsonArray("attachments") {
+                    list.take(AttachmentLink.MAX_COUNT).forEach { a ->
+                        addJsonObject {
+                            put("fileUrl", a.url)
+                            put("title", a.displayName)
+                            a.mimeType?.let { put("mimeType", it) }
+                        }
+                    }
+                }
             }
             if (removeMeet && patch) put("conferenceData", JsonNull)
             if (includeMeetRequest) {

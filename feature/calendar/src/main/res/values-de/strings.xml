@@ -207,4 +207,7 @@
     <string name="log_contact_page">Kontaktseite</string>
     <string name="log_saved">Protokoll gespeichert</string>
     <string name="log_save_failed">Die Datei konnte nicht gespeichert werden</string>
+
+    <!-- Attachments -->
+    <string name="search_in_attachments">In den Anhängen: %1$s</string>
 </resources>

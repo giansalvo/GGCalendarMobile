@@ -10,6 +10,7 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import io.github.giansalvo.ggcalendar.core.model.Attendee
+import io.github.giansalvo.ggcalendar.core.model.EventAttachment
 import io.github.giansalvo.ggcalendar.core.model.Reminder
 import kotlinx.serialization.json.Json
 
@@ -24,7 +25,7 @@ import kotlinx.serialization.json.Json
         ReminderFiredEntity::class,
         ReminderSnoozedEntity::class,
     ],
-    version = 7,
+    version = GGCalendarDatabase.CURRENT_VERSION,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -46,9 +47,27 @@ abstract class GGCalendarDatabase : RoomDatabase() {
          */
         const val OLDEST_KEPT_VERSION = 7
 
+        /** The version of the schema now (8: the attachments of the events, with a real migration from 7). */
+        const val CURRENT_VERSION = 8
+
+        /**
+         * Version 8: the attachments of the events. The column is null (not read) for the events of Google, which come back with them: the
+         * sync tokens are cleared, so the next pull of each Google calendar is a full one. The events of the other calendars have no
+         * attachments to read: an empty list.
+         */
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE events ADD COLUMN attachments TEXT")
+                db.execSQL("ALTER TABLE events ADD COLUMN attachment_text TEXT")
+                db.execSQL("UPDATE events SET attachments = '[]' WHERE calendar_id IN (SELECT id FROM calendars WHERE kind != 'google')")
+                db.execSQL("UPDATE calendars SET sync_token = NULL WHERE kind = 'google'")
+            }
+        }
+
         /** The schema rules of the app: versions 1-6 are dropped ([onReset] is told when that happens). */
         fun configure(builder: Builder<GGCalendarDatabase>, onReset: () -> Unit): Builder<GGCalendarDatabase> =
             builder.fallbackToDestructiveMigrationFrom(true, 1, 2, 3, 4, 5, 6)
+                .addMigrations(MIGRATION_7_8)
                 .addCallback(object : Callback() {
                     override fun onDestructiveMigration(db: SupportSQLiteDatabase) = onReset()
                 })
@@ -92,6 +111,12 @@ class Converters {
 
     @TypeConverter
     fun attendeesFromJson(value: String): List<Attendee> = json.decodeFromString(value)
+
+    @TypeConverter
+    fun attachmentsToJson(value: List<EventAttachment>?): String? = value?.let { json.encodeToString(it) }
+
+    @TypeConverter
+    fun attachmentsFromJson(value: String?): List<EventAttachment>? = value?.let { json.decodeFromString(it) }
 
     @TypeConverter
     fun stringsToJson(value: List<String>): String = json.encodeToString(value)

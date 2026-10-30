@@ -21,7 +21,15 @@ object EventContent {
             guests(a, ignoreGuest) == guests(b, ignoreGuest) &&
             a.availability == b.availability &&
             a.visibility == b.visibility &&
-            a.isCancelled == b.isCancelled
+            a.isCancelled == b.isCancelled &&
+            sameAttachments(a, b)
+
+    /** An unread list (null) is not a difference: Google's version is then the one that counts and nothing is sent. */
+    private fun sameAttachments(a: EventEntity, b: EventEntity): Boolean {
+        val x = a.attachments ?: return true
+        val y = b.attachments ?: return true
+        return x.map { it.url + "|" + it.title }.toSet() == y.map { it.url + "|" + it.title }.toSet()
+    }
 
     private fun guests(e: EventEntity, ignore: String?): Set<String> =
         e.attendees.filterNot { it.email.equals(ignore, ignoreCase = true) }

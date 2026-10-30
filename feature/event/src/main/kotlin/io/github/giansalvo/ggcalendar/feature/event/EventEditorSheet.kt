@@ -35,6 +35,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.AttachFile
+import androidx.compose.foundation.layout.heightIn
+import io.github.giansalvo.ggcalendar.core.model.AttachmentLink
+import io.github.giansalvo.ggcalendar.core.model.EventAttachment
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Circle
@@ -147,6 +151,18 @@ private class GuestField(
     val onPick: (Attendee) -> Unit,
 )
 
+/** The attachment fields as the form sees them: the text and the error live in the view model, so that Save can read them. */
+private class AttachmentField(
+    val text: String,
+    val title: String,
+    val error: String?,
+    val focusRequests: Int,
+    val onType: (String) -> Unit,
+    val onTitle: (String) -> Unit,
+    val onCommit: () -> Unit,
+    val onRemove: (String) -> Unit,
+)
+
 /**
  * The event editor (mockup 6): a full-height bottom sheet with Save. Leaving with unsaved changes asks first.
  */
@@ -211,6 +227,10 @@ fun EventEditorSheet(
                 EditorFields(
                     draft, calendars, viewModel.isNew, viewModel.suggestions,
                     GuestField(viewModel.guestText, viewModel.guestError, viewModel.guestFocusRequests, viewModel::typeGuest, { viewModel.commitGuests() }, viewModel::addGuest),
+                    AttachmentField(
+                        viewModel.attachmentText, viewModel.attachmentTitle, viewModel.attachmentError, viewModel.attachmentFocusRequests,
+                        viewModel::typeAttachment, viewModel::typeAttachmentTitle, { viewModel.commitAttachment() }, viewModel::removeAttachment,
+                    ),
                     viewModel::update,
                     onGuestsFocused = {
                         if (viewModel.needsContacts && !askedContacts) {
@@ -282,6 +302,7 @@ private fun EditorFields(
     isNew: Boolean,
     suggestions: List<Attendee>,
     guestField: GuestField,
+    attachmentField: AttachmentField,
     update: ((Draft) -> Draft) -> Unit,
     onGuestsFocused: () -> Unit,
 ) {
@@ -365,6 +386,8 @@ private fun EditorFields(
         }
         Divider()
         PlainField(Icons.Outlined.Notes, draft.description, R.string.add_description, singleLine = false, tag = "editor_description") { v -> update { it.copy(description = v) } }
+        Divider()
+        Attachments(draft.attachments, attachmentField)
     }
 
     when (picking) {
@@ -490,6 +513,85 @@ private fun DateTimeRow(date: LocalDate, time: LocalTime, allDay: Boolean, onDat
 fun zoneLabel(zone: ZoneId, locale: Locale): String {
     val offset = zone.rules.getOffset(Instant.now()).id.let { if (it == "Z") "" else it }
     return "${zone.getDisplayName(TextStyle.FULL, locale)} (GMT$offset)"
+}
+
+/**
+ * The links of the event (mockup 3): the address and the optional title, a plus button, one row per link with its remove button and the
+ * counter. [attachments] null = not read yet: the section is off (adding to it would replace on Google what is not known).
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun Attachments(attachments: List<EventAttachment>?, input: AttachmentField) {
+    val field = remember { FocusRequester() }
+    LaunchedEffect(input.focusRequests) { if (input.focusRequests > 0) field.requestFocus() }
+    // The message of an address that is not valid sits under the field, where the keyboard is: bring it into sight.
+    val bringIntoView = remember { BringIntoViewRequester() }
+    LaunchedEffect(input.error) { if (input.error != null) bringIntoView.bringIntoView() }
+    val colors = TextFieldDefaults.colors(
+        focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent,
+        focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent,
+    )
+    Column(Modifier.fillMaxWidth().bringIntoViewRequester(bringIntoView)) {
+        Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Outlined.AttachFile, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.width(16.dp))
+            Text(stringResource(R.string.attachments), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+            if (!attachments.isNullOrEmpty()) {
+                Text("${attachments.size}/${AttachmentLink.MAX_COUNT}", Modifier.testTag("editor_attachments_count"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        when {
+            attachments == null -> Text(
+                stringResource(R.string.attachments_unread),
+                Modifier.testTag("editor_attachments_unread").padding(start = 56.dp, end = 20.dp, top = 6.dp, bottom = 8.dp),
+                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            attachments.size >= AttachmentLink.MAX_COUNT -> Text(
+                stringResource(R.string.attachment_limit, AttachmentLink.MAX_COUNT),
+                Modifier.testTag("editor_attachments_limit").padding(start = 56.dp, end = 20.dp, top = 6.dp, bottom = 8.dp),
+                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            else -> {
+                TextField(
+                    value = input.text,
+                    onValueChange = input.onType,
+                    placeholder = { Text(stringResource(R.string.attachment_address_hint)) },
+                    singleLine = true,
+                    isError = input.error != null,
+                    supportingText = input.error?.let { bad -> { Text(stringResource(R.string.attachment_invalid_named, bad), Modifier.testTag("editor_attachment_error")) } },
+                    trailingIcon = if (input.text.isNotBlank()) ({
+                        IconButton(onClick = input.onCommit, modifier = Modifier.testTag("editor_attachment_add")) {
+                            Icon(Icons.Filled.Add, stringResource(R.string.attachment_add))
+                        }
+                    }) else null,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { if (input.text.isNotBlank()) input.onCommit() }),
+                    colors = colors,
+                    modifier = Modifier.testTag("editor_attachment_input").fillMaxWidth().padding(start = 40.dp, end = 8.dp).focusRequester(field),
+                )
+                TextField(
+                    value = input.title,
+                    onValueChange = input.onTitle,
+                    placeholder = { Text(stringResource(R.string.attachment_title_hint)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { if (input.text.isNotBlank()) input.onCommit() }),
+                    colors = colors,
+                    modifier = Modifier.testTag("editor_attachment_title").fillMaxWidth().padding(start = 40.dp, end = 8.dp),
+                )
+            }
+        }
+        attachments.orEmpty().forEachIndexed { i, a ->
+            Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(start = 56.dp, end = 8.dp).testTag("editor_attachment_$i"), verticalAlignment = Alignment.CenterVertically) {
+                AttachmentBadge(a)
+                Spacer(Modifier.width(12.dp))
+                Text(a.displayName, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                IconButton(onClick = { input.onRemove(a.url) }, modifier = Modifier.testTag("editor_attachment_remove_$i")) {
+                    Icon(Icons.Filled.Close, stringResource(R.string.attachment_remove, a.displayName))
+                }
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)

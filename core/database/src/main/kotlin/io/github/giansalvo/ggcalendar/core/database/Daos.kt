@@ -4,7 +4,9 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
+import io.github.giansalvo.ggcalendar.core.model.AttachmentLink
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -68,29 +70,29 @@ interface CalendarDao {
 }
 
 @Dao
-interface EventDao {
+abstract class EventDao {
     @Query("SELECT * FROM events WHERE id = :id")
-    suspend fun get(id: String): EventEntity?
+    abstract suspend fun get(id: String): EventEntity?
 
     @Query("SELECT * FROM events WHERE id = :id")
-    fun observe(id: String): Flow<EventEntity?>
+    abstract fun observe(id: String): Flow<EventEntity?>
 
     @Query("SELECT * FROM events WHERE calendar_id = :calendarId")
-    suspend fun getForCalendar(calendarId: String): List<EventEntity>
+    abstract suspend fun getForCalendar(calendarId: String): List<EventEntity>
 
     /** Local id of each event of a calendar that exists on Google, keyed by remote id. */
     @Query("SELECT remote_id AS remoteId, id FROM events WHERE calendar_id = :calendarId AND remote_id IS NOT NULL")
-    suspend fun remoteIds(calendarId: String): List<RemoteLink>
+    abstract suspend fun remoteIds(calendarId: String): List<RemoteLink>
 
     /** Events that own their instances: single events and series masters (not the occurrences of a series). */
     @Query("SELECT id FROM events WHERE series_master_id IS NULL")
-    suspend fun masterIds(): List<String>
+    abstract suspend fun masterIds(): List<String>
 
     @Query("SELECT id FROM events WHERE series_master_id IS NULL AND rrule IS NOT NULL")
-    suspend fun seriesIds(): List<String>
+    abstract suspend fun seriesIds(): List<String>
 
     @Query("SELECT * FROM events WHERE series_master_id = :masterId")
-    suspend fun getExceptions(masterId: String): List<EventEntity>
+    abstract suspend fun getExceptions(masterId: String): List<EventEntity>
 
     /**
      * The events to export from [calendarIds] for the days [fromDay, toDay): single events and series (not their
@@ -103,28 +105,37 @@ interface EventDao {
         WHERE e.calendar_id IN (:calendarIds) AND i.start_day < :toDay AND i.end_day > :fromDay
         """,
     )
-    suspend fun exportRootIds(calendarIds: List<String>, fromDay: Long, toDay: Long): List<String>
+    abstract suspend fun exportRootIds(calendarIds: List<String>, fromDay: Long, toDay: Long): List<String>
 
     /** Birthday events that come from Google (the contacts of an account), not from the phone's contacts. */
     @Query("SELECT * FROM events WHERE event_type = 'birthday' AND calendar_id != :exceptCalendarId")
-    suspend fun birthdaysOutside(exceptCalendarId: String): List<EventEntity>
+    abstract suspend fun birthdaysOutside(exceptCalendarId: String): List<EventEntity>
 
     @Query("SELECT * FROM events WHERE id IN (:ids)")
-    suspend fun getAll(ids: List<String>): List<EventEntity>
+    abstract suspend fun getAll(ids: List<String>): List<EventEntity>
 
     @Upsert
-    suspend fun upsert(events: List<EventEntity>)
+    protected abstract suspend fun upsertRows(events: List<EventEntity>)
+
+    /** Writes the events, keeping the search text of their attachments in step with the list. */
+    @Transaction
+    open suspend fun upsert(events: List<EventEntity>) =
+        upsertRows(events.map { it.copy(attachmentText = AttachmentLink.searchText(it.attachments)) })
+
+    /** The attachments read from Google for an event whose own change is still waiting to be sent (see SyncEngine): only if they were not read yet. */
+    @Query("UPDATE events SET attachments = :json, attachment_text = :text WHERE id = :id AND attachments IS NULL")
+    abstract suspend fun setAttachmentsIfUnread(id: String, json: String, text: String?)
 
     @Query("UPDATE events SET remote_id = :remoteId, etag = :etag WHERE id = :id")
-    suspend fun setRemote(id: String, remoteId: String, etag: String?)
+    abstract suspend fun setRemote(id: String, remoteId: String, etag: String?)
 
     /** Attendees of every event, to suggest addresses in the editor. */
     @Query("SELECT attendees FROM events WHERE attendees != '[]'")
-    suspend fun allAttendees(): List<String>
+    abstract suspend fun allAttendees(): List<String>
 
     /** Deletes an event together with the modified or cancelled occurrences of its series. */
     @Query("DELETE FROM events WHERE id IN (:ids) OR series_master_id IN (:ids)")
-    suspend fun deleteWithSeries(ids: List<String>)
+    abstract suspend fun deleteWithSeries(ids: List<String>)
 }
 
 data class RemoteLink(val remoteId: String, val id: String)
@@ -233,7 +244,8 @@ interface InstanceDao {
                (e.rrule IS NOT NULL OR e.series_master_id IS NOT NULL) AS isRecurring,
                (e.event_type = 'birthday') AS isBirthday,
                (c.access_role IN ('owner', 'writer') AND e.event_type = 'default' AND (e.organizer_email IS NULL
-                   OR e.organizer_email IN (c.remote_id, c.account_email) OR e.guests_can_modify)) AS canWrite
+                   OR e.organizer_email IN (c.remote_id, c.account_email) OR e.guests_can_modify)) AS canWrite,
+               NULL AS attachmentsJson, 1 AS inOther
         FROM instances i
         JOIN events e ON e.id = i.event_id
         JOIN calendars c ON c.id = e.calendar_id
@@ -255,7 +267,8 @@ interface InstanceDao {
 
     /**
      * Occurrences of the visible calendars whose event matches [pattern] (a LIKE pattern, `!` escapes) in title, place,
-     * description or guests (names and emails), soonest first; only the days the instances table covers.
+     * description or guests (names and emails), soonest first; only the days the instances table covers. [attachmentPattern] is the same
+     * words without accents or capitals, for the title and file name of the attachments (never their addresses).
      */
     @Query(
         """
@@ -266,18 +279,22 @@ interface InstanceDao {
                (e.rrule IS NOT NULL OR e.series_master_id IS NOT NULL) AS isRecurring,
                (e.event_type = 'birthday') AS isBirthday,
                (c.access_role IN ('owner', 'writer') AND e.event_type = 'default' AND (e.organizer_email IS NULL
-                   OR e.organizer_email IN (c.remote_id, c.account_email) OR e.guests_can_modify)) AS canWrite
+                   OR e.organizer_email IN (c.remote_id, c.account_email) OR e.guests_can_modify)) AS canWrite,
+               e.attachments AS attachmentsJson,
+               (e.title LIKE :pattern ESCAPE '!' OR e.location LIKE :pattern ESCAPE '!'
+                   OR e.description LIKE :pattern ESCAPE '!' OR e.attendees LIKE :pattern ESCAPE '!') AS inOther
         FROM instances i
         JOIN events e ON e.id = i.event_id
         JOIN calendars c ON c.id = e.calendar_id
         WHERE c.is_visible = 1 AND e.is_cancelled = 0
           AND (e.title LIKE :pattern ESCAPE '!' OR e.location LIKE :pattern ESCAPE '!'
-               OR e.description LIKE :pattern ESCAPE '!' OR e.attendees LIKE :pattern ESCAPE '!')
+               OR e.description LIKE :pattern ESCAPE '!' OR e.attendees LIKE :pattern ESCAPE '!'
+               OR e.attachment_text LIKE :attachmentPattern ESCAPE '!')
         ORDER BY i.begin_utc, e.title
         LIMIT :limit
         """,
     )
-    suspend fun search(pattern: String, limit: Int): List<InstanceRow>
+    suspend fun search(pattern: String, attachmentPattern: String, limit: Int): List<InstanceRow>
 
     /** One occurrence, also of a hidden calendar (a reminder opens it). */
     @Query(
@@ -289,7 +306,8 @@ interface InstanceDao {
                (e.rrule IS NOT NULL OR e.series_master_id IS NOT NULL) AS isRecurring,
                (e.event_type = 'birthday') AS isBirthday,
                (c.access_role IN ('owner', 'writer') AND e.event_type = 'default' AND (e.organizer_email IS NULL
-                   OR e.organizer_email IN (c.remote_id, c.account_email) OR e.guests_can_modify)) AS canWrite
+                   OR e.organizer_email IN (c.remote_id, c.account_email) OR e.guests_can_modify)) AS canWrite,
+               NULL AS attachmentsJson, 1 AS inOther
         FROM instances i
         JOIN events e ON e.id = i.event_id
         JOIN calendars c ON c.id = e.calendar_id

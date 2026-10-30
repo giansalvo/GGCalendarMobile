@@ -12,7 +12,10 @@ import io.github.giansalvo.ggcalendar.core.data.Occurrence
 import io.github.giansalvo.ggcalendar.core.data.SeriesScope
 import io.github.giansalvo.ggcalendar.core.database.CalendarEntity
 import io.github.giansalvo.ggcalendar.core.database.EventEntity
+import io.github.giansalvo.ggcalendar.core.model.AttachmentAdd
+import io.github.giansalvo.ggcalendar.core.model.AttachmentLink
 import io.github.giansalvo.ggcalendar.core.model.Attendee
+import io.github.giansalvo.ggcalendar.core.model.EventAttachment
 import io.github.giansalvo.ggcalendar.core.model.Reminder
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -59,6 +62,8 @@ data class Draft(
     val addMeet: Boolean = false,
     val meetLink: String? = null,
     val attendees: List<Attendee> = emptyList(),
+    /** The links of the event; null = not read yet (an event of Google synced before they were read): the section is off and nothing is sent. */
+    val attachments: List<EventAttachment>? = emptyList(),
     val sendInvites: Boolean = true,
     val guestsCanModify: Boolean = false,
     val guestsCanInvite: Boolean = true,
@@ -180,7 +185,63 @@ class EventEditorViewModel @Inject constructor(
         typeGuest("")
     }
 
-    val dirty: Boolean get() = draft != initial || guestText.isNotBlank()
+    /** What is typed in the attachment fields and not added yet: Save reads the address, and leaving without saving counts both as a change. */
+    var attachmentText by mutableStateOf("")
+        private set
+    var attachmentTitle by mutableStateOf("")
+        private set
+    /** The address that Save or the plus button found not valid (the message names it). */
+    var attachmentError by mutableStateOf<String?>(null)
+        private set
+
+    /** Raised when Save stops on an address that is not valid: the field takes the focus and comes into view. */
+    var attachmentFocusRequests by mutableIntStateOf(0)
+        private set
+
+    fun typeAttachment(text: String) {
+        attachmentText = text
+        attachmentError = null
+    }
+
+    fun typeAttachmentTitle(text: String) {
+        attachmentTitle = text
+    }
+
+    /**
+     * Adds the link typed in the field (with the title, if any). False (the fields keep their text and the error names the address) when
+     * it is not a valid https link. Nothing typed is fine; the same address twice is one attachment, without an error.
+     */
+    fun commitAttachment(): Boolean {
+        val current = draft?.attachments ?: return true
+        if (attachmentText.isBlank()) return true
+        return when (val r = AttachmentLink.add(current, attachmentText, attachmentTitle)) {
+            is AttachmentAdd.Added -> {
+                update { it.copy(attachments = r.list) }
+                clearAttachmentFields()
+                true
+            }
+            AttachmentAdd.Duplicate -> {
+                clearAttachmentFields()
+                true
+            }
+            AttachmentAdd.Invalid, AttachmentAdd.LimitReached -> {
+                attachmentError = attachmentText.trim()
+                false
+            }
+        }
+    }
+
+    fun removeAttachment(url: String) {
+        update { d -> d.copy(attachments = d.attachments?.filterNot { it.url == url }) }
+    }
+
+    private fun clearAttachmentFields() {
+        attachmentText = ""
+        attachmentTitle = ""
+        attachmentError = null
+    }
+
+    val dirty: Boolean get() = draft != initial || guestText.isNotBlank() || attachmentText.isNotBlank() || attachmentTitle.isNotBlank()
     val isNew: Boolean get() = original == null
 
     /** The editor was closed without saving: the next one must start from scratch, not from this draft. */
@@ -201,6 +262,11 @@ class EventEditorViewModel @Inject constructor(
         askNotify = false
         guestText = ""
         guestError = null
+        clearAttachmentFields()
+        // The requests to focus a field belong to the editor that raised them: a new editor must not start by taking the focus (and
+        // scrolling to the field) because the one before stopped Save on an address that was not valid.
+        guestFocusRequests = 0
+        attachmentFocusRequests = 0
         draft = null
         viewModelScope.launch {
             val d = when (request) {
@@ -274,6 +340,8 @@ class EventEditorViewModel @Inject constructor(
             rrule = e.rrule, location = e.location, description = e.description, reminders = e.reminders,
             color = e.color, availability = e.availability, visibility = e.visibility,
             addMeet = e.addMeet, meetLink = e.meetLink, attendees = e.attendees, sendInvites = e.sendInvites,
+            // Not read yet only for an event of Google; the other calendars have nothing to read.
+            attachments = e.attachments ?: if (detail.calendar.syncsWithGoogle) null else emptyList(),
             guestsCanModify = e.guestsCanModify, guestsCanInvite = e.guestsCanInvite, guestsCanSeeList = e.guestsCanSeeList,
         )
     }
@@ -290,6 +358,14 @@ class EventEditorViewModel @Inject constructor(
                 return
             }
         }
+        // The link typed and not added becomes an attachment first (the same rule as for the guests); one that is not valid stops the save.
+        if (draft?.attachments == null) clearAttachmentFields()
+        else if (!commitAttachment()) {
+            attachmentFocusRequests++
+            return
+        }
+        // A title typed without an address has nothing to belong to: it is dropped.
+        attachmentTitle = ""
         val d = draft ?: return
         if (occurrence != null && scope == null) {
             askScope = true
@@ -323,7 +399,7 @@ class EventEditorViewModel @Inject constructor(
             reminders = d.reminders, hasAlarm = d.reminders.orEmpty().any { it.method == io.github.giansalvo.ggcalendar.core.model.ReminderMethod.ALARM },
             color = d.color, availability = d.availability, visibility = d.visibility,
             addMeet = d.addMeet, meetLink = if (d.addMeet) d.meetLink else null,
-            attendees = d.attendees, sendInvites = d.sendInvites,
+            attendees = d.attendees, sendInvites = d.sendInvites, attachments = d.attachments,
             guestsCanModify = d.guestsCanModify, guestsCanInvite = d.guestsCanInvite, guestsCanSeeList = d.guestsCanSeeList,
             // Exclusions keep their meaning only while the series keeps its rule.
             exdates = if (d.rrule != null && d.rrule == original?.rrule) base.exdates else emptyList(),

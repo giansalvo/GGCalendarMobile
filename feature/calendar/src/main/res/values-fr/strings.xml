@@ -208,4 +208,7 @@
     <string name="log_contact_page">Page de contact</string>
     <string name="log_saved">Journal enregistré</string>
     <string name="log_save_failed">Impossible d\'enregistrer le fichier</string>
+
+    <!-- Attachments -->
+    <string name="search_in_attachments">Dans les pièces jointes&#160;: %1$s</string>
 </resources>
