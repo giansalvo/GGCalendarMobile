@@ -25,9 +25,8 @@ class StringResourcesTest(private val language: String) {
          * the problems ("module:kind:name") that are accepted; the reason is in the comment.
          */
         private val KNOWN: Map<String, Set<String>> = mapOf(
-            // Italian: plain double quotes in the middle of the text. Android removes them, so "alarme mancata" and the title of the event
-            // are shown without quotes. To correct with \" in values-it (the default language has the same two texts).
-            "it/quotes-and-spaces" to setOf("core/notifications:string:alarm_duration_help", "core/notifications:string:close_alarm_text"),
+            // Nothing at the moment. The two Italian texts with plain double quotes in the middle (alarm_duration_help and close_alarm_text,
+            // which Android showed without quotes) now use « » in Italian and “ ” in English, like the rest of the app.
         )
 
         /**

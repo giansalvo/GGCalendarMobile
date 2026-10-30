@@ -41,7 +41,7 @@
     <string name="perm_change">Change</string>
     <string name="fix">Fix</string>
     <string name="alarm_duration">Alarm duration</string>
-    <string name="alarm_duration_help">An alarm that nobody closes stops by itself after this time and leaves a "missed alarm" notification.</string>
+    <string name="alarm_duration_help">An alarm that nobody closes stops by itself after this time and leaves a “missed alarm” notification.</string>
     <string name="warning_notifications_off">Notifications are turned off: this reminder will not show.</string>
     <string name="warning_exact_off">Exact alarms are not allowed: this reminder may arrive late.</string>
     <string name="stop_alarm">Stop alarm</string>
@@ -64,7 +64,7 @@
     <string name="remaining_hours_minutes">%d h %d min</string>
     <string name="remaining_days_hours">%d d %d h</string>
     <string name="close_alarm_title">Cancel this alarm?</string>
-    <string name="close_alarm_text">The alarm for "%s" will not ring. The event stays in the calendar.</string>
+    <string name="close_alarm_text">The alarm for “%s” will not ring. The event stays in the calendar.</string>
     <string name="close_alarm">Cancel alarm</string>
     <string name="keep_alarm">Keep</string>
     <string name="alarm_sound">Alarm sound</string>
