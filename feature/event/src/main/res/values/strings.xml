@@ -98,6 +98,8 @@
     <string name="weekdays">Every weekday (Monday to Friday)</string>
     <string name="add_guests">Add people</string>
     <string name="invalid_email">Not a valid email address</string>
+    <string name="invalid_email_named">“%1$s” is not a valid email address</string>
+    <string name="add_guest">Add guest</string>
     <string name="remove">Remove</string>
     <string name="send_invites">Send invitations</string>
     <string name="guests_can_modify">Guests can modify the event</string>

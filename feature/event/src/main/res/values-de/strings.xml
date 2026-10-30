@@ -98,6 +98,8 @@
     <string name="weekdays">Jeden Werktag (Montag bis Freitag)</string>
     <string name="add_guests">Personen hinzufügen</string>
     <string name="invalid_email">Keine gültige E-Mail-Adresse</string>
+    <string name="invalid_email_named">„%1$s“ ist keine gültige E-Mail-Adresse</string>
+    <string name="add_guest">Gast hinzufügen</string>
     <string name="remove">Entfernen</string>
     <string name="send_invites">Einladungen senden</string>
     <string name="guests_can_modify">Gäste können den Termin ändern</string>

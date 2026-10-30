@@ -34,6 +34,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Circle
@@ -94,6 +95,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -133,7 +136,16 @@ internal val EVENT_COLORS = listOf(
 )
 
 private val REMINDER_MINUTES = listOf(0, 5, 10, 15, 30, 60, 120, 1440, 2880, 10080)
-private val EMAIL = Regex("""^[^\s@]+@[^\s@]+\.[^\s@]+$""")
+
+/** The guest field as the form sees it: its text and error live in the view model, so that Save can read them. */
+private class GuestField(
+    val text: String,
+    val error: String?,
+    val focusRequests: Int,
+    val onType: (String) -> Unit,
+    val onCommit: () -> Unit,
+    val onPick: (Attendee) -> Unit,
+)
 
 /**
  * The event editor (mockup 6): a full-height bottom sheet with Save. Leaving with unsaved changes asks first.
@@ -197,7 +209,9 @@ fun EventEditorSheet(
                 }
                 var askedContacts by rememberSaveable { mutableStateOf(false) }
                 EditorFields(
-                    draft, calendars, viewModel.isNew, viewModel.suggestions, viewModel::update,
+                    draft, calendars, viewModel.isNew, viewModel.suggestions,
+                    GuestField(viewModel.guestText, viewModel.guestError, viewModel.guestFocusRequests, viewModel::typeGuest, { viewModel.commitGuests() }, viewModel::addGuest),
+                    viewModel::update,
                     onGuestsFocused = {
                         if (viewModel.needsContacts && !askedContacts) {
                             askedContacts = true
@@ -267,6 +281,7 @@ private fun EditorFields(
     calendars: List<CalendarEntity>,
     isNew: Boolean,
     suggestions: List<Attendee>,
+    guestField: GuestField,
     update: ((Draft) -> Draft) -> Unit,
     onGuestsFocused: () -> Unit,
 ) {
@@ -308,7 +323,7 @@ private fun EditorFields(
 
         // Guests and Meet belong to Google: a local calendar has neither.
         if (calendars.firstOrNull { it.id == draft.calendarId }?.syncsWithGoogle != false) {
-            Guests(draft, suggestions, update, onGuestsFocused)
+            Guests(draft, guestField, suggestions, update, onGuestsFocused)
             Divider()
 
             FieldRow(Icons.Outlined.Videocam, tag = "editor_meet", onClick = { update { it.copy(addMeet = !it.addMeet) } }) {
@@ -479,19 +494,12 @@ fun zoneLabel(zone: ZoneId, locale: Locale): String {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Guests(draft: Draft, suggestions: List<Attendee>, update: ((Draft) -> Draft) -> Unit, onFocused: () -> Unit) {
-    var text by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf(false) }
-    fun add(email: String, name: String? = null) {
-        val e = email.trim()
-        if (!EMAIL.matches(e)) {
-            error = true
-            return
-        }
-        error = false
-        update { d -> if (d.attendees.any { it.email.equals(e, ignoreCase = true) }) d else d.copy(attendees = d.attendees + Attendee(e, displayName = name)) }
-        text = ""
-    }
+private fun Guests(draft: Draft, input: GuestField, suggestions: List<Attendee>, update: ((Draft) -> Draft) -> Unit, onFocused: () -> Unit) {
+    val text = input.text
+    val error = input.error
+    val field = remember { FocusRequester() }
+    // Save found an address that is not valid: the field takes the focus and comes into view (the form scrolls).
+    LaunchedEffect(input.focusRequests) { if (input.focusRequests > 0) field.requestFocus() }
     val matches = remember(text, suggestions, draft.attendees) {
         if (text.length < 2) emptyList()
         else suggestions.filter { s ->
@@ -503,6 +511,8 @@ private fun Guests(draft: Draft, suggestions: List<Attendee>, update: ((Draft) -
     // Keep the suggestions in sight above the keyboard while typing.
     val bringIntoView = remember { BringIntoViewRequester() }
     LaunchedEffect(matches) { if (matches.isNotEmpty()) bringIntoView.bringIntoView() }
+    // The message of an address that is not valid sits under the field, where the keyboard is: bring it into sight too.
+    LaunchedEffect(error) { if (error != null) bringIntoView.bringIntoView() }
     Column(Modifier.bringIntoViewRequester(bringIntoView)) {
         Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = {
@@ -514,21 +524,23 @@ private fun Guests(draft: Draft, suggestions: List<Attendee>, update: ((Draft) -
             Box(Modifier.weight(1f)) {
                 TextField(
                     value = text,
-                    onValueChange = {
-                        text = it
-                        error = false
-                    },
+                    onValueChange = input.onType,
                     placeholder = { Text(stringResource(R.string.add_guests)) },
                     singleLine = true,
-                    isError = error,
-                    supportingText = if (error) ({ Text(stringResource(R.string.invalid_email)) }) else null,
+                    isError = error != null,
+                    supportingText = error?.let { bad -> { Text(stringResource(R.string.invalid_email_named, bad), Modifier.testTag("editor_guest_error")) } },
+                    trailingIcon = if (text.isNotBlank()) ({
+                        IconButton(onClick = input.onCommit, modifier = Modifier.testTag("editor_guest_add")) {
+                            Icon(Icons.Filled.Add, stringResource(R.string.add_guest))
+                        }
+                    }) else null,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { if (text.isNotBlank()) add(text) }),
+                    keyboardActions = KeyboardActions(onDone = { if (text.isNotBlank()) input.onCommit() }),
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent,
                     ),
-                    modifier = Modifier.testTag("editor_guest_input").fillMaxWidth().onFocusChanged { if (it.isFocused) onFocused() },
+                    modifier = Modifier.testTag("editor_guest_input").fillMaxWidth().focusRequester(field).onFocusChanged { if (it.isFocused) onFocused() },
                 )
             }
         }
@@ -537,7 +549,7 @@ private fun Guests(draft: Draft, suggestions: List<Attendee>, update: ((Draft) -
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .clickable { add(m.email, m.displayName) }
+                    .clickable { input.onPick(Attendee(m.email, displayName = m.displayName)) }
                     .padding(start = 56.dp, end = 16.dp, top = 6.dp, bottom = 6.dp),
             ) {
                 Text(m.displayName ?: m.email, style = MaterialTheme.typography.bodyMedium)

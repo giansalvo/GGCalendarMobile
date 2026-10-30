@@ -1,6 +1,7 @@
 package io.github.giansalvo.ggcalendar.feature.event
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -143,7 +144,43 @@ class EventEditorViewModel @Inject constructor(
     var suggestions by mutableStateOf<List<Attendee>>(emptyList())
         private set
 
-    val dirty: Boolean get() = draft != initial
+    /** What is typed in the guest field and not confirmed yet: Save reads it, and leaving without saving counts it as a change. */
+    var guestText by mutableStateOf("")
+        private set
+    var guestError by mutableStateOf<String?>(null)
+        private set
+
+    /** Raised when Save stops on an address that is not valid: the field takes the focus and comes into view. */
+    var guestFocusRequests by mutableIntStateOf(0)
+        private set
+
+    fun typeGuest(text: String) {
+        guestText = text
+        guestError = null
+    }
+
+    /** Adds the guests typed in the field. False (the field keeps its text and shows the error) when a piece is not an address. */
+    fun commitGuests(): Boolean {
+        when (val r = GuestInput.parse(guestText)) {
+            is GuestInput.Result.Invalid -> {
+                guestError = r.text
+                return false
+            }
+            is GuestInput.Result.Valid -> {
+                guestError = null
+                guestText = ""
+                if (r.guests.isNotEmpty()) update { d -> d.copy(attendees = GuestInput.merge(d.attendees, r.guests)) }
+                return true
+            }
+        }
+    }
+
+    fun addGuest(guest: Attendee) {
+        update { d -> d.copy(attendees = GuestInput.merge(d.attendees, listOf(guest))) }
+        typeGuest("")
+    }
+
+    val dirty: Boolean get() = draft != initial || guestText.isNotBlank()
     val isNew: Boolean get() = original == null
 
     /** The editor was closed without saving: the next one must start from scratch, not from this draft. */
@@ -162,6 +199,8 @@ class EventEditorViewModel @Inject constructor(
         occurrence = null
         askScope = false
         askNotify = false
+        guestText = ""
+        guestError = null
         draft = null
         viewModelScope.launch {
             val d = when (request) {
@@ -241,6 +280,16 @@ class EventEditorViewModel @Inject constructor(
 
     /** Writes the draft (offline first) and queues it for Google; [scope] for an occurrence of a series. */
     fun save(onDone: () -> Unit, scope: SeriesScope? = null, notify: Boolean? = null) {
+        // The address typed and not confirmed becomes a guest first: the questions below (scope, calendar, telling the guests)
+        // depend on the guests the event ends up with. A local calendar has no guests: the text is dropped.
+        if (guestText.isNotBlank()) {
+            if (calendars.value.firstOrNull { it.id == draft?.calendarId }?.syncsWithGoogle == false) {
+                typeGuest("")
+            } else if (!commitGuests()) {
+                guestFocusRequests++
+                return
+            }
+        }
         val d = draft ?: return
         if (occurrence != null && scope == null) {
             askScope = true

@@ -95,6 +95,8 @@
     <string name="weekdays">Tutti i giorni feriali (dal lunedì al venerdì)</string>
     <string name="add_guests">Aggiungi persone</string>
     <string name="invalid_email">Indirizzo email non valido</string>
+    <string name="invalid_email_named">«%1$s» non è un indirizzo email valido</string>
+    <string name="add_guest">Aggiungi invitato</string>
     <string name="remove">Rimuovi</string>
     <string name="send_invites">Invia inviti</string>
     <string name="guests_can_modify">Gli invitati possono modificare l\'evento</string>

@@ -98,6 +98,8 @@
     <string name="weekdays">Todos los días laborables (de lunes a viernes)</string>
     <string name="add_guests">Añadir personas</string>
     <string name="invalid_email">No es una dirección de correo válida</string>
+    <string name="invalid_email_named">«%1$s» no es una dirección de correo válida</string>
+    <string name="add_guest">Añadir invitado</string>
     <string name="remove">Quitar</string>
     <string name="send_invites">Enviar invitaciones</string>
     <string name="guests_can_modify">Los invitados pueden modificar el evento</string>
