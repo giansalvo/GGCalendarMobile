@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="channel_reminders">Rappels</string>
+    <string name="channel_alarms">Alarmes</string>
+    <string name="channel_alarms_screen">Alarmes (écran ouvert)</string>
+    <string name="channel_missed">Alarmes manquées</string>
+    <string name="all_day">Toute la journée</string>
+    <string name="snooze">Reporter</string>
+    <string name="snooze_minutes">Reporter de %d min</string>
+    <string name="dismiss">Fermer</string>
+    <string name="join_meet">Participer avec Meet</string>
+    <string name="missed_alarm">Alarme manquée</string>
+    <plurals name="alarm_stops_in">
+        <item quantity="one">S\'arrête toute seule après %d minute</item>
+        <item quantity="other">S\'arrête toute seule après %d minutes</item>
+    </plurals>
+    <string name="alarm_title">Alarme</string>
+    <plurals name="minutes">
+        <item quantity="one">%d minute</item>
+        <item quantity="other">%d minutes</item>
+    </plurals>
+    <string name="now">Maintenant</string>
+    <string name="intro_notifications">Pour les rappels et les alarmes.</string>
+    <string name="intro_overlay">Pour que l\'alarme s\'ouvre d\'elle-même par-dessus les autres applications.</string>
+    <string name="intro_fullscreen">Pour que l\'alarme s\'ouvre lorsque le téléphone est verrouillé.</string>
+    <string name="intro_battery">Pour que les alarmes sonnent à l\'heure.</string>
+    <string name="intro_allow">Autoriser</string>
+    <string name="intro_skip">Pas maintenant</string>
+    <string name="perm_notifications">Notifications</string>
+    <string name="perm_notifications_help">Nécessaire pour afficher les rappels et les alarmes.</string>
+    <string name="perm_exact">Rappels à l\'heure exacte</string>
+    <string name="perm_exact_help">Permet aux rappels d\'arriver à la minute exacte, même écran éteint.</string>
+    <string name="perm_fullscreen">Notifications en plein écran</string>
+    <string name="perm_fullscreen_help">Permet à l\'alarme d\'ouvrir son écran lorsque le téléphone est verrouillé. Sans cette autorisation, seule une notification s\'affiche.</string>
+    <string name="perm_overlay">Affichage par-dessus les autres applications</string>
+    <string name="perm_overlay_help">Permet à l\'écran de l\'alarme de s\'ouvrir tout seul par-dessus l\'application que vous utilisez, jusqu\'à votre réponse.</string>
+    <string name="perm_battery">Batterie&#160;: aucune restriction</string>
+    <string name="perm_battery_help">Empêche le téléphone de retarder les rappels pour économiser l\'énergie. Pour le modifier&#160;: Infos sur l\'appli > Batterie.</string>
+    <string name="samsung_sleeping">Sur les téléphones Samsung, vérifiez aussi Paramètres > Batterie > Limites d\'utilisation en arrière-plan&#160;: GGCalendar ne doit pas figurer parmi les applications en veille ou en veille profonde.</string>
+    <string name="open_battery_settings">Ouvrir les paramètres de la batterie</string>
+    <string name="perm_change">Modifier</string>
+    <string name="fix">Corriger</string>
+    <string name="alarm_duration">Durée de l\'alarme</string>
+    <string name="alarm_duration_help">Une alarme que personne ne ferme s\'arrête toute seule après ce délai et laisse une notification «&#160;alarme manquée&#160;».</string>
+    <string name="warning_notifications_off">Les notifications sont désactivées&#160;: ce rappel ne s\'affichera pas.</string>
+    <string name="warning_exact_off">Les alarmes exactes ne sont pas autorisées&#160;: ce rappel peut arriver en retard.</string>
+    <string name="stop_alarm">Arrêter l\'alarme</string>
+    <string name="alarm_help">«&#160;Arrêter&#160;» coupe le son et ferme l\'alarme. «&#160;Reporter&#160;» fait sonner de nouveau après le délai choisi.</string>
+    <string name="snooze_for">Reporter de</string>
+    <string name="snooze_choice">%d min</string>
+    <string name="active_alarms_title">Alarmes actives</string>
+    <string name="active_alarms_empty">Aucune alarme n\'est programmée.</string>
+    <string name="snoozed">Reportée</string>
+    <plurals name="minutes_before">
+        <item quantity="one">%d minute avant</item>
+        <item quantity="other">%d minutes avant</item>
+    </plurals>
+    <plurals name="minutes_before_time">
+        <item quantity="one">%1$d minute avant %2$s</item>
+        <item quantity="other">%1$d minutes avant %2$s</item>
+    </plurals>
+    <string name="remaining_less_than_minute">&lt; 1 min</string>
+    <string name="remaining_minutes">%d min</string>
+    <string name="remaining_hours_minutes">%d h %d min</string>
+    <string name="remaining_days_hours">%d j %d h</string>
+    <string name="close_alarm_title">Annuler cette alarme&#160;?</string>
+    <string name="close_alarm_text">L\'alarme de «&#160;%s&#160;» ne sonnera pas. L\'événement reste dans l\'agenda.</string>
+    <string name="close_alarm">Annuler l\'alarme</string>
+    <string name="keep_alarm">Garder</string>
+    <string name="alarm_sound">Son de l\'alarme</string>
+    <string name="alarm_sound_help">S\'il ne peut pas être lu, un son intégré à l\'application retentit à la place.</string>
+    <string name="alarm_sound_default">Valeur par défaut du système</string>
+    <string name="alarm_sound_reset">Utiliser la valeur par défaut du système</string>
+    <string name="log_mail_body">Décrivez ce qui s\'est passé et quand. Veuillez conserver le journal joint.</string>
+</resources>

@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="close">Fermer</string>
+    <string name="edit">Modifier</string>
+    <string name="more_options">Plus d\'options</string>
+    <string name="share">Partager</string>
+    <string name="share_title">Partager l\'événement</string>
+    <string name="share_as_text">Sous forme de texte</string>
+    <string name="share_as_ics">Sous forme de fichier .ics</string>
+    <string name="share_scope_all">Toute la série</string>
+    <string name="share_scope_this">Cette occurrence seulement</string>
+    <string name="share_repeats">Se répète&#160;: %1$s</string>
+    <string name="share_chooser">Partager avec</string>
+    <string name="delete">Supprimer</string>
+    <string name="duplicate">Dupliquer</string>
+    <string name="cancel">Annuler</string>
+    <string name="untitled">(Sans titre)</string>
+    <string name="delete_event_question">Supprimer cet événement&#160;?</string>
+    <string name="delete_series_question">Supprimer tous les événements de cette série&#160;?</string>
+    <string name="join_meet">Participer avec Google Meet</string>
+    <string name="meet_pending">Création du lien Google Meet en cours…</string>
+    <string name="all_day">Toute la journée</string>
+    <string name="time_zone_of">Fuseau horaire&#160;: %1$s</string>
+    <string name="read_only">Lecture seule</string>
+    <string name="calendar_defaults">Rappels par défaut de l\'agenda</string>
+
+    <!-- En français la forme « one » vaut aussi pour 0 : les textes sans nombre (« Tous les jours », « une fois », « jour ») ne servent qu'avec 1, d'où tools:ignore="ImpliedQuantity" -->
+    <!-- Récurrence, par ex. « Toutes les 2 semaines le lundi, jeudi ; 5 fois » (espace insécable avant le point-virgule) -->
+    <plurals name="every_day" tools:ignore="ImpliedQuantity">
+        <item quantity="one">Tous les jours</item>
+        <item quantity="other">Tous les %d jours</item>
+    </plurals>
+    <plurals name="every_week" tools:ignore="ImpliedQuantity">
+        <item quantity="one">Toutes les semaines</item>
+        <item quantity="other">Toutes les %d semaines</item>
+    </plurals>
+    <plurals name="every_month" tools:ignore="ImpliedQuantity">
+        <item quantity="one">Tous les mois</item>
+        <item quantity="other">Tous les %d mois</item>
+    </plurals>
+    <plurals name="every_year" tools:ignore="ImpliedQuantity">
+        <item quantity="one">Tous les ans</item>
+        <item quantity="other">Tous les %d ans</item>
+    </plurals>
+    <string name="on_days">" le %1$s"</string>
+    <string name="on_month_day">" le %1$d"</string>
+    <string name="on_nth_weekday">" le %1$s %2$s"</string>
+    <string-array name="ordinals">
+        <item>dernier</item>
+        <item>premier</item>
+        <item>deuxième</item>
+        <item>troisième</item>
+        <item>quatrième</item>
+        <item>cinquième</item>
+    </string-array>
+    <plurals name="times" tools:ignore="ImpliedQuantity">
+        <item quantity="one">"&#160;; une fois"</item>
+        <item quantity="other">"&#160;; %d fois"</item>
+    </plurals>
+    <string name="until_date">"&#160;; jusqu\'au %1$s"</string>
+    <string name="custom_recurrence">Répétition personnalisée</string>
+
+    <!-- Rappels -->
+    <plurals name="minutes_before">
+        <item quantity="one">%d minute avant</item>
+        <item quantity="other">%d minutes avant</item>
+    </plurals>
+    <plurals name="hours_before">
+        <item quantity="one">%d heure avant</item>
+        <item quantity="other">%d heures avant</item>
+    </plurals>
+    <plurals name="days_before">
+        <item quantity="one">%d jour avant</item>
+        <item quantity="other">%d jours avant</item>
+    </plurals>
+    <plurals name="weeks_before">
+        <item quantity="one">%d semaine avant</item>
+        <item quantity="other">%d semaines avant</item>
+    </plurals>
+    <string name="at_start">Au début</string>
+    <string name="reminder_popup">Notification</string>
+    <string name="reminder_alarm">Alarme</string>
+    <string name="reminder_email">E-mail</string>
+
+    <!-- Invités -->
+    <plurals name="guests">
+        <item quantity="one">%d invité</item>
+        <item quantity="other">%d invités</item>
+    </plurals>
+    <string name="guests_answers">%1$d oui, %2$d non, %3$d peut-être, %4$d en attente</string>
+    <string name="organizer">Organisateur</string>
+    <string name="optional">Facultatif</string>
+    <string name="save">Enregistrer</string>
+    <string name="add_title">Ajouter un titre</string>
+    <string name="does_not_repeat">Ne se répète pas</string>
+    <string name="weekly_on">Toutes les semaines le %1$s</string>
+    <string name="monthly_on_day">Tous les mois le %1$d</string>
+    <string name="yearly_on">Tous les ans le %1$s</string>
+    <string name="weekdays">Tous les jours ouvrables (du lundi au vendredi)</string>
+    <string name="add_guests">Ajouter des invités</string>
+    <string name="invalid_email">Adresse e-mail non valide</string>
+    <string name="invalid_email_named">«&#160;%1$s&#160;» n\'est pas une adresse e-mail valide</string>
+    <string name="add_guest">Ajouter un invité</string>
+    <string name="remove">Retirer</string>
+    <string name="send_invites">Envoyer les invitations</string>
+    <string name="guests_can_modify">Les invités peuvent modifier l\'événement</string>
+    <string name="guests_can_invite">Les invités peuvent inviter d\'autres personnes</string>
+    <string name="guests_can_see_list">Les invités peuvent voir la liste des invités</string>
+    <string name="add_meet">Ajouter une visioconférence Google Meet</string>
+    <string name="copy_link">Copier le lien</string>
+    <string name="add_location">Ajouter un lieu</string>
+    <string name="add_reminder">Ajouter une notification</string>
+    <string name="custom_minutes">Minutes avant</string>
+    <string name="default_color">Couleur par défaut</string>
+    <string name="busy">Occupé</string>
+    <string name="free">Disponible</string>
+    <string name="visibility_default">Visibilité par défaut</string>
+    <string name="visibility_public">Public</string>
+    <string name="visibility_private">Privé</string>
+    <string name="add_description">Ajouter une description</string>
+    <string name="discard_question">Abandonner vos modifications&#160;?</string>
+    <string name="discard">Abandonner</string>
+    <string name="keep_editing">Continuer la modification</string>
+    <string name="move_calendar_title">Déplacer cet événement&#160;?</string>
+    <string name="move_calendar_question">Depuis %1$s vers %2$s.</string>
+    <string name="move_calendar_other_account">L\'événement est recréé dans l\'autre compte et supprimé de celui-ci.</string>
+    <string name="move_calendar_confirm">Déplacer</string>
+    <string name="search_time_zone">Rechercher un fuseau horaire</string>
+    <string name="color_lavender">Lavande</string>
+    <string name="color_sage">Sauge</string>
+    <string name="color_grape">Raisin</string>
+    <string name="color_flamingo">Flamant rose</string>
+    <string name="color_banana">Banane</string>
+    <string name="color_tangerine">Mandarine</string>
+    <string name="color_peacock">Paon</string>
+    <string name="color_graphite">Graphite</string>
+    <string name="color_blueberry">Myrtille</string>
+    <string name="color_basil">Basilic</string>
+    <string name="color_tomato">Tomate</string>
+    <string name="calendar">Agenda</string>
+    <string name="my_calendar">Mon agenda</string>
+    <string name="scope_edit_title">Modifier l\'événement récurrent</string>
+    <string name="scope_delete_title">Supprimer l\'événement récurrent</string>
+    <string name="scope_this">Cet événement</string>
+    <string name="scope_following">Cet événement et les suivants</string>
+    <string name="scope_all">Tous les événements</string>
+    <string name="custom_ellipsis">Personnaliser…</string>
+    <string name="repeat_every">Intervalle</string>
+    <plurals name="unit_days" tools:ignore="ImpliedQuantity"><item quantity="one">jour</item><item quantity="other">jours</item></plurals>
+    <plurals name="unit_weeks" tools:ignore="ImpliedQuantity"><item quantity="one">semaine</item><item quantity="other">semaines</item></plurals>
+    <plurals name="unit_months" tools:ignore="ImpliedQuantity"><item quantity="one">mois</item><item quantity="other">mois</item></plurals>
+    <plurals name="unit_years" tools:ignore="ImpliedQuantity"><item quantity="one">an</item><item quantity="other">ans</item></plurals>
+    <string name="monthly_on_nth">Tous les mois le %1$s %2$s</string>
+    <string name="ends">Fin</string>
+    <string name="ends_never">Jamais</string>
+    <string name="ends_on">Le</string>
+    <string name="ends_after">Après</string>
+    <plurals name="occurrences" tools:ignore="ImpliedQuantity"><item quantity="one">occurrence</item><item quantity="other">occurrences</item></plurals>
+    <string name="browse_contacts">Contacts</string>
+    <string name="search_contacts">Rechercher un nom ou une adresse e-mail</string>
+    <string name="no_contacts">Aucun contact trouvé</string>
+    <string name="write_to_guests">Écrire aux invités</string>
+    <string name="write_no_mail_app">Aucune application de messagerie trouvée</string>
+    <string name="export_title">Exporter</string>
+    <string name="export_calendars">Agendas</string>
+    <string name="export_range">Jours</string>
+    <string name="export_range_invalid">Le dernier jour précède le premier</string>
+    <string name="export_note">Les agendas masqués peuvent aussi être exportés. Une série est exportée une seule fois, avec ses modifications.</string>
+    <string name="export_action">Exporter</string>
+    <string name="export_nothing">Aucun événement pendant ces jours</string>
+    <string name="export_failed">Impossible d\'enregistrer le fichier</string>
+    <plurals name="export_skipped_private">
+        <item quantity="one">%d événement non exporté&#160;: il est privé.</item>
+        <item quantity="other">%d événements non exportés&#160;: ils sont privés.</item>
+    </plurals>
+    <plurals name="export_done">
+        <item quantity="one">%d événement exporté</item>
+        <item quantity="other">%d événements exportés</item>
+    </plurals>
+    <string name="notify_guests_title">Prévenir les invités&#160;?</string>
+    <string name="notify_guests_text">Google envoie aux invités un e-mail avec les modifications.</string>
+    <string name="notify_guests_send">Envoyer</string>
+    <string name="notify_guests_dont">Ne pas envoyer</string>
+    <string name="export_format_ics">Agenda\n(.ics)</string>
+    <string name="export_format_csv">Texte\n(.csv)</string>
+    <plurals name="export_rows_done">
+        <item quantity="one">%d occurrence exportée</item>
+        <item quantity="other">%d occurrences exportées</item>
+    </plurals>
+    <string name="csv_calendar">Agenda</string>
+    <string name="csv_title">Titre</string>
+    <string name="csv_start_date">Date de début</string>
+    <string name="csv_start_time">Heure de début</string>
+    <string name="csv_end_date">Date de fin</string>
+    <string name="csv_end_time">Heure de fin</string>
+    <string name="csv_all_day">Toute la journée</string>
+    <string name="csv_time_zone">Fuseau horaire</string>
+    <string name="csv_location">Lieu</string>
+    <string name="csv_description">Description</string>
+    <string name="csv_meet">Google Meet</string>
+    <string name="csv_guests">Invités</string>
+    <string name="csv_repeats">Répétition</string>
+    <string name="csv_reminders">Rappels</string>
+    <string name="csv_yes">Oui</string>
+    <string name="csv_no">Non</string>
+    <string name="export_on_phone">Sur ce téléphone</string>
+    <string name="move_calendar_to_local">Les invités et les liens Google Meet ne sont pas enregistrés dans un agenda local&#160;: ils sont perdus, et l\'événement est supprimé de Google Agenda.</string>
+    <string name="csv_status">Statut</string>
+    <string name="csv_visibility">Visibilité</string>
+    <string name="time_there">%1$s&#160;: %2$s</string>
+    <string name="app_default_reminder">Valeur par défaut de l\'application</string>
+</resources>
