@@ -26,6 +26,7 @@
 | `ggcal_windows_tz.ics` | fusi di Outlook (nomi Windows) e un fuso sconosciuto |
 | `ggcal_apple.ics` | file in stile Apple (con VALARM e proprietà X-APPLE) |
 | `ggcal_alarms.ics` | T161: un abbonamento non ha promemoria, anche se il file ha VALARM |
+| `ggcal_attach.ics` | T336: allegati (link https) di un abbonamento: 2 eventi, 3 link mostrati, uno http e un file incorporato ignorati |
 | `ggcal_5000.ics` | T160: esattamente 5000 eventi, accettato |
 | `ggcal_5001.ics` | T160: 5001 eventi, rifiutato (troppi) |
 | `ggcal_not_calendar.html` | T157: una pagina web con risposta 200: non è un calendario |
