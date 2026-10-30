@@ -41,6 +41,7 @@ class EventRepository @Inject constructor(
         combine(db.eventDao().observe(id), db.calendarDao().observeAll()) { event, calendars -> event to calendars }
             .map { (event, calendars) ->
                 event ?: return@map null
+                io.github.giansalvo.ggcalendar.core.model.Diag.log { "attachments repo observe event=${event.id.take(8)} attachments=${event.attachments?.size} updated=${event.updatedAt}" }
                 val calendar = calendars.firstOrNull { it.id == event.calendarId } ?: return@map null
                 EventDetail(event, calendar, event.seriesMasterId?.let { db.eventDao().get(it) })
             }

@@ -367,6 +367,7 @@ class EventEditorViewModel @Inject constructor(
         // A title typed without an address has nothing to belong to: it is dropped.
         attachmentTitle = ""
         val d = draft ?: return
+        io.github.giansalvo.ggcalendar.core.model.Diag.log { "attachments editor save event=${d.id.take(8)} draft=${d.attachments?.size} typed=${attachmentText.length}" }
         if (occurrence != null && scope == null) {
             askScope = true
             return

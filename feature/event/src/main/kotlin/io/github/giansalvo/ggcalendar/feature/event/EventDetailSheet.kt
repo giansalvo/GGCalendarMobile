@@ -160,6 +160,7 @@ fun EventDetailSheet(
 @Composable
 private fun DetailContent(instance: EventInstance, detail: EventDetail, secondZone: io.github.giansalvo.ggcalendar.core.data.SecondZone?, onClose: () -> Unit, onShare: () -> Unit, onEdit: () -> Unit, onDelete: (SeriesScope?) -> Unit) {
     val event = detail.event
+    io.github.giansalvo.ggcalendar.core.model.Diag.log { "attachments detail composes event=${event.id.take(8)} attachments=${event.attachments?.size}" }
     val res = LocalContext.current.resources
     val uri = LocalUriHandler.current
     var menu by remember { mutableStateOf(false) }
