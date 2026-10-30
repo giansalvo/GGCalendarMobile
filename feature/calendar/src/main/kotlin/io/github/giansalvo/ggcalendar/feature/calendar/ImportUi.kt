@@ -193,6 +193,9 @@ private fun SummaryStage(state: ImportState, vm: ImportViewModel) {
         if (s.firstDay != null && s.lastDay != null) Text(stringResource(R.string.import_summary_days, s.firstDay!!.format(date), s.lastDay!!.format(date)), Modifier.testTag("import_summary_days"), style = MaterialTheme.typography.bodySmall)
         if (s.ignored.isNotEmpty()) Text(stringResource(R.string.import_summary_ignored, s.ignored.entries.joinToString { "${it.key} ${it.value}" }), Modifier.testTag("import_summary_ignored"), style = MaterialTheme.typography.bodySmall)
         if (s.cancelledEvents > 0) Text(stringResource(R.string.import_summary_cancelled, s.cancelledEvents), Modifier.testTag("import_summary_cancelled"), style = MaterialTheme.typography.bodySmall)
+        if (s.attachments > 0) Text(stringResource(R.string.import_attachments, s.attachments), Modifier.testTag("import_summary_attachments"), style = MaterialTheme.typography.bodySmall)
+        if (s.attachmentsIgnored > 0) Text(stringResource(R.string.import_attachments_ignored, s.attachmentsIgnored), Modifier.testTag("import_summary_attachments_ignored"), style = MaterialTheme.typography.bodySmall)
+        if (s.attachmentsCut > 0) Text(stringResource(R.string.import_attachments_cut, s.attachmentsCut), Modifier.testTag("import_summary_attachments_cut"), style = MaterialTheme.typography.bodySmall)
         if (s.method != null && s.method != "PUBLISH") Text(stringResource(R.string.import_summary_method, s.method!!), Modifier.testTag("import_summary_method"), style = MaterialTheme.typography.bodySmall)
         if (s.hasFloatingTimes) Text(stringResource(R.string.import_floating_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }

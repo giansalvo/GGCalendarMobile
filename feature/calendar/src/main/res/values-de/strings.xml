@@ -210,4 +210,7 @@
 
     <!-- Attachments -->
     <string name="search_in_attachments">In den Anhängen: %1$s</string>
+    <string name="import_attachments">Anhänge (Links): %1$d</string>
+    <string name="import_attachments_ignored">Nicht gelesene Anhänge: %1$d (nur https-Links, keine Dateien in der .ics)</string>
+    <string name="import_attachments_cut">Anhänge über dem Limit von 25: %1$d ausgelassen</string>
 </resources>

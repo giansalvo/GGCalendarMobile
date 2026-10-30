@@ -211,4 +211,7 @@
 
     <!-- Attachments -->
     <string name="search_in_attachments">In attachments: %1$s</string>
+    <string name="import_attachments">Attachments (links): %1$d</string>
+    <string name="import_attachments_ignored">Attachments not read: %1$d (only https links, no files inside the .ics)</string>
+    <string name="import_attachments_cut">Attachments over the limit of 25: %1$d left out</string>
 </resources>

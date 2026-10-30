@@ -30,6 +30,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
+import io.github.giansalvo.ggcalendar.core.model.EventAttachment
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -554,4 +555,26 @@ class SubscriptionServiceTest {
         assertEquals(java.time.ZonedDateTime.of(day, java.time.LocalTime.of(7, 0), java.time.ZoneOffset.UTC).toInstant(), java.time.Instant.ofEpochMilli(first.beginUtc))
         assertNotNull(zone)
     }
+
+    // ---- attachments (issue #3, phase 3)
+
+    @Test fun `X6 a feed with attachments is stored with them and a copy that did not change is not rewritten`() = runTest {
+        val id = add(ics(vevent("a", "Uno", extra = "ATTACH;FMTTYPE=application/pdf;FILENAME=verbale.pdf:https://example.com/a.pdf\r\nATTACH:http://example.com/no.pdf\r\n")))
+        val stored = events(id).values.single()
+        assertEquals(listOf("verbale.pdf"), stored.attachments?.map { it.title })
+        // the stored row has the search text of its attachments; the copy just read has not: they are the same event
+        val change = service.apply(id, listOf(stored.copy(attachmentText = null)))
+        assertEquals(0, change.updated)
+        assertEquals(0, change.added)
+        assertEquals(0, change.removed)
+    }
+
+    @Test fun `X7 a link added or removed in the feed is an update`() = runTest {
+        val id = add(ics(vevent("a", "Uno", extra = "ATTACH:https://example.com/a.pdf\r\n")))
+        val stored = events(id).values.single()
+        val change = service.apply(id, listOf(stored.copy(attachments = listOf(EventAttachment("https://example.com/b.pdf", "b.pdf", "application/pdf")), attachmentText = null)))
+        assertEquals(1, change.updated)
+        assertEquals(listOf("b.pdf"), events(id).values.single().attachments?.map { it.title })
+    }
+
 }

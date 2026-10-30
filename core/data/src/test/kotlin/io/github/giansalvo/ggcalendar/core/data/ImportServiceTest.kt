@@ -30,6 +30,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import io.github.giansalvo.ggcalendar.core.model.EventAttachment
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -367,4 +368,54 @@ class ImportServiceTest {
         run(ics(vevent("a", "Uno"), vevent("b", "Due"), vevent("c", "Tre")))
         assertEquals(1, remindersChanged)
     }
+
+    // ---- attachments (issue #3, phase 3)
+
+    private fun attach(url: String, params: String = "") = "ATTACH$params:$url\r\n"
+
+    @Test fun `X1 the summary counts the attachments kept, ignored and over the limit`() = runTest {
+        val many = (0 until 30).joinToString("") { attach("https://example.com/t/$it.txt") }
+        val text = ics(
+            vevent("a", "Uno", extra = attach("https://example.com/a.pdf") + attach("http://example.com/b.pdf") + "ATTACH;ENCODING=BASE64;VALUE=BINARY:SGVsbG8=\r\n"),
+            vevent("b", "Due", extra = many),
+        )
+        val s = (service.summarize(source(text)) as SummaryOutcome.Ok).summary
+        assertEquals(1 + 25, s.attachments)
+        assertEquals(2, s.attachmentsIgnored)
+        assertEquals(5, s.attachmentsCut)
+    }
+
+    @Test fun `X2 a file without attachments has none to report`() = runTest {
+        val s = (service.summarize(source(ics(vevent("a", "Uno")))) as SummaryOutcome.Ok).summary
+        assertEquals(0, s.attachments)
+        assertEquals(0, s.attachmentsIgnored)
+        assertEquals(0, s.attachmentsCut)
+    }
+
+    @Test fun `X3 the events are written with their attachments and the others have a known empty list`() = runTest {
+        run(
+            ics(
+                vevent("a", "Uno", extra = attach("https://example.com/files/verbale.pdf", ";FMTTYPE=application/pdf;FILENAME=verbale.pdf") + attach("http://example.com/x.pdf")),
+                vevent("b", "Due"),
+            ),
+        )
+        val a = rows().single { it.title == "Uno" }
+        assertEquals(listOf(EventAttachment("https://example.com/files/verbale.pdf", "verbale.pdf", "application/pdf")), a.attachments)
+        assertEquals("verbale.pdf", a.attachmentText?.trim())
+        assertEquals(emptyList<EventAttachment>(), rows().single { it.title == "Due" }.attachments)
+    }
+
+    @Test fun `X4 a modified occurrence keeps its own attachments and the series its own`() = runTest {
+        val exception = "BEGIN:VEVENT\r\nUID:s\r\nDTSTAMP:20261021T000000Z\r\nRECURRENCE-ID:${stamp(soon, 9)}\r\nDTSTART:${stamp(soon, 15)}\r\nDTEND:${stamp(soon, 16)}\r\n" +
+            "SUMMARY:Spostata\r\n" + attach("https://example.com/eccezione.pdf") + "END:VEVENT\r\n"
+        run(ics(vevent("s", "Serie", extra = "RRULE:FREQ=DAILY;COUNT=3\r\n" + attach("https://example.com/serie.pdf")), exception))
+        assertEquals(listOf("https://example.com/serie.pdf"), rows().single { it.title == "Serie" }.attachments?.map { it.url })
+        assertEquals(listOf("https://example.com/eccezione.pdf"), rows().single { it.title == "Spostata" }.attachments?.map { it.url })
+    }
+
+    @Test fun `X5 the addresses are never downloaded`() = runTest {
+        run(ics(vevent("a", "Uno", extra = attach("https://localhost:${server.port}/files/a.pdf"))))
+        assertEquals(0, server.requestCount)
+    }
+
 }

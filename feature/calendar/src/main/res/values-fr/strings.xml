@@ -211,4 +211,7 @@
 
     <!-- Attachments -->
     <string name="search_in_attachments">Dans les pièces jointes&#160;: %1$s</string>
+    <string name="import_attachments">Pièces jointes (liens)&#160;: %1$d</string>
+    <string name="import_attachments_ignored">Pièces jointes non lues&#160;: %1$d (liens https uniquement, aucun fichier dans le .ics)</string>
+    <string name="import_attachments_cut">Pièces jointes au-delà de la limite de 25&#160;: %1$d laissées de côté</string>
 </resources>

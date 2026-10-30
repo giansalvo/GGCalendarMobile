@@ -75,6 +75,10 @@ class ImportSummary(
     val eventsWithAlarms: Int,
     val fileHasAlarms: Boolean,
     val hasFloatingTimes: Boolean,
+    /** The https links of ATTACH that will be kept, those that were ignored (not https, a file inside the calendar...) and those over the limit of 25. */
+    val attachments: Int = 0,
+    val attachmentsIgnored: Int = 0,
+    val attachmentsCut: Int = 0,
 )
 
 sealed interface SummaryOutcome {
@@ -179,6 +183,9 @@ class ImportService @Inject constructor(
                 fileHasAlarms = parsed.report.fileHasAlarms,
                 hasFloatingTimes = parsed.report.issues.any { it.code == io.github.giansalvo.ggcalendar.core.model.IcsIssueCode.UNKNOWN_TZID } ||
                     roots.any { (it.time as? EventTime.Timed)?.zoneId == null },
+                attachments = parsed.events.sumOf { it.attachments.size },
+                attachmentsIgnored = parsed.report.issues.filter { it.code == io.github.giansalvo.ggcalendar.core.model.IcsIssueCode.ATTACH_IGNORED }.sumOf { it.count },
+                attachmentsCut = parsed.report.issues.filter { it.code == io.github.giansalvo.ggcalendar.core.model.IcsIssueCode.ATTACH_CUT }.sumOf { it.count },
             ),
         )
     }
@@ -360,6 +367,8 @@ internal fun ImportedEvent.toLocalEntity(calendarId: String): EventEntity {
         sendInvites = false,
         reminders = reminders,
         hasAlarm = false,
+        // A file has no "not read": the list is known, empty or not.
+        attachments = attachments,
     )
     val withTime = when (val t = time) {
         is EventTime.Timed -> base.copy(allDay = false, startUtc = t.start.toEpochMilli(), endUtc = t.end.toEpochMilli(), timeZone = t.zoneId)

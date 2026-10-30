@@ -78,6 +78,7 @@ internal object EventShare {
         // No organizer, guests or reminders: the file is a copy of the event, not an invitation, and Google refuses to import
         // events that another account organizes. The status (TRANSP) always goes; the visibility (CLASS) only in an export.
         meetLink = e.meetLink,
+        attachments = e.attachments.orEmpty(),
         busy = e.availability != "FREE",
         visibility = if (!forExport) Visibility.DEFAULT else when (e.visibility) {
             "PRIVATE" -> Visibility.PRIVATE

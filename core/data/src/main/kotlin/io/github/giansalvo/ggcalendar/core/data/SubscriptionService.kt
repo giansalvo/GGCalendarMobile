@@ -287,7 +287,8 @@ class SubscriptionService @Inject constructor(
             val current = db.eventDao().getForCalendar(calendarId).associateBy { it.id }
             val wantedById = wanted.associateBy { it.id }
             val added = wanted.filter { it.id !in current }
-            val updated = wanted.filter { w -> current[w.id]?.let { it.copy(updatedAt = 0) != w } == true }
+            // The stored row has the search text of its attachments (EventDao.upsert), the copy just read has not yet: made equal before comparing.
+            val updated = wanted.filter { w -> current[w.id]?.let { it.copy(updatedAt = 0) != w.copy(attachmentText = io.github.giansalvo.ggcalendar.core.model.AttachmentLink.searchText(w.attachments)) } == true }
             val removed = current.keys.filter { it !in wantedById }
             if (removed.isNotEmpty()) db.eventDao().deleteWithSeries(removed)
             val written = added + updated

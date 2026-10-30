@@ -27,6 +27,10 @@ internal fun ImportedEvent.toSubscriptionEntity(calendarId: String): EventEntity
         sendInvites = false,
         reminders = emptyList(),
         hasAlarm = false,
+        // The links of the feed (https only): shown, read only. The search text is the one the database keeps, so that two reads of the same
+        // file give equal rows.
+        attachments = attachments,
+        attachmentText = io.github.giansalvo.ggcalendar.core.model.AttachmentLink.searchText(attachments),
         updatedAt = 0,
     )
     val withTime = when (val t = time) {

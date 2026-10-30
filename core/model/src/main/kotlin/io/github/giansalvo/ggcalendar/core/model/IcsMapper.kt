@@ -42,6 +42,8 @@ data class ImportedEvent(
     val visibility: Visibility,
     val reminders: List<Reminder>,
     val hasAlarm: Boolean,
+    /** The https links of ATTACH (at most 25, no repeated address); the other kinds of ATTACH are counted in the report, never read. */
+    val attachments: List<EventAttachment> = emptyList(),
 )
 
 class IcsReport(
@@ -164,9 +166,10 @@ object IcsMapper {
         val visibility: Visibility,
         val reminders: List<Reminder>,
         val hasAlarm: Boolean,
+        val attachments: List<EventAttachment>,
     ) {
         fun toEvent(id: String, masterId: String?, recurrenceId: String?) = ImportedEvent(
-            id, uid, masterId, recurrenceId, title, location, description, time, rrule, exdates.toList(), busy, visibility, reminders, hasAlarm,
+            id, uid, masterId, recurrenceId, title, location, description, time, rrule, exdates.toList(), busy, visibility, reminders, hasAlarm, attachments,
         )
     }
 
@@ -268,7 +271,7 @@ object IcsMapper {
             recurrenceKey = key(t, time, eventZone)
         }
 
-        if (c.all("ATTACH").isNotEmpty()) issues.add(IcsIssueCode.ATTACH_IGNORED)
+        val attachments = attachments(c, issues)
         if (c.all("CATEGORIES").isNotEmpty()) issues.add(IcsIssueCode.CATEGORIES_IGNORED)
 
         val alarmBlocks = c.children("VALARM")
@@ -279,7 +282,40 @@ object IcsMapper {
             else -> Visibility.DEFAULT
         }
         val busy = c.property("TRANSP")?.value?.trim()?.uppercase() != "TRANSPARENT"
-        return Draft(uid, recurrenceKey, cancelled, title, location, description, time, rrule, exdates, busy, visibility, reminders, alarmBlocks.isNotEmpty())
+        return Draft(uid, recurrenceKey, cancelled, title, location, description, time, rrule, exdates, busy, visibility, reminders, alarmBlocks.isNotEmpty(), attachments)
+    }
+
+    private val MIME = Regex("^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*$")
+
+    /**
+     * The links of ATTACH: https only (the type and the name come from FMTTYPE and FILENAME, or from the address). A file inside the
+     * calendar (BINARY or ENCODING), another scheme and an address that is not valid are ignored and counted ([IcsIssueCode.ATTACH_IGNORED]);
+     * the same address twice is one attachment; the ones after the 25th are counted too ([IcsIssueCode.ATTACH_CUT]). Nothing is downloaded.
+     */
+    private fun attachments(c: IcsComponent, issues: IcsIssues): List<EventAttachment> {
+        val kept = LinkedHashMap<String, EventAttachment>()
+        val cut = HashSet<String>()
+        var ignored = 0
+        for (p in c.all("ATTACH")) {
+            val binary = p.params["VALUE"]?.trim()?.equals("BINARY", ignoreCase = true) == true || p.params.containsKey("ENCODING")
+            val address = p.value.trim()
+            if (binary || !AttachmentLink.isValid(address)) {
+                ignored++
+                continue
+            }
+            if (address in kept || address in cut) continue
+            if (kept.size >= AttachmentLink.MAX_COUNT) {
+                cut += address
+                continue
+            }
+            val name = p.params["FILENAME"]?.filter { it >= ' ' }?.trim()?.take(AttachmentLink.MAX_TITLE_LENGTH)
+            val made = AttachmentLink.create(address, name) ?: continue
+            val type = p.params["FMTTYPE"]?.trim()?.takeIf { it.length <= 100 && MIME.matches(it) }
+            kept[address] = if (type != null) made.copy(mimeType = type) else made
+        }
+        if (ignored > 0) issues.add(IcsIssueCode.ATTACH_IGNORED, count = ignored)
+        if (cut.isNotEmpty()) issues.add(IcsIssueCode.ATTACH_CUT, count = cut.size)
+        return kept.values.toList()
     }
 
     // ---- dates and zones ----

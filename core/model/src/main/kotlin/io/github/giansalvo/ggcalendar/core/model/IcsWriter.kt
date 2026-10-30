@@ -26,6 +26,8 @@ data class IcsEvent(
     val meetLink: String? = null,
     val busy: Boolean = true,
     val visibility: Visibility = Visibility.DEFAULT,
+    /** The links written as ATTACH (https only, at most 25); never the files. */
+    val attachments: List<EventAttachment> = emptyList(),
 )
 
 /**
@@ -71,6 +73,7 @@ object IcsWriter {
         val description = description(e)
         if (description.isNotEmpty()) line(out, "DESCRIPTION:" + escape(description))
         e.meetLink?.let { line(out, "URL:" + clean(it)) }
+        e.attachments.filter { it.canOpen }.distinctBy { it.url }.take(AttachmentLink.MAX_COUNT).forEach { line(out, attach(it)) }
         e.rrule?.takeIf { it.isNotBlank() }?.let { rule ->
             line(out, "RRULE:" + rule.removePrefix("RRULE:"))
             e.exdates.forEach { line(out, exdate(e, zone, it)) }
@@ -112,6 +115,14 @@ object IcsWriter {
     private fun description(e: IcsEvent): String {
         val meet = e.meetLink?.takeIf { it.isNotBlank() && !e.description.contains(it) }
         return listOfNotNull(e.description.trim().takeIf { it.isNotEmpty() }, meet?.let { "Google Meet: $it" }).joinToString("\n")
+    }
+
+    /** `ATTACH;FMTTYPE=type;FILENAME=name:address`: the type and the name only when there are; a name with separators goes in quotes. */
+    private fun attach(a: EventAttachment): String {
+        val params = StringBuilder()
+        a.mimeType?.takeIf { it.isNotBlank() }?.let { params.append(";FMTTYPE=").append(param(it)) }
+        a.title.takeIf { it.isNotBlank() }?.let { params.append(";FILENAME=").append(param(it)) }
+        return "ATTACH$params:" + clean(a.url)
     }
 
     private fun attendee(a: Attendee): String {
