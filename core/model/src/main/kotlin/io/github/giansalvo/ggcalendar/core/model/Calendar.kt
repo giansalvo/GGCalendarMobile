@@ -28,6 +28,8 @@ data class CalendarInfo(
     val local: Boolean = false,
     /** A calendar read from an address, never changed from the app. */
     val subscription: Boolean = false,
+    /** The person made the calendar (the access role of Google is "owner"): only then can it be renamed or deleted. Local calendars always are. */
+    val isOwner: Boolean = false,
 ) {
     companion object {
         fun googleId(email: String, remoteId: String) = "$email|$remoteId"

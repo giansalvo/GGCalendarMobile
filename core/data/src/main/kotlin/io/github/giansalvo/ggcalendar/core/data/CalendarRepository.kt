@@ -57,7 +57,7 @@ class CalendarRepository @Inject constructor(
                 AccountWithCalendars(
                     a.email,
                     calendars.filter { it.accountEmail == a.email }.map {
-                        CalendarInfo(it.id, it.accountEmail, it.name, it.color, it.isVisible, it.canWrite, it.isPrimary)
+                        CalendarInfo(it.id, it.accountEmail, it.name, it.color, it.isVisible, it.canWrite, it.isPrimary, isOwner = it.accessRole == "owner")
                     },
                 )
             }
@@ -66,7 +66,7 @@ class CalendarRepository @Inject constructor(
     /** The calendars kept on this phone only, in the order they were made. */
     val localCalendars: Flow<List<CalendarInfo>> = db.calendarDao().observeAll().map { all ->
         all.filter { it.kind == CalendarKind.LOCAL }.sortedBy { it.sortOrder }
-            .map { CalendarInfo(it.id, null, it.name, it.color, it.isVisible, it.canWrite, false, local = true) }
+            .map { CalendarInfo(it.id, null, it.name, it.color, it.isVisible, it.canWrite, false, local = true, isOwner = true) }
     }
 
     /** The calendars read from an address, in the order they were added, with how their last download went. */

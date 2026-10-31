@@ -174,6 +174,7 @@ class CalendarViewModel @Inject constructor(
     private val repository: CalendarRepository,
     private val events: EventRepository,
     private val localCalendars: LocalCalendars,
+    private val googleCalendars: io.github.giansalvo.ggcalendar.core.data.GoogleCalendars,
     private val diagnosticLog: io.github.giansalvo.ggcalendar.core.notifications.DiagnosticLog,
 ) : ViewModel() {
     /** Whether the diagnostic log is on: the menu entry that sends it is shown only then. */
@@ -401,6 +402,40 @@ class CalendarViewModel @Inject constructor(
     fun updateLocalCalendar(id: String, name: String, colorHex: String) = viewModelScope.launch { localCalendars.update(id, name, colorHex) }
 
     fun deleteLocalCalendar(id: String) = viewModelScope.launch { localCalendars.delete(id) }
+
+    // ---- calendars of Google (made, changed and deleted on Google, online only)
+
+    private val _googleAction = MutableStateFlow<GoogleCalendarAction?>(null)
+
+    /** The dialog that makes, changes or deletes a calendar of Google, or null. It lives here: a rotation keeps it, and a request on its way is not lost. */
+    val googleAction: StateFlow<GoogleCalendarAction?> = _googleAction.asStateFlow()
+
+    fun openGoogleCalendar(kind: GoogleCalendarAction.Kind, email: String, calendarId: String? = null) {
+        _googleAction.value = GoogleCalendarAction(kind, email, calendarId)
+    }
+
+    /** Closes the dialog, unless a request is on its way. */
+    fun closeGoogleCalendar() {
+        if (_googleAction.value?.busy != true) _googleAction.value = null
+    }
+
+    fun saveGoogleCalendar(name: String, colorHex: String) = runGoogle { action ->
+        if (action.kind == GoogleCalendarAction.Kind.NEW) googleCalendars.create(action.email, name, colorHex)
+        else googleCalendars.update(action.calendarId.orEmpty(), name, colorHex)
+    }
+
+    fun deleteGoogleCalendar() = runGoogle { action -> googleCalendars.delete(action.calendarId.orEmpty()) }
+
+    private fun runGoogle(request: suspend (GoogleCalendarAction) -> io.github.giansalvo.ggcalendar.core.data.GoogleCalendarResult) {
+        val action = _googleAction.value ?: return
+        if (action.busy) return
+        _googleAction.value = action.copy(busy = true, problem = null)
+        viewModelScope.launch {
+            val result = request(action)
+            // On failure the dialog stays, with the reason and what was typed; on success it closes (the menu follows the database).
+            _googleAction.value = if (result.ok) null else action.copy(busy = false, problem = result.problem)
+        }
+    }
 
     // ---- subscriptions (calendars read from an address)
 

@@ -4,7 +4,10 @@ import io.github.giansalvo.ggcalendar.core.model.Reminder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -55,6 +58,15 @@ class GoogleCalendarApi(
     private companion object {
         val JSON_TYPE = "application/json; charset=utf-8".toMediaType()
         val EVENT_TYPES = listOf("default", "birthday", "focusTime", "fromGmail", "outOfOffice", "workingLocation")
+
+        /** Black on light colors and white on dark ones, by the usual luminance (a color that is not #RRGGBB gets black). */
+        fun textColorFor(hex: String): String {
+            val v = hex.removePrefix("#")
+            if (v.length != 6) return "#000000"
+            val n = v.toIntOrNull(16) ?: return "#000000"
+            val luminance = 0.299 * ((n shr 16) and 0xFF) + 0.587 * ((n shr 8) and 0xFF) + 0.114 * (n and 0xFF)
+            return if (luminance > 150) "#000000" else "#FFFFFF"
+        }
     }
 
     /** The primary calendar id is the account email. */
@@ -88,6 +100,42 @@ class GoogleCalendarApi(
             page = r.string("nextPageToken")
         } while (page != null)
         return list
+    }
+
+    /** Creates a secondary calendar of the account (calendars.insert) and returns its id. The color is set apart: [setCalendarListEntry]. */
+    suspend fun createCalendar(name: String, timeZone: String, accessToken: String): String {
+        val body = JsonObject(mapOf("summary" to JsonPrimitive(name), "timeZone" to JsonPrimitive(timeZone)))
+        return send("POST", url("calendars"), body, accessToken).string("id")
+            ?: throw GoogleApiException(200, "Google Calendar: new calendar without id")
+    }
+
+    /**
+     * Changes the entry of a calendar in the list of the account (calendarList.patch): the color (background as given, text readable on it)
+     * and/or, with [clearPersonalName], the personal name, which would hide the real name of the calendar from the person.
+     */
+    suspend fun setCalendarListEntry(calendarId: String, colorHex: String?, clearPersonalName: Boolean, accessToken: String) {
+        val fields = LinkedHashMap<String, JsonElement>()
+        if (colorHex != null) {
+            fields["backgroundColor"] = JsonPrimitive(colorHex)
+            fields["foregroundColor"] = JsonPrimitive(textColorFor(colorHex))
+        }
+        if (clearPersonalName) fields["summaryOverride"] = JsonNull // a null removes the field in a patch
+        val url = url("users", "me", "calendarList", calendarId).newBuilder().addQueryParameter("colorRgbFormat", "true").build()
+        send("PATCH", url, JsonObject(fields), accessToken)
+    }
+
+    /** Renames a calendar (calendars.patch): its real name, seen by everybody it is shared with. Only its owner can. */
+    suspend fun renameCalendar(calendarId: String, name: String, accessToken: String) {
+        send("PATCH", url("calendars", calendarId), JsonObject(mapOf("summary" to JsonPrimitive(name))), accessToken)
+    }
+
+    /** Deletes a secondary calendar with all its events (calendars.delete), for everybody it is shared with; one already gone (404, 410) counts as deleted. */
+    suspend fun deleteCalendar(calendarId: String, accessToken: String) {
+        try {
+            send("DELETE", url("calendars", calendarId), null, accessToken)
+        } catch (e: GoogleApiException) {
+            if (e.status != 404 && e.status != 410) throw e
+        }
     }
 
     /**

@@ -34,7 +34,7 @@ class StringResourcesTest(private val language: String) {
          * list of "same words" of the desktop app: a new text equal to the English one must be translated, or be added here.
          */
         private val SAME_WORDS: Map<String, Set<String>> = mapOf(
-            "it" to setOf("Banana", "Email", "No"),
+            "it" to setOf("Account:", "Banana", "Email", "No"),
             "de" to setOf("Flamingo", "Name", "Optional", "Status", "Text", "Version", "Website"),
             "es" to setOf("No"),
             "fr" to setOf("Contacts", "Description", "Graphite", "Notification", "Notifications", "Public", "Version", "occurrence", "occurrences", "minute", "minutes"),

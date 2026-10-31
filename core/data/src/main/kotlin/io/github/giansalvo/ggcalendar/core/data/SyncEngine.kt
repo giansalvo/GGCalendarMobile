@@ -50,6 +50,12 @@ class SyncEngine @Inject constructor(
     /** The days the instances cover; null until first read from the preferences. */
     @Volatile private var window: InstanceWindow? = null
 
+    /**
+     * Runs [block] when no sync is running, and keeps a sync from starting meanwhile. A sync deletes the calendars it does not find in
+     * Google's list: whoever writes or removes a Google calendar in the database waits here, or the sync would undo it.
+     */
+    internal suspend fun <T> exclusive(block: suspend () -> T): T = mutex.withLock { block() }
+
     suspend fun syncAll() = mutex.withLock {
         _syncing.value = true
         Diag.log { "sync begin" }

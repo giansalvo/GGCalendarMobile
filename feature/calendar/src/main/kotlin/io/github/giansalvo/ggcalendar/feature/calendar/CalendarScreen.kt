@@ -19,6 +19,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,7 +40,6 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.Cake
 import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.FileDownload
@@ -321,6 +321,12 @@ fun CalendarScreen(
                 onAddAccount = { pickAccount.launch(viewModel.chooseAccountIntent()) },
                 onRetryAccount = viewModel::reauthorize,
                 onRemoveAccount = { removing = it },
+                onNewGoogle = { email ->
+                    viewModel.openGoogleCalendar(GoogleCalendarAction.Kind.NEW, email)
+                    scope.launch { drawerState.close() }
+                },
+                onEditGoogle = { c -> viewModel.openGoogleCalendar(GoogleCalendarAction.Kind.EDIT, c.accountEmail.orEmpty(), c.id) },
+                onDeleteGoogle = { c -> viewModel.openGoogleCalendar(GoogleCalendarAction.Kind.DELETE, c.accountEmail.orEmpty(), c.id) },
                 onNewLocal = { editingLocal = "" },
                 onEditLocal = { editingLocal = it },
                 onDeleteLocal = { deletingLocal = it },
@@ -532,6 +538,16 @@ fun CalendarScreen(
         if (current == null) deletingLocal = null
         else DeleteLocalCalendarDialog(current, onConfirm = { viewModel.deleteLocalCalendar(id); deletingLocal = null }, onDismiss = { deletingLocal = null })
     }
+    val googleAction by viewModel.googleAction.collectAsStateWithLifecycle()
+    googleAction?.let { action ->
+        GoogleCalendarDialogs(
+            action = action,
+            calendars = state.accounts.flatMap { it.calendars },
+            onSave = viewModel::saveGoogleCalendar,
+            onDelete = viewModel::deleteGoogleCalendar,
+            onDismiss = viewModel::closeGoogleCalendar,
+        )
+    }
     subscriptionDialog?.let { dialog ->
         SubscriptionAddDialog(
             dialog = dialog,
@@ -690,7 +706,7 @@ private fun TodayIcon(day: Int) {
 }
 
 @Composable
-private fun Avatar(email: String?) {
+internal fun Avatar(email: String?) {
     Box(
         Modifier.size(32.dp).background(MaterialTheme.colorScheme.primary, CircleShape),
         contentAlignment = Alignment.Center,
@@ -712,6 +728,9 @@ private fun CalendarDrawer(
     onAddAccount: () -> Unit,
     onRetryAccount: (String) -> Unit,
     onRemoveAccount: (String) -> Unit,
+    onNewGoogle: (String) -> Unit,
+    onEditGoogle: (CalendarInfo) -> Unit,
+    onDeleteGoogle: (CalendarInfo) -> Unit,
     onNewLocal: () -> Unit,
     onEditLocal: (String) -> Unit,
     onDeleteLocal: (String) -> Unit,
@@ -764,17 +783,13 @@ private fun CalendarDrawer(
             )
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             state.accounts.forEach { account ->
-                Row(Modifier.padding(16.dp, 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Avatar(account.email)
-                    Column(Modifier.padding(start = 16.dp).weight(1f)) {
-                        Text(account.email, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text("Google", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    IconButton(onClick = { onRemoveAccount(account.email) }, modifier = Modifier.testTag("drawer_account_remove")) {
-                        Icon(Icons.AutoMirrored.Outlined.Logout, contentDescription = stringResource(R.string.remove_account_cd, account.email))
-                    }
+                AccountHeader(account.email, onNewCalendar = { onNewGoogle(account.email) }, onRemove = { onRemoveAccount(account.email) })
+                account.calendars.forEach { calendar ->
+                    ActionableCalendarRow(
+                        calendar, onToggleCalendar,
+                        googleCalendarActions(calendar, onEdit = { onEditGoogle(calendar) }, onDelete = { onDeleteGoogle(calendar) }),
+                    )
                 }
-                account.calendars.forEach { CalendarRow(it, onToggleCalendar) }
             }
             LocalCalendarsSection(state.localCalendars, onToggleCalendar, onNewLocal, onEditLocal, onDeleteLocal)
             SubscriptionsSection(
@@ -851,10 +866,19 @@ private fun CalendarDrawer(
 }
 
 @Composable
-internal fun CalendarRow(calendar: CalendarInfo, onToggle: (String, Boolean) -> Unit, trailing: @Composable (() -> Unit)? = null) {
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+internal fun CalendarRow(
+    calendar: CalendarInfo,
+    onToggle: (String, Boolean) -> Unit,
+    onLongClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+    trailing: @Composable (() -> Unit)? = null,
+) {
     val color = parseColor(calendar.colorHex)
     Row(
-        Modifier.testTag("calendar_row").fillMaxWidth().clickable { onToggle(calendar.id, !calendar.isVisible) }.padding(start = 4.dp, end = 16.dp),
+        modifier.testTag("calendar_row").fillMaxWidth()
+            .combinedClickable(onLongClick = onLongClick, onClick = { onToggle(calendar.id, !calendar.isVisible) })
+            .padding(start = 4.dp, end = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Checkbox(
