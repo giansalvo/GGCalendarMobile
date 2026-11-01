@@ -1,6 +1,6 @@
     # Calendari di prova per GGCalendar
 
-    File sintetici, senza dati di nessuno. Le date partono da **26/10/2026** (i primi giorni dopo la generazione): se i file si
+    File sintetici, senza dati di nessuno. Le date partono da **02/11/2026** (i primi giorni dopo la generazione): se i file si
     allontanano troppo dall'oggi, si rigenerano con `python make_feeds.py --start AAAA-MM-GG`.
 
     ## Come pubblicarli
@@ -38,8 +38,6 @@
 | `slow.php` | T160 T167: risposta lenta (25 s, più dei 20 s che l'app aspetta): slow.php?s=25-qualcosa |
 | `big.php` | T160: oltre 10 MB, rifiutato (file troppo grande), fatto al volo: big.php?mb=11 e big.php?mb=11&declared=1 |
 | `redirect.php` | T159: reindirizzamenti: redirect.php?kind=ok|to_http|chain |
-| `etag.php` | GGCalendar desktop, abbonamento a URL: lo stesso `.ics` con `ETag` e `Last-Modified` e risposta 304: `etag.php?f=ggcal_basic`, con `&rev=X` (nuovo ETag, stesso contenuto), `&noetag=1`, `&nolm=1` |
-| `changing.php` | GGCalendar desktop: un indirizzo il cui contenuto cambia durante il test: `changing.php?tag=SIGLA` (versione 1), `&set=2` (versione 2), `&set=error` (500), `&set=html` (pagina web), `&set=empty` (vuoto); lo stato è un piccolo file per sigla nella cartella `state/`, tolto dopo un giorno |
 | `.htaccess` | facoltativo: niente cache |
 
     ## Il cambio di contenuto (T154, T164)
