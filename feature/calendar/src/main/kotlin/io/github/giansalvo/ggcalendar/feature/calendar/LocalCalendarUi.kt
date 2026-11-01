@@ -34,6 +34,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -49,45 +51,66 @@ internal val LocalCalendarColors = listOf(
     "#039BE5", "#7986CB", "#33B679", "#8E24AA", "#E67C73", "#F6BF26", "#F4511E", "#616161", "#3F51B5", "#0B8043", "#D50000", "#795548",
 )
 
-/** What a long press on a calendar of the side menu offers. The primary calendar, the read-only ones and the subscriptions have no such menu. */
+/** What a long press on a calendar of the side menu offers. The primary calendar and the read-only ones have no such menu. */
 internal class CalendarActions(val canDelete: Boolean, val onEdit: () -> Unit, val onDelete: () -> Unit)
+
+/** One entry of the long press menu of a calendar: its text, the tag the tests find it by and what it does. */
+internal class CalendarMenuItem(val label: String, val tag: String, val onClick: () -> Unit)
 
 /**
  * A calendar of the side menu. With [actions] a long press opens a menu with "Edit" and, when it can be deleted, "Delete" (the same two
  * actions go to TalkBack as custom actions, because a long press cannot be seen).
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun ActionableCalendarRow(calendar: CalendarInfo, onToggle: (String, Boolean) -> Unit, actions: CalendarActions?) {
-    if (actions == null) {
+    val edit = stringResource(R.string.calendar_menu_edit)
+    val delete = stringResource(R.string.local_calendar_delete)
+    MenuCalendarRow(
+        calendar, onToggle,
+        items = actions?.let {
+            buildList {
+                add(CalendarMenuItem(edit, "calendar_menu_edit", it.onEdit))
+                if (it.canDelete) add(CalendarMenuItem(delete, "calendar_menu_delete", it.onDelete))
+            }
+        },
+    )
+}
+
+/**
+ * A calendar of the side menu with a long press menu of [items] (none: no menu). [footer] is more content under the row (a subscription's
+ * state) that opens the same menu when it is long pressed; it gets the modifier that does that.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+internal fun MenuCalendarRow(
+    calendar: CalendarInfo,
+    onToggle: (String, Boolean) -> Unit,
+    items: List<CalendarMenuItem>?,
+    footer: (@Composable (Modifier) -> Unit)? = null,
+) {
+    if (items.isNullOrEmpty()) {
         CalendarRow(calendar, onToggle)
+        footer?.invoke(Modifier)
         return
     }
     var open by remember { mutableStateOf(false) }
-    val edit = stringResource(R.string.calendar_menu_edit)
-    val delete = stringResource(R.string.local_calendar_delete)
     Box {
-        CalendarRow(
-            calendar, onToggle,
-            onLongClick = { open = true },
-            modifier = Modifier.semantics {
-                customActions = buildList {
-                    add(CustomAccessibilityAction(edit) { actions.onEdit(); true })
-                    if (actions.canDelete) add(CustomAccessibilityAction(delete) { actions.onDelete(); true })
-                }
-            },
-        )
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }, modifier = Modifier.exposeTestTags()) {
-            DropdownMenuItem(
-                text = { Text(edit) },
-                onClick = { open = false; actions.onEdit() },
-                modifier = Modifier.testTag("calendar_menu_edit"),
+        Column {
+            CalendarRow(
+                calendar, onToggle,
+                onLongClick = { open = true },
+                modifier = Modifier.semantics {
+                    customActions = items.map { item -> CustomAccessibilityAction(item.label) { item.onClick(); true } }
+                },
             )
-            if (actions.canDelete) {
+            footer?.invoke(Modifier.pointerInput(Unit) { detectTapGestures(onLongPress = { open = true }) })
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }, modifier = Modifier.exposeTestTags()) {
+            items.forEach { item ->
                 DropdownMenuItem(
-                    text = { Text(delete) },
-                    onClick = { open = false; actions.onDelete() },
-                    modifier = Modifier.testTag("calendar_menu_delete"),
+                    text = { Text(item.label) },
+                    onClick = { open = false; item.onClick() },
+                    modifier = Modifier.testTag(item.tag),
                 )
             }
         }

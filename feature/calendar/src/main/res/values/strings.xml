@@ -140,7 +140,6 @@
     <string name="subscription_never">Not downloaded yet</string>
     <string name="subscription_updated_at">Updated %1$s</string>
     <string name="subscription_not_updated">Not updated: %1$s Data of %2$s</string>
-    <string name="subscription_options">Options of %1$s</string>
     <string name="subscription_refresh_now">Update now</string>
     <string name="subscription_edit">Name, color and days</string>
     <string name="subscription_show_address">Show address</string>

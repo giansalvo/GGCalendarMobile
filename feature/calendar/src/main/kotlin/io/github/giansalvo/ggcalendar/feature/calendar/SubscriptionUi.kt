@@ -17,15 +17,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.OutlinedTextField
@@ -107,44 +103,23 @@ internal fun SubscriptionsSection(
     }
     subscriptions.forEach { info ->
         val calendar = info.calendar
-        CalendarRow(calendar, onToggle) {
-            var open by remember { mutableStateOf(false) }
-            Box {
-                IconButton(onClick = { open = true }, modifier = Modifier.testTag("subscription_menu")) {
-                    Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.subscription_options, calendar.name))
-                }
-                DropdownMenu(expanded = open, onDismissRequest = { open = false }, modifier = Modifier.exposeTestTags()) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.subscription_refresh_now)) },
-                        onClick = { open = false; onRefresh(calendar.id) },
-                        modifier = Modifier.testTag("subscription_menu_refresh"),
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.subscription_edit)) },
-                        onClick = { open = false; onEdit(calendar.id) },
-                        modifier = Modifier.testTag("subscription_menu_edit"),
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.subscription_show_address)) },
-                        onClick = { open = false; onShowAddress(calendar.id) },
-                        modifier = Modifier.testTag("subscription_menu_address"),
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.subscription_remove)) },
-                        onClick = { open = false; onRemove(calendar.id) },
-                        modifier = Modifier.testTag("subscription_menu_remove"),
-                    )
-                }
-            }
-        }
-        Text(
-            subscriptionStatus(info),
-            Modifier.testTag("subscription_status").padding(start = 52.dp, end = 16.dp, bottom = 6.dp),
-            style = MaterialTheme.typography.bodySmall,
-            color = if (info.error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 3,
-            overflow = TextOverflow.Ellipsis,
+        val status = subscriptionStatus(info)
+        val items = listOf(
+            CalendarMenuItem(stringResource(R.string.subscription_refresh_now), "subscription_menu_refresh") { onRefresh(calendar.id) },
+            CalendarMenuItem(stringResource(R.string.subscription_edit), "subscription_menu_edit") { onEdit(calendar.id) },
+            CalendarMenuItem(stringResource(R.string.subscription_show_address), "subscription_menu_address") { onShowAddress(calendar.id) },
+            CalendarMenuItem(stringResource(R.string.subscription_remove), "subscription_menu_remove") { onRemove(calendar.id) },
         )
+        MenuCalendarRow(calendar, onToggle, items) { longPress ->
+            Text(
+                status,
+                longPress.testTag("subscription_status").padding(start = 52.dp, end = 16.dp, bottom = 6.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = if (info.error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
     NavigationDrawerItem(
         icon = { Icon(Icons.Outlined.Add, contentDescription = null) },

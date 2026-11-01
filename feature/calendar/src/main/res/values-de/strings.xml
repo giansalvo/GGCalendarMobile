@@ -139,7 +139,6 @@
     <string name="subscription_never">Noch nicht heruntergeladen</string>
     <string name="subscription_updated_at">Aktualisiert %1$s</string>
     <string name="subscription_not_updated">Nicht aktualisiert: %1$s Daten von %2$s</string>
-    <string name="subscription_options">Optionen von %1$s</string>
     <string name="subscription_refresh_now">Jetzt aktualisieren</string>
     <string name="subscription_edit">Name, Farbe und Tage</string>
     <string name="subscription_show_address">Adresse anzeigen</string>
