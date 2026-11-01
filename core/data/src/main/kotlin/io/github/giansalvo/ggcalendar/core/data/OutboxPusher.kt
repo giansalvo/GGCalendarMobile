@@ -137,8 +137,23 @@ class OutboxPusher @Inject constructor(
             api.insertEvent(remoteCalendar, GoogleEventMapper.toGoogle(google, meetRequest, patch = false), item.sendUpdates, accessToken)
         } else {
             val body = GoogleEventMapper.toGoogle(google, meetRequest, patch = true, removeMeet = removeMeet)
-            // Patch only the version we last saw; a modified occurrence's instance id has no known version.
-            val etag = if (target == current.remoteId) current.etag else null
+            // Patch only the version we last saw. The first edit of an occurrence has none: the instance of the series has no row, id or etag here.
+            var etag = if (target == current.remoteId) current.etag else null
+            val firstEdit = target != current.remoteId && snapshot.seriesMasterId != null && !snapshot.isCancelled
+            if (firstEdit) {
+                // Read the instance as Google has it now: its etag protects the patch, and its content must still be what the edit started from
+                // (the occurrence as the series gave it). Otherwise somebody changed the occurrence or the series meanwhile (issue 13).
+                val instance = api.getEvent(remoteCalendar, target!!, accessToken)
+                val defaults = calendars.get(item.calendarId)?.defaultReminders.orEmpty()
+                val instanceEntity = instance?.toEntity(current.id, current.calendarId, current.seriesMasterId, defaults)
+                if (base != null && (instanceEntity == null || !EventContent.same(instanceEntity, base, ignoreGuest = email))) {
+                    Diag.log { "outbox first edit of an occurrence: Google changed it (found=${instanceEntity != null}): conflict" }
+                    // Google's version is not written as a row: the occurrence is not an exception there (or the pull brings the real one).
+                    resolveConflict(item, email, null, recompute)
+                    return Outcome.CONFLICT
+                }
+                etag = instance?.etag
+            }
             try {
                 api.patchEvent(remoteCalendar, target!!, body, item.sendUpdates, accessToken, etag)
             } catch (e: GoogleApiException) {
@@ -158,7 +173,7 @@ class OutboxPusher @Inject constructor(
                     }
                 }
                 patched ?: run {
-                    resolveConflict(item, email, remoteEntity, recompute)
+                    resolveConflict(item, email, if (firstEdit) null else remoteEntity, recompute)
                     return Outcome.CONFLICT
                 }
             }
@@ -192,6 +207,7 @@ class OutboxPusher @Inject constructor(
             .filter { it.operation == OutboxEntity.CREATE || it.operation == OutboxEntity.UPDATE }
             .mapNotNull { it.payload?.let { p -> JSON.decodeFromString<EventEntity>(p) } }
             .lastOrNull() ?: return
+        val seriesId = local.seriesMasterId
         val title = local.title.ifBlank { context.getString(R.string.untitled) }
         val copy = local.copy(
             id = UUID.randomUUID().toString(),
@@ -217,7 +233,8 @@ class OutboxPusher @Inject constructor(
             )
             messages.insert(SyncMessageEntity(accountEmail = email, kind = "conflict", text = context.getString(R.string.message_conflict, title, copy.title)))
         }
-        if (remote != null) recompute(remote.seriesMasterId ?: remote.id)
+        // Without Google's version the modified occurrence is gone from here: the series draws that day again.
+        if (remote != null) recompute(remote.seriesMasterId ?: remote.id) else seriesId?.let { recompute(it) }
         recompute(copy.id)
     }
 

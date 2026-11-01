@@ -41,6 +41,26 @@ object SeriesOps {
         isCancelled = false,
     )
 
+    /**
+     * The occurrence as the series gives it before anybody edits it: what the person saw when they chose "Only this event". It is the version
+     * a first edit of the occurrence starts from (the `base` of the queued change), because the occurrence has no row, id or etag of its own yet.
+     */
+    fun occurrenceOf(master: EventEntity, occ: Occurrence): EventEntity = master.copy(
+        remoteId = null,
+        etag = null,
+        iCalUid = null,
+        rrule = null,
+        exdates = emptyList(),
+        seriesMasterId = master.id,
+        startUtc = if (master.allDay) null else occ.beginUtc,
+        endUtc = if (master.allDay) null else occ.endUtc,
+        startDay = if (master.allDay) occ.startDay else null,
+        endDay = if (master.allDay) occ.startDay + ((master.endDay ?: (occ.startDay + 1)) - (master.startDay ?: occ.startDay)) else null,
+        originalStartUtc = if (master.allDay) null else occ.beginUtc,
+        originalStartDay = if (master.allDay) occ.startDay else null,
+        isCancelled = false,
+    )
+
     data class Shifted(val master: EventEntity, val children: List<EventEntity>)
 
     /**

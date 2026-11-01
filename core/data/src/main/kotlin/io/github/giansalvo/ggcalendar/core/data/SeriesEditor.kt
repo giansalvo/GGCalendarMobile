@@ -19,7 +19,7 @@ class SeriesEditor @Inject constructor(
         val master = events.get(masterId) ?: return
         val zone = ZoneId.systemDefault()
         when {
-            scope == SeriesScope.THIS -> writer.save(SeriesOps.exception(master, occ, edited), sendUpdates)
+            scope == SeriesScope.THIS -> writer.save(SeriesOps.exception(master, occ, edited), sendUpdates, base = SeriesOps.occurrenceOf(master, occ))
             scope == SeriesScope.ALL || SeriesOps.isFirst(master, occ) -> {
                 val shifted = SeriesOps.all(master, occ, edited, events.getExceptions(masterId), zone)
                 // Modified occurrences only follow locally: Google moves them with the series.

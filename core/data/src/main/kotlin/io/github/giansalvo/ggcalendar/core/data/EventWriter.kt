@@ -25,7 +25,7 @@ class EventWriter @Inject constructor(
     private val json get() = OutboxPusher.JSON
 
     /** Saves a new or edited event (also a modified occurrence of a series: [EventEntity.seriesMasterId] set). */
-    suspend fun save(event: EventEntity, sendUpdates: Boolean = true) {
+    suspend fun save(event: EventEntity, sendUpdates: Boolean = true, base: EventEntity? = null) {
         val toGoogle = db.calendarDao().get(event.calendarId)?.syncsWithGoogle ?: true
         Diag.log { "writer save begin event=${event.id.take(8)} google=$toGoogle allDay=${event.allDay} start=${event.startUtc} end=${event.endUtc}" }
         val saved = if (toGoogle) event.copy(updatedAt = System.currentTimeMillis())
@@ -39,7 +39,8 @@ class EventWriter @Inject constructor(
             }
             val pending = outbox.getFor(event.id)
             // The Google version the edit starts from: the row as last synced, or the base of the first queued edit.
-            val base = if (pending.isEmpty()) existing?.takeIf { it.remoteId != null }?.let { json.encodeToString(it) } else pending.first().base
+            // [base] is given for the first edit of an occurrence of a series, which has no row yet: the occurrence as the series gave it.
+            val startedFrom = if (pending.isEmpty()) base?.let { json.encodeToString(it) } ?: existing?.takeIf { it.remoteId != null }?.let { json.encodeToString(it) } else pending.first().base
             events.upsert(listOf(saved))
             outbox.insert(
                 OutboxEntity(
@@ -47,7 +48,7 @@ class EventWriter @Inject constructor(
                     calendarId = saved.calendarId,
                     operation = if (existing == null && saved.seriesMasterId == null) OutboxEntity.CREATE else OutboxEntity.UPDATE,
                     payload = json.encodeToString(saved),
-                    base = base,
+                    base = startedFrom,
                     sendUpdates = sendUpdates,
                 ),
             )
