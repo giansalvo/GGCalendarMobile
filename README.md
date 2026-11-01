@@ -15,18 +15,8 @@
 
 ---
 
-> **Stato:** ultima versione pubblicata 1.0.5, disponibile su [Google Play](https://play.google.com/store/apps/details?id=io.github.giansalvo.ggcalendar). L'APK firmato è nella pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases).
-> **Status:** latest release 1.0.5, available on [Google Play](https://play.google.com/store/apps/details?id=io.github.giansalvo.ggcalendar). The signed APK is on the [Releases](https://github.com/giansalvo/GGCalendarMobile/releases) page.
-
-## Installazione e primo accesso
-
-1. Installa l'app da [Google Play](https://play.google.com/store/apps/details?id=io.github.giansalvo.ggcalendar), oppure scarica l'APK (`GGCalendar-<versione>.apk`) dalla pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases) e, se vuoi, controlla l'impronta con il file `.sha256` (`certutil -hashfile GGCalendar-<versione>.apk SHA256` su Windows, `sha256sum` su Linux e macOS).
-2. Apri il file sul telefono e consenti l'installazione da questa fonte quando Android lo chiede. Serve Android 8 o successivo.
-3. Se vuoi aggiungi il tuo account Google dal menu dell'app.
-
-> **Nota: "Google non ha verificato questa app".** L'accesso ai dati del calendario non ha ancora completato la verifica di Google, quindi al primo accesso Google mostra l'avviso *"Google non ha verificato questa app"*. È previsto e non indica un problema dell'app: tocca **Avanzate**, poi **Vai a GGCalendar (non sicuro)** e concedi l'accesso al calendario. Il codice è pubblico in questo repository e l'app non ha server propri (vedi la [privacy](https://profgusinu.altervista.org/GGCalendar/privacy.html)). Finché l'app non è verificata, Google limita a 100 il numero di utenti che possono autorizzarla.
->
-> *Note: "Google hasn't verified this app". Access to calendar data has not yet completed Google's verification, so Google shows this warning the first time you sign in. It is expected: tap **Advanced**, then **Go to GGCalendar (unsafe)**, and grant calendar access. Until the app is verified, Google limits it to 100 users.*
+> **Stato:** ultima versione pubblicata 1.0.6, disponibile su [Google Play](https://play.google.com/store/apps/details?id=io.github.giansalvo.ggcalendar). L'APK firmato è nella pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases).
+> **Status:** latest release 1.0.6, available on [Google Play](https://play.google.com/store/apps/details?id=io.github.giansalvo.ggcalendar). The signed APK is on the [Releases](https://github.com/giansalvo/GGCalendarMobile/releases) page.
 
 ## Funzionalità
 
@@ -40,10 +30,16 @@
 - Importazione di un file `.ics` o di un indirizzo iCal in un calendario locale
 - Secondo fuso orario
 - Registro diagnostico facoltativo inviabile per mail dal menu laterale
-- Lingue supportate: Italiano, inglese, spagnolo e tedesco
+- Lingue supportate: Italiano, inglese, spagnolo, tedesco e francese
 - Temi: chiaro e scuro
 
 È la versione Android di [GGCalendar per Windows](https://github.com/giansalvo/GGCalendar): stessa logica di sincronizzazione e stesso progetto Google.
+
+## Installazione e primo accesso
+
+1. Installa l'app da [Google Play](https://play.google.com/store/apps/details?id=io.github.giansalvo.ggcalendar), oppure scarica l'APK (`GGCalendar-<versione>.apk`) dalla pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases) e, se vuoi, controlla l'impronta con il file `.sha256` (`certutil -hashfile GGCalendar-<versione>.apk SHA256` su Windows, `sha256sum` su Linux e macOS).
+2. Apri il file sul telefono e consenti l'installazione da questa fonte quando Android lo chiede. Serve Android 8 o successivo.
+3. Se vuoi aggiungi il tuo account Google dal menu dell'app.
 
 ## Compilare dal codice sorgente
 

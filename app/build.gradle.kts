@@ -30,8 +30,8 @@ android {
         applicationId = "io.github.giansalvo.ggcalendar"
         minSdk = 26
         targetSdk = 36
-        versionCode = 18
-        versionName = "1.0.5"
+        versionCode = 19 // always up: Google Play refuses a code that is not higher than the published one (18, version 1.0.5)
+        versionName = "1.0.6"
         // A diagnostic build (-Pdiag=true, with --no-configuration-cache) writes log lines tagged GGCalDiag about the accounts and
         // the side menu; a normal build writes none.
         val diag = providers.gradleProperty("diag").orNull == "true"

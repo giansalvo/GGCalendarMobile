@@ -2,6 +2,14 @@
 
 Le modifiche di GGCalendar Mobile da una versione alla successiva, dalla più recente.
 
+## 1.0.6 (01/11/2026)
+
+- Nuova lingua: francese
+- Descrizione degli eventi anche in HTML
+- Possibilità di aggiungere link come allegati ad un evento
+- Menu laterale: la pressione lunga su un calendario visualizza il menu contestuale
+- Correzione di anomalie (bug)
+
 ## 1.0.5 (24/10/2026)
 
 - Versione per la pubblicazione su Google Play, firmata con la stessa chiave dell'APK: nessuna modifica alle funzioni rispetto alla 1.0.3
