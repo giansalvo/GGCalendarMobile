@@ -118,8 +118,9 @@ class ReminderNotifier @Inject constructor(@ApplicationContext private val conte
     }
 
     /** The tap on a notification: the app opens on the occurrence. */
-    fun openApp(alert: ReminderAlert): PendingIntent {
-        val intent = (context.packageManager.getLaunchIntentForPackage(context.packageName) ?: Intent())
+    fun openApp(alert: ReminderAlert): PendingIntent? {
+        // The launch intent of our own package is explicit; without it the notification simply has no tap action (never an empty implicit intent).
+        val intent = (context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return null)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             .putExtra(Reminders.EXTRA_OPEN_EVENT, alert.eventId)
             .putExtra(Reminders.EXTRA_OPEN_BEGIN, alert.beginUtc)
