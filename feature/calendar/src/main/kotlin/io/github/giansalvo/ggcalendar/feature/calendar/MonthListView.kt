@@ -1,5 +1,6 @@
 package io.github.giansalvo.ggcalendar.feature.calendar
 
+import androidx.compose.ui.platform.LocalConfiguration
 import android.text.format.DateFormat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -155,6 +156,6 @@ private fun dayTitle(date: LocalDate): String {
         days > 1 -> pluralStringResource(R.plurals.days_from_now, days, days)
         else -> pluralStringResource(R.plurals.days_ago, -days, -days)
     }
-    val locale = Locale.getDefault()
+    val locale = LocalConfiguration.current.locales[0]
     return relative + " · " + date.format(DateFormats.of("EEEdMMM", locale))
 }

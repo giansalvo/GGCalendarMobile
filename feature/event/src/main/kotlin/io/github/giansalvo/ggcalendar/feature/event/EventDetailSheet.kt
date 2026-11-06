@@ -1,5 +1,6 @@
 package io.github.giansalvo.ggcalendar.feature.event
 
+import androidx.compose.ui.platform.LocalConfiguration
 import io.github.giansalvo.ggcalendar.core.notifications.exposeTestTags
 import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.background
@@ -198,9 +199,9 @@ private fun DetailContent(instance: EventInstance, detail: EventDetail, secondZo
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 val zone = event.timeZone
-                val name = zone?.let { runCatching { ZoneId.of(it).getDisplayName(TextStyle.FULL, Locale.getDefault()) }.getOrDefault(it) }
+                val name = zone?.let { runCatching { ZoneId.of(it).getDisplayName(TextStyle.FULL, LocalConfiguration.current.locales[0]) }.getOrDefault(it) }
                 // Only when it differs from the phone's (Europe/Rome and Europe/Berlin are both "Central European Time").
-                if (!event.allDay && name != null && name != ZoneId.systemDefault().getDisplayName(TextStyle.FULL, Locale.getDefault())) {
+                if (!event.allDay && name != null && name != ZoneId.systemDefault().getDisplayName(TextStyle.FULL, LocalConfiguration.current.locales[0])) {
                     Text(stringResource(R.string.time_zone_of, name), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 // The same hours in the second time zone of the settings (summer time and half hours as they are there on that day).

@@ -41,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -63,6 +64,7 @@ import java.time.format.FormatStyle
 @Composable
 fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, locals: List<io.github.giansalvo.ggcalendar.core.model.CalendarInfo> = emptyList(), viewModel: ExportViewModel = hiltViewModel()) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     val year = remember { LocalDate.now().year }
     var chosen by rememberSaveable { mutableStateOf<Set<String>?>(null) }
@@ -75,7 +77,7 @@ fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, lo
     // What the export did, shown when it ends: events written and events left out, with the reason.
     var summary by remember { mutableStateOf<String?>(null) }
     fun summaryOf(r: ExportResult, saved: Boolean): String = buildString {
-        append(if (!saved) context.getString(R.string.export_failed) else context.resources.getQuantityString(if (r.occurrences) R.plurals.export_rows_done else R.plurals.export_done, r.count, r.count))
+        append(if (!saved) resources.getString(R.string.export_failed) else resources.getQuantityString(if (r.occurrences) R.plurals.export_rows_done else R.plurals.export_done, r.count, r.count))
     }
 
     val all = accounts.flatMap { it.calendars } + locals
@@ -172,9 +174,9 @@ fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, lo
             TextButton(modifier = Modifier.testTag("export_confirm"), enabled = valid && !busy, onClick = {
                 busy = true
                 scope.launch {
-                    val result = if (csv) viewModel.csv(selected, fromDay, toDay, context.resources) else viewModel.ics(selected, fromDay, toDay)
+                    val result = if (csv) viewModel.csv(selected, fromDay, toDay, resources) else viewModel.ics(selected, fromDay, toDay)
                     if (result.count == 0) {
-                        summary = context.getString(R.string.export_nothing)
+                        summary = resources.getString(R.string.export_nothing)
                         busy = false
                     } else {
                         pending = result

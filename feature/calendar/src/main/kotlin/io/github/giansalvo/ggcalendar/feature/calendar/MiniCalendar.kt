@@ -1,5 +1,6 @@
 package io.github.giansalvo.ggcalendar.feature.calendar
 
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -80,7 +81,7 @@ internal fun MiniCalendar(
         snapshotFlow { pager.settledPage }.collect { monthChange(base.plusMonths((it - CENTER).toLong())) }
     }
     val firstDay = firstDayOfWeek()
-    val locale = Locale.getDefault()
+    val locale = LocalConfiguration.current.locales[0]
     val today = LocalDate.now()
 
     Column(modifier.fillMaxWidth().background(container).padding(horizontal = 8.dp, vertical = 4.dp)) {

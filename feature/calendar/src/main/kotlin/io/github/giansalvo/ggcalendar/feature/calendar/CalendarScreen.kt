@@ -1,5 +1,6 @@
 package io.github.giansalvo.ggcalendar.feature.calendar
 
+import androidx.compose.ui.platform.LocalConfiguration
 import io.github.giansalvo.ggcalendar.core.notifications.exposeTestTags
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -654,7 +655,7 @@ fun CalendarScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CalendarTopBar(state: CalendarUiState, miniOpen: Boolean, onMenu: () -> Unit, onTitle: () -> Unit, onToday: () -> Unit, onSync: () -> Unit, onSearch: () -> Unit, onSettings: () -> Unit) {
-    val locale = Locale.getDefault()
+    val locale = LocalConfiguration.current.locales[0]
     val month = state.date.month.getDisplayName(TextStyle.FULL_STANDALONE, locale).replaceFirstChar { it.titlecase(locale) }
     val title = if (state.date.year == LocalDate.now().year) month else "$month ${state.date.year}"
     TopAppBar(

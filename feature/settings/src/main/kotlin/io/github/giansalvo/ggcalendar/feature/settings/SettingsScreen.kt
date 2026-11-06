@@ -307,7 +307,7 @@ private fun DefaultReminderRow(minutes: Int, onChange: (Int) -> Unit) {
 @Composable
 private fun SecondZoneRows(draft: SettingsDraft, onChange: (SettingsDraft) -> Unit) {
     var picking by remember { mutableStateOf(false) }
-    val locale = Locale.getDefault()
+    val locale = LocalConfiguration.current.locales[0]
     SwitchRow(stringResource(R.string.settings_second_zone), stringResource(R.string.settings_second_zone_hint), draft.secondZoneOn, tag = "settings_second_zone") { on ->
         // The first time it is turned on, it starts from a zone that is not the one of the phone.
         val id = draft.secondZoneId ?: if (ZoneId.systemDefault().id == "America/New_York") "Europe/London" else "America/New_York"
@@ -386,7 +386,7 @@ private fun WeekStartRow(selected: DayOfWeek, onChange: (DayOfWeek) -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 RadioButton(selected = selected == day, onClick = null)
-                Text(day.getDisplayName(TextStyle.FULL, Locale.getDefault()).replaceFirstChar { it.uppercase() }, Modifier.padding(start = 16.dp), style = MaterialTheme.typography.bodyLarge)
+                Text(day.getDisplayName(TextStyle.FULL, LocalConfiguration.current.locales[0]).replaceFirstChar { it.uppercase() }, Modifier.padding(start = 16.dp), style = MaterialTheme.typography.bodyLarge)
             }
         }
     }
