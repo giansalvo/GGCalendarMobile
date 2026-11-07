@@ -126,7 +126,7 @@ class OutboxPusher @Inject constructor(
             // A modified occurrence is an existing Google instance of the series: patch it instead of inserting.
             val master = events.get(masterId) ?: return Outcome.DONE
             masterRemote = master.remoteId ?: return Outcome.LATER // the series has not reached Google yet
-            if (target == null) target = GoogleEventMapper.instanceId(masterRemote!!, snapshot.originalStart() ?: return Outcome.DONE)
+            if (target == null) target = GoogleEventMapper.instanceId(masterRemote, snapshot.originalStart() ?: return Outcome.DONE)
         }
         val base = item.base?.let { JSON.decodeFromString<EventEntity>(it) }
         val google = snapshot.toGoogleEvent(masterRemote)
@@ -143,7 +143,7 @@ class OutboxPusher @Inject constructor(
             if (firstEdit) {
                 // Read the instance as Google has it now: its etag protects the patch, and its content must still be what the edit started from
                 // (the occurrence as the series gave it). Otherwise somebody changed the occurrence or the series meanwhile (issue 13).
-                val instance = api.getEvent(remoteCalendar, target!!, accessToken)
+                val instance = api.getEvent(remoteCalendar, target, accessToken)
                 val defaults = calendars.get(item.calendarId)?.defaultReminders.orEmpty()
                 val instanceEntity = instance?.toEntity(current.id, current.calendarId, current.seriesMasterId, defaults)
                 if (base != null && (instanceEntity == null || !EventContent.same(instanceEntity, base, ignoreGuest = email))) {
@@ -155,10 +155,10 @@ class OutboxPusher @Inject constructor(
                 etag = instance?.etag
             }
             try {
-                api.patchEvent(remoteCalendar, target!!, body, item.sendUpdates, accessToken, etag)
+                api.patchEvent(remoteCalendar, target, body, item.sendUpdates, accessToken, etag)
             } catch (e: GoogleApiException) {
                 if (e.status != 412) throw e
-                val remote = api.getEvent(remoteCalendar, target!!, accessToken)
+                val remote = api.getEvent(remoteCalendar, target, accessToken)
                 val defaults = calendars.get(item.calendarId)?.defaultReminders.orEmpty()
                 val remoteEntity = remote?.toEntity(current.id, current.calendarId, current.seriesMasterId, defaults)
                 // Google also changes the version on its own (Meet conference, a guest's reply): if what the user sees
@@ -166,7 +166,7 @@ class OutboxPusher @Inject constructor(
                 var patched: GoogleEvent? = null
                 if (remoteEntity != null && base != null && EventContent.same(remoteEntity, base, ignoreGuest = email)) {
                     patched = try {
-                        api.patchEvent(remoteCalendar, target!!, body, item.sendUpdates, accessToken, remote.etag)
+                        api.patchEvent(remoteCalendar, target, body, item.sendUpdates, accessToken, remote.etag)
                     } catch (again: GoogleApiException) {
                         if (again.status != 412) throw again
                         null // changed again meanwhile: a real conflict

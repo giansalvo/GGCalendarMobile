@@ -213,7 +213,7 @@ object IcsMapper {
         val recurringRule = c.property("RRULE")
         val rrule = recurringRule?.let { rrule(it.value, allDay, eventZone, issues) }
         if (allDay) {
-            val startDay = start.date!!
+            val startDay = start.date
             var endDay = when {
                 endTemporal != null -> endTemporal.date ?: endTemporal.local?.toLocalDate()
                 durationSeconds != null -> startDay.plusDays(maxOf(1L, durationSeconds / 86_400L))

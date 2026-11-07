@@ -1,5 +1,6 @@
 package io.github.giansalvo.ggcalendar.feature.event
 
+import android.content.ClipData
 import androidx.compose.ui.platform.LocalConfiguration
 import io.github.giansalvo.ggcalendar.core.notifications.exposeTestTags
 import androidx.compose.ui.platform.testTag
@@ -48,7 +49,7 @@ import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Notes
+import androidx.compose.material.icons.automirrored.outlined.Notes
 import androidx.compose.material.icons.outlined.WorkOutline
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Public
@@ -62,7 +63,7 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -105,7 +106,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -114,7 +116,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.giansalvo.ggcalendar.core.database.CalendarEntity
 import io.github.giansalvo.ggcalendar.core.model.Attendee
@@ -355,10 +357,11 @@ private fun EditorFields(
                 }
             }
             draft.meetLink?.takeIf { draft.addMeet }?.let { link ->
-                val clipboard = LocalClipboardManager.current
+                val clipboard = LocalClipboard.current
+                val clipScope = rememberCoroutineScope()
                 Row(Modifier.padding(start = 56.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(link, Modifier.weight(1f), color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    IconButton(onClick = { clipboard.setText(AnnotatedString(link)) }) { Icon(Icons.Outlined.ContentCopy, stringResource(R.string.copy_link)) }
+                    IconButton(onClick = { clipScope.launch { clipboard.setClipEntry(ClipEntry(ClipData.newPlainText(link, link))) } }) { Icon(Icons.Outlined.ContentCopy, stringResource(R.string.copy_link)) }
                 }
             }
             Divider()
@@ -386,7 +389,7 @@ private fun EditorFields(
             Text(stringResource(if (draft.visibility == "PRIVATE") R.string.visibility_private else R.string.visibility_public))
         }
         Divider()
-        PlainField(Icons.Outlined.Notes, draft.description, R.string.add_description, singleLine = false, tag = "editor_description") { v -> update { it.copy(description = v) } }
+        PlainField(Icons.AutoMirrored.Outlined.Notes, draft.description, R.string.add_description, singleLine = false, tag = "editor_description") { v -> update { it.copy(description = v) } }
         Divider()
         Attachments(draft.attachments, attachmentField)
     }
@@ -421,7 +424,7 @@ private fun CalendarChooser(calendars: List<CalendarEntity>, selectedId: String,
             supportingText = selected?.accountEmail?.let { { Text(it) } },
             leadingIcon = { Box(Modifier.size(14.dp).background(parseColor(selected?.color), CircleShape)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(open) },
-            modifier = Modifier.testTag("editor_calendar").fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
+            modifier = Modifier.testTag("editor_calendar").fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
         )
         ExposedDropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             calendars.groupBy { it.accountEmail ?: "" }.forEach { (account, list) ->

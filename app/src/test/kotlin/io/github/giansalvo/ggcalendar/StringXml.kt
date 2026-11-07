@@ -20,7 +20,7 @@ internal class StringXml(val module: String, val entries: Map<String, Entry>) {
     companion object {
         /** The folder of the project, found from the folder where Gradle runs the tests of a module. */
         val root: File by lazy {
-            var dir: File? = File(System.getProperty("user.dir")).absoluteFile
+            var dir: File? = File(checkNotNull(System.getProperty("user.dir"))).absoluteFile
             while (dir != null && !File(dir, "settings.gradle.kts").exists()) dir = dir.parentFile
             dir ?: error("settings.gradle.kts not found above ${System.getProperty("user.dir")}")
         }
@@ -30,8 +30,8 @@ internal class StringXml(val module: String, val entries: Map<String, Entry>) {
         /** The modules that have texts to translate, as paths from the root ("feature/event"). */
         val modules: List<String> by lazy {
             root.walkTopDown().onEnter { it.name !in SKIP }
-                .filter { it.isFile && it.name == "strings.xml" && it.parentFile.name == "values" && it.invariantSeparatorsPath.contains("/src/main/res/") }
-                .map { it.parentFile.parentFile.parentFile.parentFile.parentFile.relativeTo(root).invariantSeparatorsPath }
+                .filter { it.isFile && it.name == "strings.xml" && it.parentFile?.name == "values" && it.invariantSeparatorsPath.contains("/src/main/res/") }
+                .map { checkNotNull(it.parentFile?.parentFile?.parentFile?.parentFile?.parentFile).relativeTo(root).invariantSeparatorsPath }
                 .sorted().toList()
         }
 

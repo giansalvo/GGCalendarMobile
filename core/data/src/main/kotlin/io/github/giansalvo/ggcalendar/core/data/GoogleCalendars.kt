@@ -133,7 +133,7 @@ class GoogleCalendars @Inject constructor(
         val recolor = newColorHex != null && !newColorHex.equals(calendar.color, ignoreCase = true)
         if (!rename && !recolor) return GoogleCalendarResult(calendarId = calendarId)
         if (rename) {
-            if (name!!.isEmpty()) return GoogleCalendarResult(problem = GoogleCalendarProblem.EMPTY_NAME)
+            if (name.isEmpty()) return GoogleCalendarResult(problem = GoogleCalendarProblem.EMPTY_NAME)
             if (calendar.isPrimary) return GoogleCalendarResult(problem = GoogleCalendarProblem.PRIMARY)
             if (calendar.accessRole != "owner") return GoogleCalendarResult(problem = GoogleCalendarProblem.NOT_OWNER)
         }
@@ -142,13 +142,13 @@ class GoogleCalendars @Inject constructor(
         var partial: GoogleCalendarProblem? = null
         try {
             if (rename) {
-                withFreshTokenOnce(tokens.get, tokens.invalidate) { api.renameCalendar(remoteId, name!!, it) }
-                finalName = name!!
+                withFreshTokenOnce(tokens.get, tokens.invalidate) { api.renameCalendar(remoteId, name, it) }
+                finalName = name
                 try {
                     withFreshTokenOnce(tokens.get, tokens.invalidate) {
                         api.setCalendarListEntry(remoteId, if (recolor) newColorHex else null, clearPersonalName = true, accessToken = it)
                     }
-                    if (recolor) finalColor = newColorHex!!
+                    if (recolor) finalColor = newColorHex
                 } catch (e: Exception) {
                     if (e is kotlinx.coroutines.CancellationException) throw e
                     partial = problemOf(e)

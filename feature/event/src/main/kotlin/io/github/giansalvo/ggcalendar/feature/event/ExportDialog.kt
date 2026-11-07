@@ -45,7 +45,7 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import io.github.giansalvo.ggcalendar.core.data.AccountWithCalendars
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

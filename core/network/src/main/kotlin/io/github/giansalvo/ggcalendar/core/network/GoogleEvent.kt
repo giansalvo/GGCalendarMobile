@@ -372,5 +372,5 @@ object GoogleEventMapper {
     private fun JsonObject.str(name: String): String? = (this[name] as? JsonPrimitive)?.takeIf { it.isString }?.content
     private fun JsonObject.bool(name: String): Boolean? = (this[name] as? JsonPrimitive)?.booleanOrNull
     private fun JsonObject.obj(name: String): JsonObject? = this[name] as? JsonObject
-    private fun JsonObject.arr(name: String): JsonArray? = (this[name] as? JsonElement)?.let { it as? JsonArray }
+    private fun JsonObject.arr(name: String): JsonArray? = this[name] as? JsonArray
 }

@@ -34,7 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -48,6 +48,8 @@ import io.github.giansalvo.ggcalendar.core.model.SubscriptionInfo
 import io.github.giansalvo.ggcalendar.core.notifications.exposeTestTags
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 /** The text that tells a subscription problem (a message of the dialog or the reason on the row of the menu). */
 @Composable
@@ -165,7 +167,8 @@ internal fun SubscriptionAddDialog(
         is SubscriptionDialog.Input -> {
             // Not saved with the screen state: the address can be a secret.
             var address by remember(dialog) { mutableStateOf(dialog.address) }
-            val clipboard = LocalClipboardManager.current
+            val clipboard = LocalClipboard.current
+            val clipScope = rememberCoroutineScope()
             AlertDialog(
                 modifier = Modifier.exposeTestTags(),
                 onDismissRequest = onDismiss,
@@ -181,7 +184,7 @@ internal fun SubscriptionAddDialog(
                             modifier = Modifier.fillMaxWidth().testTag("subscription_address"),
                         )
                         TextButton(
-                            onClick = { clipboard.getText()?.text?.let { address = it.take(2048) } },
+                            onClick = { clipScope.launch { clipboard.getClipEntry()?.clipData?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text?.toString()?.let { address = it.take(2048) } } },
                             modifier = Modifier.testTag("subscription_paste"),
                         ) { Text(stringResource(R.string.subscription_paste)) }
                         dialog.problem?.let {

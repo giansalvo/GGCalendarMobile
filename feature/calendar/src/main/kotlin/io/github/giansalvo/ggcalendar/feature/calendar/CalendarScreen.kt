@@ -110,7 +110,7 @@ import io.github.giansalvo.ggcalendar.feature.event.NotifyGuestsDialog
 import io.github.giansalvo.ggcalendar.feature.event.SeriesScopeDialog
 import io.github.giansalvo.ggcalendar.feature.settings.SettingsScreen
 import io.github.giansalvo.ggcalendar.feature.event.occurrence
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle

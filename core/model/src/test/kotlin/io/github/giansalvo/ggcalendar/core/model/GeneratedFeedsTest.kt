@@ -58,7 +58,7 @@ class GeneratedFeedsTest {
         assertEquals(5000, counts("ggcal_5000.ics"))
         assertEquals(5001, counts("ggcal_5001.ics"))
         assertTrue("the big file is made by big.php", File(dir!!, "big.php").readText().contains("max(1, min(20"))
-        assertTrue(!File(dir!!, "ggcal_too_big.ics").exists())
+        assertTrue(!File(dir, "ggcal_too_big.ics").exists())
 
         val dup = read("ggcal_dup_uid.ics")
         println("dup events=${dup.events.size} issues=${dup.report.issues.map { it.code }}")
@@ -66,6 +66,6 @@ class GeneratedFeedsTest {
 
         val malformed = read("ggcal_malformed.ics")
         println("malformed events=${malformed.events.size} fatal=${malformed.report.fatal} issues=${malformed.report.issues.map { it.code }}")
-        assertEquals(0L, File(dir!!, "ggcal_empty.ics").length())
+        assertEquals(0L, File(dir, "ggcal_empty.ics").length())
     }
 }

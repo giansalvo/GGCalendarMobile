@@ -66,7 +66,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import io.github.giansalvo.ggcalendar.core.data.AppPreferences
 import io.github.giansalvo.ggcalendar.core.data.ThemeMode
 import io.github.giansalvo.ggcalendar.feature.event.WeekSettings
