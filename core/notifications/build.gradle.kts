@@ -23,7 +23,7 @@ android {
         }
     }
     // The library has no targetSdk of its own: lint must judge the permissions against the app's.
-    lint { targetSdk = 36 }
+    lint { targetSdk = 37 }
 }
 
 kotlin {
