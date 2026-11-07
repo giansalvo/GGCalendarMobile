@@ -4,6 +4,7 @@ import io.github.giansalvo.ggcalendar.core.notifications.exposeTestTags
 import androidx.compose.ui.platform.testTag
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -32,6 +35,7 @@ import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,14 +64,23 @@ import java.time.format.FormatStyle
  * Export calendars to an `.ics` file: which calendars (hidden ones too) and which days. The file goes where the user
  * chooses with the system file picker, so no storage permission is needed.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, locals: List<io.github.giansalvo.ggcalendar.core.model.CalendarInfo> = emptyList(), viewModel: ExportViewModel = hiltViewModel()) {
+fun ExportDialog(
+    accounts: List<AccountWithCalendars>,
+    onDismiss: () -> Unit,
+    locals: List<io.github.giansalvo.ggcalendar.core.model.CalendarInfo> = emptyList(),
+    subscriptions: List<io.github.giansalvo.ggcalendar.core.model.CalendarInfo> = emptyList(),
+    birthdays: io.github.giansalvo.ggcalendar.core.model.CalendarInfo? = null,
+    /** The calendar that starts ticked, alone (the others can be ticked too); null: the visible calendars. */
+    preselected: String? = null,
+    viewModel: ExportViewModel = hiltViewModel(),
+) {
     val context = LocalContext.current
     val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     val year = remember { LocalDate.now().year }
-    var chosen by rememberSaveable { mutableStateOf<Set<String>?>(null) }
+    var chosen by rememberSaveable { mutableStateOf<Set<String>?>(preselected?.let { setOf(it) }) }
     var from by rememberSaveable { mutableStateOf(LocalDate.of(year, 1, 1).toString()) }
     var to by rememberSaveable { mutableStateOf(LocalDate.of(year, 12, 31).toString()) }
     var picking by remember { mutableStateOf<Boolean?>(null) } // true: the first day, false: the last
@@ -80,7 +93,16 @@ fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, lo
         append(if (!saved) resources.getString(R.string.export_failed) else resources.getQuantityString(if (r.occurrences) R.plurals.export_rows_done else R.plurals.export_done, r.count, r.count))
     }
 
-    val all = accounts.flatMap { it.calendars } + locals
+    val extra = listOfNotNull(birthdays)
+    // The list of calendars scrolls: the one the dialog was opened for is brought into view (a subscription is at the end of it).
+    val preselectedRow = remember { BringIntoViewRequester() }
+    LaunchedEffect(preselected) {
+        if (preselected != null) {
+            androidx.compose.runtime.withFrameNanos { }
+            runCatching { preselectedRow.bringIntoView() }
+        }
+    }
+    val all = accounts.flatMap { it.calendars } + locals + subscriptions + extra
     val selected = chosen ?: all.filter { it.isVisible }.map { it.id }.toSet()
     val fromDay = LocalDate.parse(from)
     val toDay = LocalDate.parse(to)
@@ -135,7 +157,12 @@ fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, lo
                 Column(Modifier.padding(top = 12.dp).heightIn(max = 300.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(stringResource(R.string.export_calendars), style = MaterialTheme.typography.titleSmall)
                 val phoneTitle = stringResource(R.string.export_on_phone)
-                val groups = accounts.map { it.email to it.calendars } + (if (locals.isEmpty()) emptyList() else listOf(phoneTitle to locals))
+                val subscriptionsTitle = stringResource(R.string.export_subscriptions)
+                val contactsTitle = stringResource(R.string.export_contacts)
+                val groups = accounts.map { it.email to it.calendars } +
+                    (if (locals.isEmpty()) emptyList() else listOf(phoneTitle to locals)) +
+                    (if (subscriptions.isEmpty()) emptyList() else listOf(subscriptionsTitle to subscriptions)) +
+                    (if (extra.isEmpty()) emptyList() else listOf(contactsTitle to extra))
                 groups.forEach { (title, calendars) ->
                     // The master checkbox of the account: all of its calendars or none; a dash when only some are chosen.
                     val ids = calendars.map { it.id }
@@ -157,7 +184,8 @@ fun ExportDialog(accounts: List<AccountWithCalendars>, onDismiss: () -> Unit, lo
                     }
                     calendars.forEach { c ->
                         Row(
-                            Modifier.fillMaxWidth().clickable { chosen = if (c.id in selected) selected - c.id else selected + c.id },
+                            Modifier.fillMaxWidth().then(if (c.id == preselected) Modifier.bringIntoViewRequester(preselectedRow) else Modifier)
+                                .clickable { chosen = if (c.id in selected) selected - c.id else selected + c.id },
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Spacer(Modifier.width(24.dp))

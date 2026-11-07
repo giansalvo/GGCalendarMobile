@@ -42,7 +42,6 @@ import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Cake
-import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.Info
@@ -169,7 +168,8 @@ fun CalendarScreen(
     var yearPickerOpen by rememberSaveable { mutableStateOf(false) }
     var alarmsOpen by rememberSaveable { mutableStateOf(false) }
     var aboutOpen by rememberSaveable { mutableStateOf(false) }
-    var exportOpen by rememberSaveable { mutableStateOf(false) }
+    // The calendar whose long press menu opened the export (it starts ticked); null: the export is closed.
+    var exportFor by rememberSaveable { mutableStateOf<String?>(null) }
     var removing by rememberSaveable { mutableStateOf<String?>(null) }
     // The local calendar being made (empty text) or changed (its id), and the one being deleted.
     var editingLocal by rememberSaveable { mutableStateOf<String?>(null) }
@@ -295,7 +295,7 @@ fun CalendarScreen(
     val windowName = when {
         settingsOpen -> "settings"
         aboutOpen -> "about"
-        exportOpen -> "export"
+        exportFor != null -> "export"
         alarmsOpen -> "active alarms"
         searchOpen -> "search"
         state.editing != null -> "event editor"
@@ -351,8 +351,8 @@ fun CalendarScreen(
                     importViewModel.open()
                     scope.launch { drawerState.close() }
                 },
-                onExport = {
-                    exportOpen = true
+                onExport = { id ->
+                    exportFor = id
                     scope.launch { drawerState.close() }
                 },
                 logOn = logOn,
@@ -522,7 +522,13 @@ fun CalendarScreen(
         SettingsScreen(onClose = { settingsOpen = false })
     }
     ImportScreen(importViewModel, onShow = { day -> if (day != null) viewModel.goTo(day) })
-    if (exportOpen) ExportDialog(accounts = state.accounts, locals = state.localCalendars, onDismiss = { exportOpen = false })
+    exportFor?.let { id ->
+        ExportDialog(
+            accounts = state.accounts, locals = state.localCalendars,
+            subscriptions = state.subscriptions.map { it.calendar }, birthdays = state.birthdays,
+            preselected = id, onDismiss = { exportFor = null },
+        )
+    }
     editingLocal?.let { id ->
         val current = state.localCalendars.firstOrNull { it.id == id }
         LocalCalendarDialog(
@@ -741,7 +747,7 @@ private fun CalendarDrawer(
     onActiveAlarms: () -> Unit,
     onSettings: () -> Unit,
     onImport: () -> Unit,
-    onExport: () -> Unit,
+    onExport: (String) -> Unit,
     logOn: Boolean,
     onSendLog: () -> Unit,
     onAbout: () -> Unit,
@@ -787,19 +793,23 @@ private fun CalendarDrawer(
                     ActionableCalendarRow(
                         calendar, onToggleCalendar,
                         googleCalendarActions(calendar, onEdit = { onEditGoogle(calendar) }, onDelete = { onDeleteGoogle(calendar) }),
+                        onExport = { onExport(calendar.id) },
                     )
                 }
             }
-            LocalCalendarsSection(state.localCalendars, onToggleCalendar, onNewLocal, onEditLocal, onDeleteLocal)
+            LocalCalendarsSection(state.localCalendars, onToggleCalendar, onNewLocal, onEditLocal, onDeleteLocal, onExport)
             SubscriptionsSection(
-                state.subscriptions, onToggleCalendar, onAddSubscription, onRefreshSubscription, onEditSubscription, onShowSubscriptionAddress, onRemoveSubscription,
+                state.subscriptions, onToggleCalendar, onAddSubscription, onRefreshSubscription, onEditSubscription, onShowSubscriptionAddress, onRemoveSubscription, onExport,
             )
             state.birthdays?.let { birthdays ->
                 Row(Modifier.padding(16.dp, 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.Cake, contentDescription = null)
                     Text(stringResource(R.string.contacts), Modifier.padding(start = 16.dp), style = MaterialTheme.typography.bodyLarge)
                 }
-                CalendarRow(birthdays, onToggleCalendar)
+                MenuCalendarRow(
+                    birthdays, onToggleCalendar,
+                    listOf(CalendarMenuItem(stringResource(R.string.calendar_menu_export), "calendar_menu_export") { onExport(birthdays.id) }),
+                )
             }
             // The snackbar below the drawer would be hidden by it: the same news is told here, where the user is looking.
             state.addingAccount?.let { email ->
@@ -828,13 +838,6 @@ private fun CalendarDrawer(
                 selected = false,
                 onClick = onImport,
                 modifier = Modifier.testTag("drawer_import"),
-            )
-            NavigationDrawerItem(
-                icon = { Icon(Icons.Outlined.FileUpload, contentDescription = null) },
-                label = { Text(stringResource(R.string.export_ics)) },
-                selected = false,
-                onClick = onExport,
-                modifier = Modifier.testTag("drawer_export"),
             )
             NavigationDrawerItem(
                 icon = { Icon(Icons.Outlined.Settings, contentDescription = null) },

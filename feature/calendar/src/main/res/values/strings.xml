@@ -57,7 +57,7 @@
     <string name="about_license">License</string>
     <string name="about_source">Source code</string>
     <string name="active_alarms">Active alarms</string>
-    <string name="export_ics">Export (.ics, CSV)</string>
+    <string name="calendar_menu_export">Export</string>
     <string name="settings">Settings</string>
     <string name="contacts">Phone contacts</string>
     <string name="remove_account_title">Remove account?</string>

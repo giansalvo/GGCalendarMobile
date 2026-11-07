@@ -56,7 +56,7 @@
     <string name="about_license">Licence</string>
     <string name="about_source">Code source</string>
     <string name="active_alarms">Alarmes actives</string>
-    <string name="export_ics">Exporter (.ics, CSV)</string>
+    <string name="calendar_menu_export">Exporter</string>
     <string name="settings">Paramètres</string>
     <string name="contacts">Contacts du téléphone</string>
     <string name="remove_account_title">Retirer le compte&#160;?</string>

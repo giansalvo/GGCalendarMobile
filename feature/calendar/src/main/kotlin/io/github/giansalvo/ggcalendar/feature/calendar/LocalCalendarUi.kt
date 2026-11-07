@@ -58,20 +58,22 @@ internal class CalendarActions(val canDelete: Boolean, val onEdit: () -> Unit, v
 internal class CalendarMenuItem(val label: String, val tag: String, val onClick: () -> Unit)
 
 /**
- * A calendar of the side menu. With [actions] a long press opens a menu with "Edit" and, when it can be deleted, "Delete" (the same two
- * actions go to TalkBack as custom actions, because a long press cannot be seen).
+ * A calendar of the side menu. A long press opens a menu with "Edit" and, when it can be deleted, "Delete" (both only with [actions]) and
+ * always "Export" (the same entries go to TalkBack as custom actions, because a long press cannot be seen).
  */
 @Composable
-internal fun ActionableCalendarRow(calendar: CalendarInfo, onToggle: (String, Boolean) -> Unit, actions: CalendarActions?) {
+internal fun ActionableCalendarRow(calendar: CalendarInfo, onToggle: (String, Boolean) -> Unit, actions: CalendarActions?, onExport: () -> Unit) {
     val edit = stringResource(R.string.calendar_menu_edit)
     val delete = stringResource(R.string.local_calendar_delete)
+    val export = stringResource(R.string.calendar_menu_export)
     MenuCalendarRow(
         calendar, onToggle,
-        items = actions?.let {
-            buildList {
+        items = buildList {
+            actions?.let {
                 add(CalendarMenuItem(edit, "calendar_menu_edit", it.onEdit))
                 if (it.canDelete) add(CalendarMenuItem(delete, "calendar_menu_delete", it.onDelete))
             }
+            add(CalendarMenuItem(export, "calendar_menu_export", onExport))
         },
     )
 }
@@ -125,13 +127,14 @@ internal fun LocalCalendarsSection(
     onNew: () -> Unit,
     onEdit: (String) -> Unit,
     onDelete: (String) -> Unit,
+    onExport: (String) -> Unit,
 ) {
     Row(Modifier.padding(16.dp, 12.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(Icons.Outlined.PhoneAndroid, contentDescription = null)
         Text(stringResource(R.string.local_calendars), Modifier.padding(start = 16.dp), style = MaterialTheme.typography.bodyLarge)
     }
     calendars.forEach { calendar ->
-        ActionableCalendarRow(calendar, onToggle, CalendarActions(canDelete = true, onEdit = { onEdit(calendar.id) }, onDelete = { onDelete(calendar.id) }))
+        ActionableCalendarRow(calendar, onToggle, CalendarActions(canDelete = true, onEdit = { onEdit(calendar.id) }, onDelete = { onDelete(calendar.id) }), onExport = { onExport(calendar.id) })
     }
     NavigationDrawerItem(
         icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
