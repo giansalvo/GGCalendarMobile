@@ -1,5 +1,6 @@
 package io.github.giansalvo.ggcalendar.feature.calendar
 
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -71,7 +72,7 @@ internal fun MonthView(
             (0 until 7).forEach { i ->
                 val dow = firstDay.plus(i.toLong())
                 Text(
-                    dow.getDisplayName(TextStyle.SHORT, Locale.getDefault()).replaceFirstChar { it.titlecase(Locale.getDefault()) },
+                    dow.getDisplayName(TextStyle.SHORT, LocalConfiguration.current.locales[0]).replaceFirstChar { it.titlecase(LocalConfiguration.current.locales[0]) },
                     style = MaterialTheme.typography.labelMedium,
                     color = if (dow == LocalDate.now().dayOfWeek) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f),

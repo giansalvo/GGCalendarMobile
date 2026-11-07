@@ -1,5 +1,6 @@
 package io.github.giansalvo.ggcalendar.feature.event
 
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -50,7 +51,7 @@ private enum class Ending { NEVER, ON_DATE, AFTER }
 @Composable
 internal fun CustomRecurrenceDialog(start: LocalDate, allDay: Boolean, current: String?, onDismiss: () -> Unit, onPick: (String) -> Unit) {
     val res = LocalContext.current.resources
-    val locale = Locale.getDefault()
+    val locale = LocalConfiguration.current.locales[0]
     val initial = RecurrenceRule.parse(current) ?: RecurrenceRule(Frequency.WEEKLY, days = listOf(start.dayOfWeek))
     var frequency by remember { mutableStateOf(initial.frequency) }
     var interval by remember { mutableStateOf(initial.interval.toString()) }

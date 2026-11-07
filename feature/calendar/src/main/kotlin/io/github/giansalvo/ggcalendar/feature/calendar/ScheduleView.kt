@@ -193,7 +193,7 @@ private fun DateLabel(day: LocalDate, isToday: Boolean) {
     val color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            day.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()).replaceFirstChar { it.titlecase(Locale.getDefault()) },
+            day.dayOfWeek.getDisplayName(TextStyle.SHORT, LocalConfiguration.current.locales[0]).replaceFirstChar { it.titlecase(LocalConfiguration.current.locales[0]) },
             style = MaterialTheme.typography.labelMedium,
             color = color,
         )

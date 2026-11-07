@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
     alias(libs.plugins.kotlin.serialization)
@@ -8,7 +7,7 @@ plugins {
 
 android {
     namespace = "io.github.giansalvo.ggcalendar.core.database"
-    compileSdk = 36
+    compileSdk = 37
     defaultConfig { minSdk = 26 }
     testOptions {
         unitTests.isIncludeAndroidResources = true

@@ -45,7 +45,7 @@
 
 Requisiti: [Android Studio](https://developer.android.com/studio) (include JDK e Android SDK).
 
-Da riga di comando serve un **JDK 21** (è quello usato dal CI): imposta `JAVA_HOME` su di esso. Con un JDK più recente, ad esempio il 25, Gradle 8.14 e Kotlin 2.2 non si avviano. Il codice compila comunque per Java 17, quindi il JDK usato non cambia l'app prodotta.
+Da riga di comando serve un **JDK 21** (è quello usato dal CI): imposta `JAVA_HOME` su di esso. Con un JDK più recente, ad esempio il 25 (quello incorporato in Android Studio), Gradle e Kotlin 2.2 non si avviano: in Android Studio imposta il Gradle JDK su 21 in *Settings > Build > Gradle*. La build usa **AGP 9.5** e **Gradle 9.6**, per cui serve Android Studio **Rabbit 2 (2026.2.2)** o successivo. Il codice compila comunque per Java 17, quindi il JDK usato non cambia l'app prodotta.
 
 ```powershell
 git clone https://github.com/giansalvo/GGCalendarMobile.git

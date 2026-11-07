@@ -1,5 +1,6 @@
 package io.github.giansalvo.ggcalendar.feature.event
 
+import androidx.compose.ui.platform.LocalConfiguration
 import io.github.giansalvo.ggcalendar.core.notifications.exposeTestTags
 import androidx.compose.ui.platform.testTag
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -307,7 +308,7 @@ private fun EditorFields(
     onGuestsFocused: () -> Unit,
 ) {
     val res = LocalContext.current.resources
-    val locale = Locale.getDefault()
+    val locale = LocalConfiguration.current.locales[0]
     var picking by remember { mutableStateOf<Picker?>(null) }
 
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
@@ -502,7 +503,7 @@ private val editorDate get() = io.github.giansalvo.ggcalendar.core.data.DateForm
 private fun DateTimeRow(date: LocalDate, time: LocalTime, allDay: Boolean, onDate: () -> Unit, onTime: () -> Unit, tag: String) {
     Row(Modifier.fillMaxWidth().padding(start = 56.dp, end = 20.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(
-            date.format(editorDate).replaceFirstChar { it.titlecase(Locale.getDefault()) },
+            date.format(editorDate).replaceFirstChar { it.titlecase(LocalConfiguration.current.locales[0]) },
             Modifier.testTag(tag + "_date").weight(1f).clickable(onClick = onDate).padding(vertical = 12.dp),
         )
         if (!allDay) Text(time.format(timeFormat), Modifier.testTag(tag + "_time").clickable(onClick = onTime).padding(12.dp))
@@ -825,7 +826,7 @@ private fun TimeDialog(initial: LocalTime, onDismiss: () -> Unit, onPick: (Local
 
 @Composable
 fun ZonePickerDialog(current: ZoneId, onDismiss: () -> Unit, onPick: (ZoneId) -> Unit) {
-    val locale = Locale.getDefault()
+    val locale = LocalConfiguration.current.locales[0]
     var query by remember { mutableStateOf("") }
     val zones = remember {
         ZoneId.getAvailableZoneIds().filter { '/' in it && !it.startsWith("Etc/") && !it.startsWith("SystemV/") }
@@ -865,7 +866,7 @@ private fun RecurrenceDialog(draft: Draft, onDismiss: () -> Unit, onPick: (Strin
         return
     }
     val res = LocalContext.current.resources
-    val locale = Locale.getDefault()
+    val locale = LocalConfiguration.current.locales[0]
     val day = draft.startDate
     val weekday = day.dayOfWeek
     val presets: List<Pair<String?, String>> = buildList {

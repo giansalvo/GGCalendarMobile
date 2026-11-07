@@ -1,5 +1,6 @@
 package io.github.giansalvo.ggcalendar.feature.calendar
 
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -318,7 +319,7 @@ private fun Modifier.pinchToZoom(onZoom: (factor: Float, focusY: Float) -> Unit,
 
 @Composable
 private fun DayHeader(days: List<LocalDate>, today: LocalDate, onDayClick: (LocalDate) -> Unit, axis: Dp, zoneLabel: String?) {
-    val locale = Locale.getDefault()
+    val locale = LocalConfiguration.current.locales[0]
     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Row(Modifier.width(axis), verticalAlignment = Alignment.Bottom) {
             Spacer(Modifier.width(HOUR_COLUMN))
@@ -477,7 +478,7 @@ private fun zoneTime(time: LocalTime, is24: Boolean): String =
 @Composable
 private fun SecondHourLabels(hour: Dp, rows: List<ZoneRow>) {
     val is24 = android.text.format.DateFormat.is24HourFormat(LocalContext.current)
-    val locale = Locale.getDefault()
+    val locale = LocalConfiguration.current.locales[0]
     Box(Modifier.width(ZONE_COLUMN).height(hour * 24)) {
         rows.forEachIndexed { h, row ->
             ZoneRowLabel(row, h, hour, is24, locale, Modifier.width(ZONE_COLUMN - 6.dp).offset(x = 0.dp), "zone_row_", TextAlign.End)
@@ -552,7 +553,7 @@ private fun DayColumn(
         val width = maxWidth
         if (zoneRows != null) {
             val is24 = android.text.format.DateFormat.is24HourFormat(LocalContext.current)
-            val locale = Locale.getDefault()
+            val locale = LocalConfiguration.current.locales[0]
             zoneRows.forEachIndexed { h, row ->
                 ZoneRowLabel(row, h, hour, is24, locale, Modifier.padding(start = 3.dp).width(ZONE_COLUMN), "zone_day_row_", TextAlign.Start)
             }
