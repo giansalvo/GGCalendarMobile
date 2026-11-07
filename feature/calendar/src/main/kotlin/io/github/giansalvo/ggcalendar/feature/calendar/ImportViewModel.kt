@@ -1,9 +1,11 @@
 package io.github.giansalvo.ggcalendar.feature.calendar
 
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.giansalvo.ggcalendar.core.data.CalendarRepository
 import io.github.giansalvo.ggcalendar.core.data.DuplicateAction
 import io.github.giansalvo.ggcalendar.core.data.ImportOptions
@@ -60,6 +62,7 @@ data class ImportState(
 
 @HiltViewModel
 class ImportViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val service: ImportService,
     private val repository: CalendarRepository,
 ) : ViewModel() {
@@ -113,7 +116,7 @@ class ImportViewModel @Inject constructor(
                             summary = s.summary,
                             locals = locals,
                             destination = ImportState.NEW,
-                            newName = s.summary.calendarName ?: s.summary.label.removeSuffix(".ics").removeSuffix(".ICS").ifBlank { "Calendar" },
+                            newName = s.summary.calendarName ?: s.summary.label.removeSuffix(".ics").removeSuffix(".ICS").ifBlank { context.getString(R.string.import_default_name) },
                             reminders = if (s.summary.fileHasAlarms) ReminderChoice.FILE else ReminderChoice.APP_DEFAULT,
                             appDefaultMinutes = repository.defaultReminderMinutes(),
                         )
@@ -151,7 +154,7 @@ class ImportViewModel @Inject constructor(
         }
         cancelled = false
         mutable.update { it.copy(stage = ImportStage.IMPORTING, confirmLarge = false, progress = 0 to 0) }
-        val target = if (st.destination == ImportState.NEW) ImportTarget.NewCalendar(st.newName.trim().ifBlank { "Calendar" }, st.newColor) else ImportTarget.Existing(st.destination)
+        val target = if (st.destination == ImportState.NEW) ImportTarget.NewCalendar(st.newName.trim().ifBlank { context.getString(R.string.import_default_name) }, st.newColor) else ImportTarget.Existing(st.destination)
         workJob = viewModelScope.launch {
             val outcome = service.import(
                 src, target, ImportOptions(st.range, st.duplicates, st.reminders),

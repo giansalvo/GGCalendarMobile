@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -29,13 +30,13 @@ import io.github.giansalvo.ggcalendar.core.model.EventAttachment
 import io.github.giansalvo.ggcalendar.core.notifications.exposeTestTags
 
 /** The kind of file shown in the small badge of a row: from the type Google or the extension gave, else a plain link. */
-internal enum class AttachmentKind(val label: String, val color: Color, val dark: Boolean = false) {
-    PDF("PDF", Color(0xFFD93025)),
-    IMAGE("IMG", Color(0xFF1E8E3E)),
-    DOCUMENT("DOC", Color(0xFF1A73E8)),
-    SHEET("XLS", Color(0xFF188038)),
-    DRIVE("▲", Color(0xFFF9AB00), dark = true),
-    LINK("LINK", Color(0xFF6B6572)),
+internal enum class AttachmentKind(@StringRes val label: Int, val color: Color, val dark: Boolean = false) {
+    PDF(R.string.attachment_badge_pdf, Color(0xFFD93025)),
+    IMAGE(R.string.attachment_badge_image, Color(0xFF1E8E3E)),
+    DOCUMENT(R.string.attachment_badge_document, Color(0xFF1A73E8)),
+    SHEET(R.string.attachment_badge_sheet, Color(0xFF188038)),
+    DRIVE(R.string.attachment_badge_drive, Color(0xFFF9AB00), dark = true),
+    LINK(R.string.attachment_badge_link, Color(0xFF6B6572)),
 }
 
 internal fun attachmentKind(a: EventAttachment): AttachmentKind {
@@ -55,7 +56,7 @@ internal fun AttachmentBadge(a: EventAttachment, modifier: Modifier = Modifier) 
     val kind = attachmentKind(a)
     val shape = RoundedCornerShape(7.dp)
     Box(modifier.size(width = 36.dp, height = 28.dp).background(if (a.canOpen) kind.color else MaterialTheme.colorScheme.outline, shape), contentAlignment = Alignment.Center) {
-        Text(kind.label, color = if (kind.dark) Color(0xFF222222) else Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 1)
+        Text(stringResource(kind.label), color = if (kind.dark) Color(0xFF222222) else Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 1)
     }
 }
 

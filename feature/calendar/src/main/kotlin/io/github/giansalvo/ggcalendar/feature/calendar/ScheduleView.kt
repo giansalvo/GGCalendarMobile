@@ -237,7 +237,7 @@ private fun EventCard(instance: EventInstance, day: LocalDate, dimmed: Boolean, 
         }
         if (instance.isBirthday) Icon(Icons.Outlined.Cake, contentDescription = stringResource(R.string.birthday), tint = content)
         if (instance.hasAlarm) Icon(Icons.Outlined.Alarm, contentDescription = stringResource(R.string.alarm), tint = content)
-        if (instance.hasMeet) Icon(Icons.Outlined.Videocam, contentDescription = "Google Meet", tint = content)
+        if (instance.hasMeet) Icon(Icons.Outlined.Videocam, contentDescription = stringResource(R.string.meet_description), tint = content)
     }
 }
 

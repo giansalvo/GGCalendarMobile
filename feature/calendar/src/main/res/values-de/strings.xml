@@ -231,4 +231,6 @@
     <string name="import_attachments">Anhänge (Links): %1$d</string>
     <string name="import_attachments_ignored">Nicht gelesene Anhänge: %1$d (nur https-Links, keine Dateien in der .ics)</string>
     <string name="import_attachments_cut">Anhänge über dem Limit von 25: %1$d ausgelassen</string>
+    <string name="meet_description">Google-Meet-Videoanruf</string>
+    <string name="import_default_name">Kalender</string>
 </resources>

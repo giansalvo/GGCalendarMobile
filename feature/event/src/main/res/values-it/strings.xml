@@ -225,4 +225,11 @@
     <string name="attachment_open">Apri</string>
     <string name="attachment_not_openable">Non apribile (non è https)</string>
     <string name="attachment_drive">Google Drive</string>
+    <string name="attachment_badge_pdf">PDF</string>
+    <string name="attachment_badge_image">IMG</string>
+    <string name="attachment_badge_document">DOC</string>
+    <string name="attachment_badge_sheet">XLS</string>
+    <string name="attachment_badge_drive">▲</string>
+    <string name="attachment_badge_link">LINK</string>
+    <string name="share_meet">Google Meet: %1$s</string>
 </resources>
