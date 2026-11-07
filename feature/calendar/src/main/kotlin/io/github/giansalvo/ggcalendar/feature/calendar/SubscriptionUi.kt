@@ -96,6 +96,7 @@ internal fun SubscriptionsSection(
     onEdit: (String) -> Unit,
     onShowAddress: (String) -> Unit,
     onRemove: (String) -> Unit,
+    onExport: (String) -> Unit,
 ) {
     if (subscriptions.isNotEmpty()) {
         Row(Modifier.padding(16.dp, 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -110,6 +111,7 @@ internal fun SubscriptionsSection(
             CalendarMenuItem(stringResource(R.string.subscription_refresh_now), "subscription_menu_refresh") { onRefresh(calendar.id) },
             CalendarMenuItem(stringResource(R.string.subscription_edit), "subscription_menu_edit") { onEdit(calendar.id) },
             CalendarMenuItem(stringResource(R.string.subscription_show_address), "subscription_menu_address") { onShowAddress(calendar.id) },
+            CalendarMenuItem(stringResource(R.string.calendar_menu_export), "calendar_menu_export") { onExport(calendar.id) },
             CalendarMenuItem(stringResource(R.string.subscription_remove), "subscription_menu_remove") { onRemove(calendar.id) },
         )
         MenuCalendarRow(calendar, onToggle, items) { longPress ->

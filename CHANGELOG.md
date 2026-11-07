@@ -5,6 +5,7 @@ Le modifiche di GGCalendar Mobile da una versione alla successiva, dalla più re
 ## 1.0.8 (xx/11/2026)
 
 - Barra superiore più pulita: tolto il cerchio con l'iniziale dell'account, che mostrava sempre e solo il primo account
+- «Esporta» si apre con la pressione lunga su un calendario; si possono ancora aggiungerne altri. La voce è rimossa dal menu laterale
 
 ## 1.0.7 (07/11/2026)
 

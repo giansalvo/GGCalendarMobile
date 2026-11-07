@@ -204,6 +204,8 @@
     <string name="csv_yes">Oui</string>
     <string name="csv_no">Non</string>
     <string name="export_on_phone">Sur ce téléphone</string>
+    <string name="export_subscriptions">Abonnements</string>
+    <string name="export_contacts">Contacts du téléphone</string>
     <string name="move_calendar_to_local">Les invités et les liens Google Meet ne sont pas enregistrés dans un agenda local&#160;: ils sont perdus, et l\'événement est supprimé de Google Agenda.</string>
     <string name="csv_status">Statut</string>
     <string name="csv_visibility">Visibilité</string>
