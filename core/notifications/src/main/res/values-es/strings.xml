@@ -61,8 +61,8 @@
     </plurals>
     <string name="remaining_less_than_minute">&lt; 1 min</string>
     <string name="remaining_minutes">%d min</string>
-    <string name="remaining_hours_minutes">%d h %d min</string>
-    <string name="remaining_days_hours">%d d %d h</string>
+    <string name="remaining_hours_minutes">%1$d h %2$d min</string>
+    <string name="remaining_days_hours">%1$d d %2$d h</string>
     <string name="close_alarm_title">¿Cancelar esta alarma?</string>
     <string name="close_alarm_text">La alarma de \"%s\" no sonará. El evento sigue en el calendario.</string>
     <string name="close_alarm">Cancelar alarma</string>

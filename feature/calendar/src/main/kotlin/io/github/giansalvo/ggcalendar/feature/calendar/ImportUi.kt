@@ -52,7 +52,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -68,6 +68,8 @@ import io.github.giansalvo.ggcalendar.core.data.ReminderChoice
 import io.github.giansalvo.ggcalendar.core.notifications.exposeTestTags
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 /**
  * The window that imports a file or an address into a local calendar. It opens on the choice of the source (from the menu) or
@@ -123,7 +125,8 @@ internal fun ImportScreen(viewModel: ImportViewModel, onShow: (java.time.LocalDa
 @Composable
 private fun SourceStage(onPick: () -> Unit, onAddress: (String) -> Unit) {
     var address by rememberSaveable { mutableStateOf("") }
-    val clipboard = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val clipScope = rememberCoroutineScope()
     Text(stringResource(R.string.import_intro), style = MaterialTheme.typography.bodyMedium)
     Button(onClick = onPick, modifier = Modifier.fillMaxWidth().testTag("import_choose_file")) { Text(stringResource(R.string.import_choose_file)) }
     HorizontalDivider()
@@ -137,7 +140,7 @@ private fun SourceStage(onPick: () -> Unit, onAddress: (String) -> Unit) {
         modifier = Modifier.fillMaxWidth().testTag("import_address"),
     )
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        TextButton(onClick = { clipboard.getText()?.text?.let { address = it.take(2048) } }, modifier = Modifier.testTag("import_paste")) { Text(stringResource(R.string.subscription_paste)) }
+        TextButton(onClick = { clipScope.launch { clipboard.getClipEntry()?.clipData?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text?.toString()?.let { address = it.take(2048) } } }, modifier = Modifier.testTag("import_paste")) { Text(stringResource(R.string.subscription_paste)) }
         OutlinedButton(onClick = { onAddress(address) }, enabled = address.isNotBlank(), modifier = Modifier.testTag("import_address_go")) { Text(stringResource(R.string.import_read)) }
     }
     Text(stringResource(R.string.import_address_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

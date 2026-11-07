@@ -29,11 +29,11 @@ import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Group
-import androidx.compose.material.icons.outlined.HelpOutline
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.Notes
+import androidx.compose.material.icons.automirrored.outlined.Notes
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Share
@@ -75,7 +75,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.giansalvo.ggcalendar.core.data.EventDetail
 import io.github.giansalvo.ggcalendar.core.data.SeriesScope
@@ -272,7 +272,7 @@ private fun DetailContent(instance: EventInstance, detail: EventDetail, secondZo
         }
 
         if (event.description.isNotBlank()) {
-            InfoRow(Icons.Outlined.Notes) { Text(descriptionText(event.description), style = MaterialTheme.typography.bodyMedium) }
+            InfoRow(Icons.AutoMirrored.Outlined.Notes) { Text(descriptionText(event.description), style = MaterialTheme.typography.bodyMedium) }
         }
 
         // Not read yet (null) shows nothing, like no attachments at all.
@@ -363,7 +363,7 @@ private fun Guests(attendees: List<Attendee>, organizer: String?, onWrite: (() -
                     val (icon, tint) = when (a.response) {
                         "accepted" -> Icons.Outlined.CheckCircle to MaterialTheme.colorScheme.primary
                         "declined" -> Icons.Outlined.Cancel to MaterialTheme.colorScheme.error
-                        "tentative" -> Icons.Outlined.HelpOutline to MaterialTheme.colorScheme.onSurfaceVariant
+                        "tentative" -> Icons.AutoMirrored.Outlined.HelpOutline to MaterialTheme.colorScheme.onSurfaceVariant
                         else -> Icons.Outlined.Schedule to MaterialTheme.colorScheme.onSurfaceVariant
                     }
                     Icon(icon, null, tint = tint, modifier = Modifier.size(18.dp))
