@@ -2,7 +2,12 @@
 
 Le modifiche di GGCalendar Mobile da una versione alla successiva, dalla più recente.
 
-## 1.0.7 (xx/11/2026)
+## 1.0.7 (07/11/2026)
+
+- Aggiornamento ad Android 17 (livello API 37): sveglie, promemoria e notifiche provati anche sulla nuova versione del sistema
+- Accesso con Google aggiornato alla libreria Google Play services auth 22
+- Notifiche più sicure: si aprono con un collegamento esplicito all'app
+- Aggiornate le librerie e gli strumenti dell'app (Kotlin 2.4, Android Gradle Plugin 9.5, Compose): nessuna modifica alle funzioni
 
 
 ## 1.0.6 (01/11/2026)
