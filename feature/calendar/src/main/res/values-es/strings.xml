@@ -231,4 +231,6 @@
     <string name="import_attachments">Adjuntos (enlaces): %1$d</string>
     <string name="import_attachments_ignored">Adjuntos no leídos: %1$d (solo enlaces https, ningún archivo dentro del .ics)</string>
     <string name="import_attachments_cut">Adjuntos por encima del límite de 25: %1$d omitidos</string>
+    <string name="meet_description">Videollamada de Google Meet</string>
+    <string name="import_default_name">Calendario</string>
 </resources>

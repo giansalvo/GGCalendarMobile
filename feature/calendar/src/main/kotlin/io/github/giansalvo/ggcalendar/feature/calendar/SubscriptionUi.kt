@@ -218,7 +218,8 @@ internal fun SubscriptionAddDialog(
         )
         is SubscriptionDialog.Preview -> {
             val preview = dialog.preview
-            var name by remember(dialog) { mutableStateOf(preview.name) }
+            val defaultName = stringResource(R.string.import_default_name)
+            var name by remember(dialog) { mutableStateOf(preview.name.ifBlank { defaultName }) }
             var color by remember(dialog) { mutableStateOf(LocalCalendarColors.first()) }
             val dates = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
             AlertDialog(

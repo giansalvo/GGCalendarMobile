@@ -6,6 +6,7 @@ Le modifiche di GGCalendar Mobile da una versione alla successiva, dalla più re
 
 - Barra superiore più pulita: tolto il cerchio con l'iniziale dell'account, che mostrava sempre e solo il primo account
 - «Esporta» si apre con la pressione lunga su un calendario; si possono ancora aggiungerne altri. La voce è rimossa dal menu laterale
+- Testi che prima erano scritti a mano ora seguono la lingua: riga «Google Meet» nel testo condiviso e frase letta da TalkBack, etichette degli allegati, nome proposto per un calendario senza nome, offset del fuso orario e data di «Ogni anno il…» nell'ordine della lingua
 
 ## 1.0.7 (07/11/2026)
 

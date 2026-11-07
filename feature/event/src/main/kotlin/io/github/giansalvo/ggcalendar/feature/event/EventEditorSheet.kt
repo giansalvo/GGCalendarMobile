@@ -118,6 +118,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.giansalvo.ggcalendar.core.data.DateFormats
 import io.github.giansalvo.ggcalendar.core.database.CalendarEntity
 import io.github.giansalvo.ggcalendar.core.model.Attendee
 import io.github.giansalvo.ggcalendar.core.model.Frequency
@@ -515,8 +516,9 @@ private fun DateTimeRow(date: LocalDate, time: LocalTime, allDay: Boolean, onDat
 
 /** "Central European Time (GMT+01:00)", the offset of today. */
 fun zoneLabel(zone: ZoneId, locale: Locale): String {
-    val offset = zone.rules.getOffset(Instant.now()).id.let { if (it == "Z") "" else it }
-    return "${zone.getDisplayName(TextStyle.FULL, locale)} (GMT$offset)"
+    // "GMT+01:00" as the language of the phone writes it (the localized form of the offset, pattern OOOO).
+    val offset = java.time.format.DateTimeFormatter.ofPattern("OOOO", locale).format(java.time.ZonedDateTime.now(zone))
+    return "${zone.getDisplayName(TextStyle.FULL, locale)} ($offset)"
 }
 
 /**
@@ -877,7 +879,7 @@ private fun RecurrenceDialog(draft: Draft, onDismiss: () -> Unit, onPick: (Strin
         add(RecurrenceRule(Frequency.DAILY).toRrule(draft.allDay) to res.getQuantityString(R.plurals.every_day, 1))
         add(RecurrenceRule(Frequency.WEEKLY, days = listOf(weekday)).toRrule(draft.allDay) to res.getString(R.string.weekly_on, weekday.getDisplayName(TextStyle.FULL, locale)))
         add(RecurrenceRule(Frequency.MONTHLY, monthDay = day.dayOfMonth).toRrule(draft.allDay) to res.getString(R.string.monthly_on_day, day.dayOfMonth))
-        add(RecurrenceRule(Frequency.YEARLY).toRrule(draft.allDay) to res.getString(R.string.yearly_on, day.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM"))))
+        add(RecurrenceRule(Frequency.YEARLY).toRrule(draft.allDay) to res.getString(R.string.yearly_on, day.format(DateFormats.of("dMMMM", locale))))
         add(
             RecurrenceRule(Frequency.WEEKLY, days = listOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY)).toRrule(draft.allDay)
                 to res.getString(R.string.weekdays),

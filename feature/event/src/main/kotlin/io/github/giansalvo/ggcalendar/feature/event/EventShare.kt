@@ -101,7 +101,7 @@ internal object EventShare {
         parts += whenText(instance.allDay, instance.begin, instance.end, instance.startDay, instance.endDay)
         master(detail)?.rrule?.let { rule -> describe(rule, res)?.let { parts += res.getString(R.string.share_repeats, it) } }
         if (e.location.isNotBlank()) parts += e.location.trim()
-        e.meetLink?.takeIf { it.isNotBlank() }?.let { parts += "Google Meet: $it" }
+        e.meetLink?.takeIf { it.isNotBlank() }?.let { parts += res.getString(R.string.share_meet, it) }
         DescriptionPlainText.of(e.description).trim().takeIf { it.isNotEmpty() }?.let { parts += "\n" + it }
         return parts.joinToString("\n")
     }

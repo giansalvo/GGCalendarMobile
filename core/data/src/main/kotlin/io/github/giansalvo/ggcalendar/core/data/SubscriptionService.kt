@@ -117,7 +117,7 @@ class SubscriptionService @Inject constructor(
         // The total may be over the limit: the days chosen in the dialog can bring it under (see [countIn]).
         val zone = ZoneId.systemDefault()
         val days = parsed.events.map { dayOf(it.time, zone) }
-        val name = parsed.report.calendarName?.trim()?.takeIf { it.isNotEmpty() }?.take(LocalCalendars.MAX_NAME) ?: "Calendar"
+        val name = parsed.report.calendarName?.trim()?.takeIf { it.isNotEmpty() }?.take(LocalCalendars.MAX_NAME).orEmpty() // empty when the file has none: the dialog proposes a name from its resources
         return PreviewResult.Ok(
             SubscriptionPreview(
                 url = url, name = name, eventCount = parsed.events.size, firstDay = days.minOrNull(), lastDay = days.maxOrNull(),
