@@ -689,8 +689,6 @@ private fun CalendarTopBar(state: CalendarUiState, miniOpen: Boolean, onMenu: ()
             IconButton(onClick = onSettings, modifier = Modifier.testTag("btn_settings")) {
                 Icon(Icons.Outlined.Settings, contentDescription = stringResource(R.string.settings))
             }
-            Avatar(state.accounts.firstOrNull()?.email)
-            Spacer(Modifier.width(8.dp))
         },
     )
 }

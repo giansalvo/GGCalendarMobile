@@ -2,6 +2,10 @@
 
 Le modifiche di GGCalendar Mobile da una versione alla successiva, dalla più recente.
 
+## 1.0.8 (xx/11/2026)
+
+- Barra superiore più pulita: tolto il cerchio con l'iniziale dell'account, che mostrava sempre e solo il primo account
+
 ## 1.0.7 (07/11/2026)
 
 - Aggiornamento ad Android 17 (livello API 37): sveglie, promemoria e notifiche provati anche sulla nuova versione del sistema
