@@ -34,14 +34,14 @@ class StringResourcesTest(private val language: String) {
          * list of "same words" of the desktop app: a new text equal to the English one must be translated, or be added here.
          */
         private val SAME_WORDS: Map<String, Set<String>> = mapOf(
-            "it" to setOf("Account:", "Banana", "Email", "No"),
-            "de" to setOf("Flamingo", "Name", "Optional", "Status", "Text", "Version", "Website"),
+            "it" to setOf("Account:", "Banana", "Email", "LINK", "No"),
+            "de" to setOf("Flamingo", "LINK", "Name", "Optional", "Status", "Text", "Version", "Website"),
             "es" to setOf("No"),
             "fr" to setOf("Contacts", "Description", "Graphite", "Notification", "Notifications", "Public", "Version", "occurrence", "occurrences", "minute", "minutes"),
         )
 
-        /** Names and formats that are the same in every language. */
-        private val SAME_EVERYWHERE = Regex("Google Meet|Google Drive|Google|GGCalendar|iCal|\\.ics|\\.csv|CSV|OK|https?://|webcal://|\\b(?:min|h|d)\\b")
+        /** Names and formats that are the same in every language (the file type abbreviations of the attachment badges too). */
+        private val SAME_EVERYWHERE = Regex("Google Meet|Google Drive|Google|GGCalendar|iCal|\\.ics|\\.csv|CSV|OK|https?://|webcal://|\\b(?:min|h|d)\\b|\\b(?:PDF|IMG|DOC|XLS)\\b")
         private val PLACEHOLDER = Regex("%(?:\\d+\\$)?[-#+ 0,(]*\\d*(?:\\.\\d+)?[a-zA-Z]|%%")
     }
 
