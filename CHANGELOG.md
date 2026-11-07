@@ -2,6 +2,9 @@
 
 Le modifiche di GGCalendar Mobile da una versione alla successiva, dalla più recente.
 
+## 1.0.7 (xx/11/2026)
+
+
 ## 1.0.6 (01/11/2026)
 
 - Nuova lingua: francese
