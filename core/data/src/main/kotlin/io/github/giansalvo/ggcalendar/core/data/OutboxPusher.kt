@@ -103,11 +103,12 @@ class OutboxPusher @Inject constructor(
         return conflicts
     }
 
-    /** The end of an import into Google, told once: how many events Google took and how many it did not. */
+    /**
+     * The end of an import into Google, told once: how many events Google took and how many it did not. Only the numbers and the name of the
+     * calendar are stored ("sent|rejected|name"): the sentence is made when it is shown, in the language of the app then.
+     */
     private suspend fun announce(email: String, report: ImportReports.Finished) {
-        val text = if (report.rejected == 0) context.resources.getQuantityString(R.plurals.message_import_sent, report.sent, report.sent, report.calendarName)
-        else context.getString(R.string.message_import_partial, report.sent, report.rejected, report.calendarName)
-        messages.insert(SyncMessageEntity(accountEmail = email, kind = "info", text = text))
+        messages.insert(SyncMessageEntity(accountEmail = email, kind = "import_result", text = "${report.sent}|${report.rejected}|${report.calendarName}"))
     }
 
     private suspend fun delete(item: OutboxEntity, remoteCalendar: String, accessToken: String): Outcome {

@@ -236,9 +236,9 @@ class OutboxPusherTest {
 
         push()
 
-        val info = db.syncMessageDao().observeUnread().first().filter { it.kind == "info" }
+        val info = db.syncMessageDao().observeUnread().first().filter { it.kind == "import_result" }
         assertEquals(1, info.size)
-        assertTrue(info.single().text, info.single().text.contains("Prova") && info.single().text.contains("1") && info.single().text.contains("not accepted"))
+        assertEquals("1 taken, 1 not accepted, the name of the calendar last", "1|1|Prova", info.single().text)
         assertTrue(db.outboxDao().getAll().isEmpty())
     }
 
@@ -254,8 +254,8 @@ class OutboxPusherTest {
         push()
         push()
 
-        val info = db.syncMessageDao().observeUnread().first().filter { it.kind == "info" }
+        val info = db.syncMessageDao().observeUnread().first().filter { it.kind == "import_result" }
         assertEquals(1, info.size)
-        assertFalse(info.single().text.contains("not accepted"))
+        assertEquals("1|0|Prova", info.single().text)
     }
 }

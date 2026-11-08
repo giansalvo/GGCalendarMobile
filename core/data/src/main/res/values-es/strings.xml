@@ -4,10 +4,5 @@
     <string name="conflict_suffix">" (conflicto)"</string>
     <string name="message_conflict">\"%1$s\" se cambió aquí y en Google: se mantuvo la versión de Google y la tuya se guardó como \"%2$s\".</string>
     <string name="message_rejected">Google no aceptó un cambio (%1$d): %2$s</string>
-    <plurals name="message_import_sent">
-        <item quantity="one">Importación en %2$s: %1$d evento enviado a Google.</item>
-        <item quantity="other">Importación en %2$s: %1$d eventos enviados a Google.</item>
-    </plurals>
-    <string name="message_import_partial">Importación en %3$s: enviados %1$d, no aceptados %2$d.</string>
     <string name="birthdays_calendar">Cumpleaños (contactos)</string>
 </resources>
