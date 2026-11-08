@@ -463,4 +463,14 @@ class ImportServiceTest {
         assertEquals(0, server.requestCount)
     }
 
+    @Test fun `U215 into a Google calendar the user is asked from 1000 events, into a local one from 20000`() = runTest {
+        val google = googleCalendar()
+        fun many(n: Int) = ics(*(1..n).map { vevent("m$it", "Evento $it") }.toTypedArray())
+        val atLimit = service.plan(source(many(1000)), google, SubscriptionRange())
+        assertTrue("1000 events still go without asking", !atLimit.needsConfirmation && atLimit.toGoogle)
+        val over = service.plan(source(many(1001)), google, SubscriptionRange())
+        assertTrue("one more and the user is asked", over.needsConfirmation && over.toGoogle)
+        val local = service.plan(source(many(1001)), home, SubscriptionRange())
+        assertTrue("a local calendar does not ask at 1001", !local.needsConfirmation && !local.toGoogle)
+    }
 }

@@ -28,8 +28,10 @@ class OutboxPusher @Inject constructor(
     @ApplicationContext private val context: Context,
     private val db: GGCalendarDatabase,
     private val api: GoogleCalendarApi,
+    private val reports: ImportReports = ImportReports(),
 ) {
-    private enum class Outcome { DONE, LATER, CONFLICT }
+    /** DROPPED: the entry can never go (its series did not reach Google and nothing will send it): it leaves the queue like a rejection. */
+    private enum class Outcome { DONE, LATER, CONFLICT, DROPPED }
 
     private val events get() = db.eventDao()
     private val calendars get() = db.calendarDao()
@@ -54,6 +56,7 @@ class OutboxPusher @Inject constructor(
             val remoteCalendar = calendars.get(item.calendarId)?.remoteId
             if (remoteCalendar == null) {
                 outbox.complete(item.seq) // the calendar is gone
+                reports.rejected(item.seq)?.let { announce(email, it) }
                 continue
             }
             try {
@@ -63,7 +66,16 @@ class OutboxPusher @Inject constructor(
                     else -> sendSnapshot(item, remoteCalendar, email, accessToken, recompute)
                 }
                 when (outcome) {
-                    Outcome.DONE -> outbox.complete(item.seq)
+                    Outcome.DONE -> {
+                        outbox.complete(item.seq)
+                        reports.sent(item.seq)?.let { announce(email, it) }
+                    }
+                    Outcome.DROPPED -> {
+                        outbox.complete(item.seq)
+                        // like a rejection: the phone shows what Google has at the next pull
+                        calendars.setSyncToken(item.calendarId, null)
+                        reports.rejected(item.seq)?.let { announce(email, it) }
+                    }
                     Outcome.LATER -> Unit
                     Outcome.CONFLICT -> {
                         conflicted += item.eventId
@@ -74,6 +86,7 @@ class OutboxPusher @Inject constructor(
                 if (!e.isRateLimit && (e.status == 400 || e.status == 403 || e.status == 404)) {
                     // A permanent rejection must not block the rest of the queue.
                     outbox.complete(item.seq)
+                    reports.rejected(item.seq)?.let { announce(email, it) }
                     // The local change will never reach Google: the next pull of this calendar is a full one, so that
                     // the phone shows Google's version again.
                     calendars.setSyncToken(item.calendarId, null)
@@ -88,6 +101,13 @@ class OutboxPusher @Inject constructor(
             }
         }
         return conflicts
+    }
+
+    /** The end of an import into Google, told once: how many events Google took and how many it did not. */
+    private suspend fun announce(email: String, report: ImportReports.Finished) {
+        val text = if (report.rejected == 0) context.resources.getQuantityString(R.plurals.message_import_sent, report.sent, report.sent, report.calendarName)
+        else context.getString(R.string.message_import_partial, report.sent, report.rejected, report.calendarName)
+        messages.insert(SyncMessageEntity(accountEmail = email, kind = "info", text = text))
     }
 
     private suspend fun delete(item: OutboxEntity, remoteCalendar: String, accessToken: String): Outcome {
@@ -125,7 +145,8 @@ class OutboxPusher @Inject constructor(
         snapshot.seriesMasterId?.let { masterId ->
             // A modified occurrence is an existing Google instance of the series: patch it instead of inserting.
             val master = events.get(masterId) ?: return Outcome.DONE
-            masterRemote = master.remoteId ?: return Outcome.LATER // the series has not reached Google yet
+            // The series has not reached Google yet: wait for it, unless nothing is going to send it (its own entry was rejected).
+            masterRemote = master.remoteId ?: return if (outbox.getFor(masterId).isEmpty()) Outcome.DROPPED else Outcome.LATER
             if (target == null) target = GoogleEventMapper.instanceId(masterRemote, snapshot.originalStart() ?: return Outcome.DONE)
         }
         val base = item.base?.let { JSON.decodeFromString<EventEntity>(it) }

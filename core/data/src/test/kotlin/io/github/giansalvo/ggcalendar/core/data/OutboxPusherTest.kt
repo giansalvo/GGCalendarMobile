@@ -35,13 +35,14 @@ class OutboxPusherTest {
     private lateinit var db: GGCalendarDatabase
     private lateinit var pusher: OutboxPusher
     private val recomputed = mutableListOf<String>()
+    private val reports = ImportReports()
 
     @Before
     fun setUp() = runTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         db = Room.inMemoryDatabaseBuilder(context, GGCalendarDatabase::class.java).allowMainThreadQueries().build()
         server.start()
-        pusher = OutboxPusher(context, db, GoogleCalendarApi(OkHttpClient(), server.url("/calendar/v3/")))
+        pusher = OutboxPusher(context, db, GoogleCalendarApi(OkHttpClient(), server.url("/calendar/v3/")), reports)
         db.accountDao().insert(AccountEntity(me))
         db.calendarDao().upsert(CalendarEntity(calendarId, me, me, "Me", "#1A73E8", "owner"))
     }
@@ -190,5 +191,71 @@ class OutboxPusherTest {
         assertEquals("DELETE", request.method)
         assertTrue(request.url.encodedPath.endsWith("/events/g1"))
         assertTrue(db.outboxDao().getAll().isEmpty())
+    }
+
+    // U211
+    @Test
+    fun anExceptionWhoseSeriesWillNeverGoLeavesTheQueueInsteadOfWaitingForever() = runTest {
+        val master = event("Serie") // no id on Google and nothing queued for it: its own entry was rejected and is gone
+        val exception = event("Spostata").copy(id = "e2", seriesMasterId = master.id, originalStartUtc = master.startUtc)
+        db.eventDao().upsert(listOf(master, exception))
+        queue(exception, OutboxEntity.UPDATE)
+
+        push()
+
+        assertTrue(db.outboxDao().getAll().isEmpty())
+        assertEquals(0, server.requestCount)
+    }
+
+    // U212
+    @Test
+    fun anExceptionWaitsWhileItsSeriesIsStillInTheQueue() = runTest {
+        val master = event("Serie")
+        val exception = event("Spostata").copy(id = "e2", seriesMasterId = master.id, originalStartUtc = master.startUtc)
+        db.eventDao().upsert(listOf(master, exception))
+        queue(master, OutboxEntity.IMPORT)
+        queue(exception, OutboxEntity.UPDATE)
+        server.enqueue(MockResponse.Builder().code(500).build()) // the series does not go now: the exception stays behind it
+
+        push()
+
+        assertEquals(2, db.outboxDao().getAll().size)
+    }
+
+    // U213
+    @Test
+    fun theEndOfAnImportIsToldOnceWithHowManyEventsGoogleTookAndHowManyNot() = runTest {
+        val a = event("A")
+        val b = event("B").copy(id = "e2")
+        db.eventDao().upsert(listOf(a, b))
+        queue(a, OutboxEntity.IMPORT)
+        queue(b, OutboxEntity.IMPORT)
+        reports.begin("Prova", db.outboxDao().getAll().map { it.seq })
+        server.enqueue(MockResponse.Builder().body(googleJson("g1", "\"1\"", "A")).build())
+        server.enqueue(MockResponse.Builder().code(400).body("{}").build()) // Google does not accept the second
+
+        push()
+
+        val info = db.syncMessageDao().observeUnread().first().filter { it.kind == "info" }
+        assertEquals(1, info.size)
+        assertTrue(info.single().text, info.single().text.contains("Prova") && info.single().text.contains("1") && info.single().text.contains("not accepted"))
+        assertTrue(db.outboxDao().getAll().isEmpty())
+    }
+
+    // U214
+    @Test
+    fun anImportThatGoogleTookWholeSaysSoAndOnlyOnce() = runTest {
+        val a = event("A")
+        db.eventDao().upsert(listOf(a))
+        queue(a, OutboxEntity.IMPORT)
+        reports.begin("Prova", db.outboxDao().getAll().map { it.seq })
+        server.enqueue(MockResponse.Builder().body(googleJson("g1", "\"1\"", "A")).build())
+
+        push()
+        push()
+
+        val info = db.syncMessageDao().observeUnread().first().filter { it.kind == "info" }
+        assertEquals(1, info.size)
+        assertFalse(info.single().text.contains("not accepted"))
     }
 }

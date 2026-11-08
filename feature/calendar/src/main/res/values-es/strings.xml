@@ -211,6 +211,7 @@
     <string name="import_minutes_before">%1$d min antes</string>
     <string name="import_large_title">Muchos eventos</string>
     <string name="import_large_text">Vas a importar %1$d eventos. Puede tardar un poco. Continúa o elige menos días.</string>
+    <string name="import_large_text_google">Vas a importar %1$d eventos en un calendario de Google. Cada uno se envía por separado a Google y Google limita las solicitudes: puede tardar varios minutos. Continúa o elige menos días.</string>
     <string name="import_continue">Continuar</string>
     <string name="import_change_days">Cambiar los días</string>
     <string name="import_problem_too_large">El archivo supera los 10 MB.</string>
