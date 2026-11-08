@@ -213,6 +213,11 @@
     <string name="import_large_title">Many events</string>
     <string name="import_large_text">You are about to import %1$d events. It may take a while. Continue, or choose fewer days.</string>
     <string name="import_large_text_google">You are about to import %1$d events into a Google calendar. Each one is sent to Google on its own and Google limits the requests: it may take several minutes. Continue, or choose fewer days.</string>
+    <plurals name="message_import_sent">
+        <item quantity="one">Import into %2$s: %1$d event sent to Google.</item>
+        <item quantity="other">Import into %2$s: %1$d events sent to Google.</item>
+    </plurals>
+    <string name="message_import_partial">Import into %3$s: sent %1$d, not accepted %2$d.</string>
     <string name="import_continue">Continue</string>
     <string name="import_change_days">Change the days</string>
     <string name="import_problem_too_large">The file is larger than 10 MB.</string>

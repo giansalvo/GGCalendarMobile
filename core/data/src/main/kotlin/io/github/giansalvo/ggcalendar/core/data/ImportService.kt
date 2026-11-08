@@ -374,7 +374,7 @@ class ImportService @Inject constructor(
         const val WARN_EVENTS = 20_000
 
         /** Into a Google calendar every event is a request: the user is asked from here, with the time it may take in mind. */
-        const val WARN_EVENTS_GOOGLE = 1_000
+        const val WARN_EVENTS_GOOGLE = 500
         private const val PREVIEW = "local:preview"
     }
 }

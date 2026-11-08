@@ -237,6 +237,7 @@ fun CalendarScreen(
     val missingText = stringResource(R.string.message_account_missing)
     val schemaResetText = stringResource(R.string.message_schema_reset)
     val syncErrorText = stringResource(R.string.message_sync_error)
+    val resources = LocalContext.current.resources
     val addLabel = stringResource(R.string.account_add_action)
     val closeLabel = stringResource(R.string.message_close)
     LaunchedEffect(state.message?.id) {
@@ -248,6 +249,14 @@ fun CalendarScreen(
             "account_missing" -> missingText.format(message.accountEmail)
             "sync_error" -> syncErrorText.format(message.accountEmail, message.text)
             "schema_reset" -> schemaResetText
+            // "sent|rejected|name" (the name may hold a bar: it is the last part)
+            "import_result" -> message.text.split("|", limit = 3).let { parts ->
+                val sent = parts.getOrNull(0)?.toIntOrNull() ?: 0
+                val rejected = parts.getOrNull(1)?.toIntOrNull() ?: 0
+                val name = parts.getOrNull(2).orEmpty()
+                if (rejected == 0) resources.getQuantityString(R.plurals.message_import_sent, sent, sent, name)
+                else resources.getString(R.string.message_import_partial, sent, rejected, name)
+            }
             else -> message.text
         }
         // Conflicts and errors stay until the user closes them: they explain what happened to an edit.
