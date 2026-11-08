@@ -57,6 +57,7 @@
     <string name="about_source">Quellcode</string>
     <string name="active_alarms">Aktive Wecker</string>
     <string name="calendar_menu_export">Exportieren</string>
+    <string name="calendar_menu_import">Importieren</string>
     <string name="settings">Einstellungen</string>
     <string name="contacts">Kontakte des Telefons</string>
     <string name="remove_account_title">Konto entfernen?</string>
@@ -233,4 +234,6 @@
     <string name="import_attachments_cut">Anhänge über dem Limit von 25: %1$d ausgelassen</string>
     <string name="meet_description">Google-Meet-Videoanruf</string>
     <string name="import_default_name">Kalender</string>
+    <string name="import_dest_google">%1$s · Google</string>
+    <string name="import_google_warning">Die Termine werden an Google Kalender gesendet, an das Konto dieses Kalenders. Niemand wird eingeladen. Zum Entfernen müssen sie einzeln gelöscht werden.</string>
 </resources>

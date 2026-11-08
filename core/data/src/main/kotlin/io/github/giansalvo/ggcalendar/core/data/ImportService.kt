@@ -6,6 +6,7 @@ import androidx.room.withTransaction
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.giansalvo.ggcalendar.core.database.CalendarKind
 import io.github.giansalvo.ggcalendar.core.database.EventEntity
+import io.github.giansalvo.ggcalendar.core.database.OutboxEntity
 import io.github.giansalvo.ggcalendar.core.database.GGCalendarDatabase
 import io.github.giansalvo.ggcalendar.core.model.EventTime
 import io.github.giansalvo.ggcalendar.core.model.IcsImportOptions
@@ -42,7 +43,7 @@ enum class DuplicateAction { SKIP, UPDATE, AS_NEW }
 /** The reminders of the events the import makes: those of the file, the default reminder of the settings, or none. */
 enum class ReminderChoice { FILE, APP_DEFAULT, NONE }
 
-/** Where the events go: a local calendar that is there, or a new one (made only when the import is done). */
+/** Where the events go: a calendar that is there (a local one, or a Google one the person can write in), or a new local one (made only when the import is done). */
 sealed interface ImportTarget {
     data class Existing(val calendarId: String) : ImportTarget
     data class NewCalendar(val name: String, val colorHex: String) : ImportTarget
@@ -109,8 +110,9 @@ class ImportOptions(
 )
 
 /**
- * Reads a file or an address once and writes its events into a local calendar of the phone: never into a Google calendar, never an
- * outbox entry, never an invitation. Nothing is kept of the address. The write is one transaction: what is not finished is not there.
+ * Reads a file or an address once and writes its events into a calendar: a local one of the phone (no outbox entry, no invitation), or a
+ * Google one the person can write in (each new event is queued for events.import, which keeps the UID of the file; nobody is invited).
+ * Nothing is kept of the address. The write is one transaction: what is not finished is not there.
  */
 @Singleton
 class ImportService @Inject constructor(
@@ -121,6 +123,7 @@ class ImportService @Inject constructor(
     private val reminders: ReminderHooks,
     private val prefs: AppPreferences,
     private val locals: LocalCalendars,
+    private val scheduler: SyncScheduler,
 ) {
     // ---- reading
 
@@ -213,10 +216,13 @@ class ImportService @Inject constructor(
         isCancelled: () -> Boolean = { false },
     ): ImportOutcome {
         val newId = "local:" + UUID.randomUUID()
+        var toGoogle = false
         val calendarId = when (target) {
             is ImportTarget.Existing -> {
                 val calendar = db.calendarDao().get(target.calendarId)
-                if (calendar == null || calendar.kind != CalendarKind.LOCAL) return ImportOutcome.Failed(ImportProblem.NOT_A_LOCAL_CALENDAR)
+                val writable = calendar != null && (calendar.kind == CalendarKind.LOCAL || (calendar.syncsWithGoogle && calendar.canWrite && calendar.remoteId != null))
+                if (calendar == null || !writable) return ImportOutcome.Failed(ImportProblem.NOT_A_LOCAL_CALENDAR)
+                toGoogle = calendar.syncsWithGoogle
                 calendar.id
             }
             is ImportTarget.NewCalendar -> newId
@@ -242,7 +248,9 @@ class ImportService @Inject constructor(
                 val from = "$calendarId|${e.iCalUid}"
                 val to = "$from~$suffix"
                 fun fix(id: String) = if (id == from || id.startsWith("$from|")) to + id.removePrefix(from) else id
-                return e.copy(id = fix(e.id), seriesMasterId = e.seriesMasterId?.let(::fix))
+                // In a Google calendar the UID is what makes an event the same event: a copy needs a UID of its own.
+                val uid = if (toGoogle) e.iCalUid + "~" + suffix else e.iCalUid
+                return e.copy(id = fix(e.id), seriesMasterId = e.seriesMasterId?.let(::fix), iCalUid = uid)
             }
             val toWrite = ArrayList<EventEntity>(prepared.size)
             var imported = 0
@@ -258,23 +266,40 @@ class ImportService @Inject constructor(
                     }
                     options.duplicates == DuplicateAction.UPDATE -> {
                         // The event that is there keeps its own reminders and color: the choice about reminders is for the events made now.
-                        toWrite += row.copy(reminders = had.reminders, hasAlarm = had.hasAlarm, color = had.color, updatedAt = now)
+                        toWrite += row.copy(reminders = had.reminders, hasAlarm = had.hasAlarm, color = had.color, remoteId = had.remoteId, etag = had.etag, updatedAt = now)
                         if (e.seriesMasterId == null) updated++
                     }
                     else -> if (e.seriesMasterId == null) skipped++
                 }
             }
             if (toWrite.isNotEmpty()) db.eventDao().upsert(toWrite)
+            if (toGoogle) queueForGoogle(toWrite, existing, calendarId)
             val rootIds = toWrite.map { it.seriesMasterId ?: it.id }.toSet()
             if (rootIds.isNotEmpty()) engine.recomputeMany(rootIds)
             Counts(imported, updated, skipped, roots.size, toWrite)
         }
         // The instances are rebuilt and the alarms planned once, for the whole import.
         if (result.written.isNotEmpty()) reminders.changed()
+        if (toGoogle && result.written.isNotEmpty()) scheduler.syncNow()
         val zone = ZoneId.systemDefault()
         val first = result.written.filter { it.seriesMasterId == null }.mapNotNull { eventDay(it, zone) }.minOrNull()
         val ignored = IcsMapper.parse(source.text, IcsImportOptions(calendarId = PREVIEW, importAlarms = false)).report.let { r -> r.ignoredComponents.values.sum() + r.cancelledEvents }
         return ImportOutcome.Done(calendarId, result.imported, result.updated, result.skipped, ignored, first)
+    }
+
+    /**
+     * One outbox entry for each row written, in the order the queue sends them: a series before its modified occurrences (an occurrence
+     * is a change of an instance of the series, which Google must have already). A new event goes with events.import; one that is
+     * already on Google (an update of a duplicate) with a patch. The events of a file are never sent with an invitation.
+     */
+    private suspend fun queueForGoogle(rows: List<EventEntity>, existing: Map<String, EventEntity>, calendarId: String) {
+        val outbox = db.outboxDao()
+        rows.sortedBy { if (it.seriesMasterId == null) 0 else 1 }.forEach { row ->
+            val had = existing[row.id]
+            val operation = if (row.seriesMasterId != null || had?.remoteId != null) OutboxEntity.UPDATE else OutboxEntity.IMPORT
+            val base = if (operation == OutboxEntity.UPDATE && row.seriesMasterId == null) had?.let { OutboxPusher.JSON.encodeToString(it) } else null
+            outbox.insert(OutboxEntity(eventId = row.id, calendarId = calendarId, operation = operation, payload = OutboxPusher.JSON.encodeToString(row), base = base, sendUpdates = false))
+        }
     }
 
     private class Counts(val imported: Int, val updated: Int, val skipped: Int, val total: Int, val written: List<EventEntity>)
@@ -289,7 +314,7 @@ class ImportService @Inject constructor(
         onProgress: ((Int, Int) -> Unit)?,
         isCancelled: () -> Boolean = { false },
     ): List<EventEntity>? {
-        val parsed = IcsMapper.parse(source.text, IcsImportOptions(calendarId = calendarId, importAlarms = true))
+        val parsed = IcsMapper.parse(source.text, IcsImportOptions(calendarId = calendarId, importAlarms = true, guestsInDescription = true, urlInDescription = true))
         if (problemOf(parsed.report) != null) return null
         val total = parsed.events.size
         val rows = ArrayList<EventEntity>(total)

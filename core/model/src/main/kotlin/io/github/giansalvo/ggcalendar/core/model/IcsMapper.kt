@@ -20,6 +20,8 @@ data class IcsImportOptions(
     val importAlarms: Boolean = true,
     /** Write the organizer and the attendees as text in the description. They never become guests. */
     val guestsInDescription: Boolean = false,
+    /** Write the address of URL as text at the end of the description ("URL: https://..."): the app has no field for it. */
+    val urlInDescription: Boolean = false,
 )
 
 /**
@@ -189,7 +191,7 @@ object IcsMapper {
         val title = text(c.property("SUMMARY")?.value.orEmpty(), MAX_TITLE, issues, singleLine = true)
         val location = text(c.property("LOCATION")?.value.orEmpty(), MAX_LOCATION, issues, singleLine = true)
         var description = text(c.property("DESCRIPTION")?.value.orEmpty(), MAX_DESCRIPTION, issues, singleLine = false)
-        if (o.guestsInDescription) description = withGuests(c, description)
+        if (o.guestsInDescription || o.urlInDescription) description = withExtras(c, description, o)
         val uid = c.property("UID")?.value?.trim()?.filter { it >= ' ' }?.takeIf { it.isNotEmpty() }?.let {
             if (it.length > MAX_UID) {
                 issues.add(IcsIssueCode.FIELD_TRUNCATED, "UID")
@@ -508,11 +510,19 @@ object IcsMapper {
         return trimmed.take(cut)
     }
 
-    private fun withGuests(c: IcsComponent, description: String): String {
+    /** The address of URL: http or https, without control characters, at most 2000 characters; anything else is not written. */
+    private fun urlText(c: IcsComponent): String? {
+        val v = c.property("URL")?.value?.trim().orEmpty()
+        val ok = (v.startsWith("https://", ignoreCase = true) || v.startsWith("http://", ignoreCase = true)) && v.length <= 2000 && v.none { it <= ' ' || it == '\u007F' }
+        return if (ok) "URL: $v" else null
+    }
+
+    private fun withExtras(c: IcsComponent, description: String, o: IcsImportOptions): String {
         fun who(p: IcsProperty) = p.params["CN"]?.takeIf { it.isNotBlank() } ?: p.value.trim().removePrefix("mailto:").removePrefix("MAILTO:")
-        val organizer = c.property("ORGANIZER")?.let { "Organizer: " + who(it) }
-        val attendees = c.all("ATTENDEE").takeIf { it.isNotEmpty() }?.let { "Attendees: " + it.joinToString(", ") { a -> who(a) } }
-        return listOfNotNull(description.takeIf { it.isNotEmpty() }, organizer, attendees).joinToString("\n").take(MAX_DESCRIPTION)
+        val organizer = c.property("ORGANIZER")?.takeIf { o.guestsInDescription }?.let { "Organizer: " + who(it) }
+        val attendees = c.all("ATTENDEE").takeIf { o.guestsInDescription && it.isNotEmpty() }?.let { "Attendees: " + it.joinToString(", ") { a -> who(a) } }
+        val url = if (o.urlInDescription) urlText(c) else null
+        return listOfNotNull(description.takeIf { it.isNotEmpty() }, organizer, attendees, url).joinToString("\n").take(MAX_DESCRIPTION)
     }
 
     private fun sha256(s: String): String =

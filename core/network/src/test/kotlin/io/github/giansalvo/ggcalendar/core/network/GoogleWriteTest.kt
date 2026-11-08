@@ -125,6 +125,22 @@ class GoogleWriteTest {
     }
 
     @Test
+    fun importPostsToTheImportAddressWithTheUidOfTheFileAndInvitesNobody() = runTest {
+        server.enqueue(MockResponse.Builder().body("""{"id":"imp1","etag":"\"e1\"","iCalUID":"uid-of-the-file@x","start":{"dateTime":"2026-10-12T14:00:00+02:00"},"end":{"dateTime":"2026-10-12T16:00:00+02:00"}}""").build())
+        val withUid = timed.copy(iCalUid = "uid-of-the-file@x")
+        val imported = api.importEvent("me@x.com", GoogleEventMapper.toGoogle(withUid, false, false, includeICalUid = true), accessToken = "t")
+        assertEquals("imp1", imported.id)
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertEquals("/calendar/v3/calendars/me@x.com/events/import", request.url.encodedPath.replace("%40", "@"))
+        assertEquals("none", request.url.queryParameter("sendUpdates"))
+        val sent = Json.parseToJsonElement(request.body!!.utf8()).jsonObject
+        assertEquals("uid-of-the-file@x", sent.str("iCalUID"))
+        // the insert of an event of the editor does not carry it
+        assertNull(GoogleEventMapper.toGoogle(withUid, false, false).str("iCalUID"))
+    }
+
+    @Test
     fun patchSendsIfMatchAndReports412() = runTest {
         server.enqueue(MockResponse.Builder().code(412).body("""{"error":{"code":412}}""").build())
         val error = runCatching {

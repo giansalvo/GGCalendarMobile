@@ -206,7 +206,8 @@ private fun SummaryStage(state: ImportState, vm: ImportViewModel) {
     // The destination.
     Text(stringResource(R.string.import_destination), style = MaterialTheme.typography.titleSmall)
     state.locals.forEachIndexed { i, local ->
-        ChoiceRow(local.name, state.destination == local.id, "import_dest_$i") { vm.change { it.copy(destination = local.id) } }
+        val label = if (local.google) stringResource(R.string.import_dest_google, local.name) else local.name
+        ChoiceRow(label, state.destination == local.id, "import_dest_$i") { vm.change { it.copy(destination = local.id) } }
     }
     ChoiceRow(stringResource(R.string.import_new_calendar), state.destination == ImportState.NEW, "import_dest_new") { vm.change { it.copy(destination = ImportState.NEW) } }
     if (state.destination == ImportState.NEW) {
@@ -227,6 +228,10 @@ private fun SummaryStage(state: ImportState, vm: ImportViewModel) {
                 )
             }
         }
+    }
+
+    if (state.locals.firstOrNull { it.id == state.destination }?.google == true) {
+        Text(stringResource(R.string.import_google_warning), Modifier.testTag("import_google_warning"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
     }
 
     // The days: the same two fields and the same rule as the public calendars.
