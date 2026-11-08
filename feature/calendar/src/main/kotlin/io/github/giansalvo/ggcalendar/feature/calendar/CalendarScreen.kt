@@ -351,6 +351,10 @@ fun CalendarScreen(
                     importViewModel.open()
                     scope.launch { drawerState.close() }
                 },
+                onImportInto = { id ->
+                    importViewModel.open(id)
+                    scope.launch { drawerState.close() }
+                },
                 onExport = { id ->
                     exportFor = id
                     scope.launch { drawerState.close() }
@@ -748,6 +752,7 @@ private fun CalendarDrawer(
     onSettings: () -> Unit,
     onImport: () -> Unit,
     onExport: (String) -> Unit,
+    onImportInto: (String) -> Unit,
     logOn: Boolean,
     onSendLog: () -> Unit,
     onAbout: () -> Unit,
@@ -794,10 +799,11 @@ private fun CalendarDrawer(
                         calendar, onToggleCalendar,
                         googleCalendarActions(calendar, onEdit = { onEditGoogle(calendar) }, onDelete = { onDeleteGoogle(calendar) }),
                         onExport = { onExport(calendar.id) },
+                        onImport = if (calendar.canWrite) ({ onImportInto(calendar.id) }) else null,
                     )
                 }
             }
-            LocalCalendarsSection(state.localCalendars, onToggleCalendar, onNewLocal, onEditLocal, onDeleteLocal, onExport)
+            LocalCalendarsSection(state.localCalendars, onToggleCalendar, onNewLocal, onEditLocal, onDeleteLocal, onExport, onImportInto)
             SubscriptionsSection(
                 state.subscriptions, onToggleCalendar, onAddSubscription, onRefreshSubscription, onEditSubscription, onShowSubscriptionAddress, onRemoveSubscription, onExport,
             )

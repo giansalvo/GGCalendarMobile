@@ -134,7 +134,12 @@ class OutboxPusher @Inject constructor(
         val removeMeet = !snapshot.addMeet && base?.addMeet == true
 
         val result: GoogleEvent = if (target == null) {
-            api.insertEvent(remoteCalendar, GoogleEventMapper.toGoogle(google, meetRequest, patch = false), item.sendUpdates, accessToken)
+            // An event of a file keeps its UID: events.import (never an invitation); the others are inserted.
+            if (item.operation == OutboxEntity.IMPORT) {
+                api.importEvent(remoteCalendar, GoogleEventMapper.toGoogle(google, includeMeetRequest = false, patch = false, includeICalUid = true), accessToken)
+            } else {
+                api.insertEvent(remoteCalendar, GoogleEventMapper.toGoogle(google, meetRequest, patch = false), item.sendUpdates, accessToken)
+            }
         } else {
             val body = GoogleEventMapper.toGoogle(google, meetRequest, patch = true, removeMeet = removeMeet)
             // Patch only the version we last saw. The first edit of an occurrence has none: the instance of the series has no row, id or etag here.
@@ -204,7 +209,7 @@ class OutboxPusher @Inject constructor(
     private suspend fun resolveConflict(item: OutboxEntity, email: String, remote: EventEntity?, recompute: suspend (String) -> Unit) {
         // The last queued snapshot carries every local edit made since the last sync.
         val local = outbox.getFor(item.eventId)
-            .filter { it.operation == OutboxEntity.CREATE || it.operation == OutboxEntity.UPDATE }
+            .filter { it.operation == OutboxEntity.CREATE || it.operation == OutboxEntity.IMPORT || it.operation == OutboxEntity.UPDATE }
             .mapNotNull { it.payload?.let { p -> JSON.decodeFromString<EventEntity>(p) } }
             .lastOrNull() ?: return
         val seriesId = local.seriesMasterId

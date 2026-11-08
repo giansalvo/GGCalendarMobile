@@ -57,6 +57,7 @@
     <string name="about_source">Code source</string>
     <string name="active_alarms">Alarmes actives</string>
     <string name="calendar_menu_export">Exporter</string>
+    <string name="calendar_menu_import">Importer</string>
     <string name="settings">Paramètres</string>
     <string name="contacts">Contacts du téléphone</string>
     <string name="remove_account_title">Retirer le compte&#160;?</string>
@@ -234,4 +235,6 @@
     <string name="import_attachments_cut">Pièces jointes au-delà de la limite de 25&#160;: %1$d laissées de côté</string>
     <string name="meet_description">Appel vidéo Google Meet</string>
     <string name="import_default_name">Agenda</string>
+    <string name="import_dest_google">%1$s · Google</string>
+    <string name="import_google_warning">Les événements sont envoyés à Google Agenda, sur le compte de cet agenda. Personne n\'est invité. Pour les retirer ensuite, il faut les supprimer un par un.</string>
 </resources>

@@ -303,6 +303,20 @@ class IcsMapperTest {
         assertEquals("note\nOrganizer: Anna\nAttendees: Bo, B, cy@x.it", withText.description)
     }
 
+    // U210
+    @Test
+    fun theUrlGoesAtTheEndOfTheDescriptionOnlyWhenAskedAndOnlyIfItIsHttp() {
+        val body = arrayOf("DTSTART:20261008T080000Z", "DESCRIPTION:note", "URL:https://example.org/g01?a=1")
+        assertEquals("note", one(*body).description)
+        val asked = options.copy(urlInDescription = true)
+        assertEquals("note\nURL: https://example.org/g01?a=1", one(*body, o = asked).description)
+        assertEquals("URL: http://example.org/x", one("DTSTART:20261008T080000Z", "URL:http://example.org/x", o = asked).description)
+        assertEquals("", one("DTSTART:20261008T080000Z", "URL:javascript:alert(1)", o = asked).description)
+        assertEquals("", one("DTSTART:20261008T080000Z", "URL:https://exa mple.org", o = asked).description)
+        val both = options.copy(urlInDescription = true, guestsInDescription = true)
+        assertEquals("note\nOrganizer: Anna\nURL: https://example.org/g01?a=1", one("DTSTART:20261008T080000Z", "DESCRIPTION:note", "ORGANIZER;CN=Anna:mailto:anna@x.it", "URL:https://example.org/g01?a=1", o = both).description)
+    }
+
     // U122
     @Test
     fun longFieldsAreCutAndControlCharactersDropped() {

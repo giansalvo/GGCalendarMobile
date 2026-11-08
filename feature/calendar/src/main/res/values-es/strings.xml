@@ -57,6 +57,7 @@
     <string name="about_source">Código fuente</string>
     <string name="active_alarms">Alarmas activas</string>
     <string name="calendar_menu_export">Exportar</string>
+    <string name="calendar_menu_import">Importar</string>
     <string name="settings">Ajustes</string>
     <string name="contacts">Contactos del teléfono</string>
     <string name="remove_account_title">¿Quitar la cuenta?</string>
@@ -233,4 +234,6 @@
     <string name="import_attachments_cut">Adjuntos por encima del límite de 25: %1$d omitidos</string>
     <string name="meet_description">Videollamada de Google Meet</string>
     <string name="import_default_name">Calendario</string>
+    <string name="import_dest_google">%1$s · Google</string>
+    <string name="import_google_warning">Los eventos se envían a Google Calendar, a la cuenta de este calendario. No se invita a nadie. Para quitarlos después hay que eliminarlos uno por uno.</string>
 </resources>

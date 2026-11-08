@@ -57,6 +57,7 @@
     <string name="about_source">Codice sorgente</string>
     <string name="active_alarms">Sveglie attive</string>
     <string name="calendar_menu_export">Esporta</string>
+    <string name="calendar_menu_import">Importa</string>
     <string name="settings">Impostazioni</string>
     <string name="contacts">Rubrica del telefono</string>
     <string name="remove_account_title">Rimuovere l\'account?</string>
@@ -233,4 +234,6 @@
     <string name="import_attachments_cut">Allegati oltre il limite di 25: %1$d lasciati fuori</string>
     <string name="meet_description">Videochiamata Google Meet</string>
     <string name="import_default_name">Calendario</string>
+    <string name="import_dest_google">%1$s · Google</string>
+    <string name="import_google_warning">Gli eventi vengono inviati a Google Calendar, nell\'account di questo calendario. Nessuno viene invitato. Per toglierli dopo, vanno eliminati uno per uno.</string>
 </resources>

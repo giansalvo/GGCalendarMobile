@@ -171,6 +171,14 @@ class GoogleCalendarApi(
         send("POST", writeUrl(sendUpdates, "calendars", calendarId, "events"), body, accessToken).toEvent()
 
     /**
+     * Imports an event with its own iCalUID (events.import): Google keeps the UID of the file and, when the calendar already has an
+     * event with that UID, does not make a second one. The body is the one of [insertEvent] plus `iCalUID` ([GoogleEventMapper.toGoogle]).
+     * Nobody is invited: an import never sends updates.
+     */
+    suspend fun importEvent(calendarId: String, body: JsonObject, accessToken: String): GoogleEvent =
+        send("POST", writeUrl(false, "calendars", calendarId, "events", "import"), body, accessToken).toEvent()
+
+    /**
      * Updates the fields in [body]. With [etag] the update applies only to that version: otherwise Google answers 412
      * ([GoogleApiException.status]) and the caller decides about the conflict.
      */

@@ -58,6 +58,7 @@
     <string name="about_source">Source code</string>
     <string name="active_alarms">Active alarms</string>
     <string name="calendar_menu_export">Export</string>
+    <string name="calendar_menu_import">Import</string>
     <string name="settings">Settings</string>
     <string name="contacts">Phone contacts</string>
     <string name="remove_account_title">Remove account?</string>
@@ -234,4 +235,6 @@
     <string name="import_attachments_cut">Attachments over the limit of 25: %1$d left out</string>
     <string name="meet_description">Google Meet video call</string>
     <string name="import_default_name">Calendar</string>
+    <string name="import_dest_google">%1$s · Google</string>
+    <string name="import_google_warning">The events are sent to Google Calendar, to the account of this calendar. Nobody is invited. To remove them afterwards you delete them one by one.</string>
 </resources>

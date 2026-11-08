@@ -29,8 +29,8 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import javax.inject.Inject
 
-/** A local calendar the events can go to. */
-data class ImportLocal(val id: String, val name: String)
+/** A calendar the events can go to: a local one, or a Google one the person can write in ([google]). */
+data class ImportLocal(val id: String, val name: String, val google: Boolean = false)
 
 enum class ImportStage { CLOSED, SOURCE, READING, SUMMARY, IMPORTING, DONE, ERROR }
 
@@ -77,14 +77,19 @@ class ImportViewModel @Inject constructor(
     @Volatile
     private var cancelled = false
 
-    /** Opens the window on the choice of the source (the menu entry). */
-    fun open() {
+    /** The calendar chosen with "Import" in its long press menu: it is the destination when the summary comes (null: the side menu entry). */
+    private var preselected: String? = null
+
+    /** Opens the window on the choice of the source (the side menu entry, or the long press menu of the calendar [destination]). */
+    fun open(destination: String? = null) {
         reset()
+        preselected = destination
         mutable.value = ImportState(stage = ImportStage.SOURCE)
     }
 
     fun close() {
         cancelled = true
+        preselected = null
         reset()
         mutable.value = ImportState()
     }
@@ -110,12 +115,13 @@ class ImportViewModel @Inject constructor(
                     is SummaryOutcome.Problem -> mutable.value = ImportState(stage = ImportStage.ERROR, problem = s.problem)
                     is SummaryOutcome.Ok -> {
                         source = r.source
-                        val locals = repository.localCalendars.first().map { ImportLocal(it.id, it.name) }
+                        val locals = repository.localCalendars.first().map { ImportLocal(it.id, it.name) } +
+                            repository.accounts.first().flatMap { account -> account.calendars.filter { it.canWrite }.map { ImportLocal(it.id, it.name, google = true) } }
                         mutable.value = ImportState(
                             stage = ImportStage.SUMMARY,
                             summary = s.summary,
                             locals = locals,
-                            destination = ImportState.NEW,
+                            destination = preselected?.takeIf { id -> locals.any { it.id == id } } ?: ImportState.NEW,
                             newName = s.summary.calendarName ?: s.summary.label.removeSuffix(".ics").removeSuffix(".ICS").ifBlank { context.getString(R.string.import_default_name) },
                             reminders = if (s.summary.fileHasAlarms) ReminderChoice.FILE else ReminderChoice.APP_DEFAULT,
                             appDefaultMinutes = repository.defaultReminderMinutes(),

@@ -197,8 +197,11 @@ object GoogleEventMapper {
         patch: Boolean,
         defaultZone: ZoneId = ZoneId.systemDefault(),
         removeMeet: Boolean = false,
+        includeICalUid: Boolean = false,
     ): JsonObject =
         buildJsonObject {
+            // events.import keeps the UID of the file: the one the event had where it came from.
+            if (includeICalUid) ev.iCalUid?.let { put("iCalUID", it) }
             put("summary", ev.title)
             put("location", ev.location)
             put("description", ev.description)

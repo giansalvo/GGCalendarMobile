@@ -154,7 +154,7 @@ data class OutboxEntity(
     @PrimaryKey(autoGenerate = true) val seq: Long = 0,
     @ColumnInfo(name = "event_id") val eventId: String,
     @ColumnInfo(name = "calendar_id") val calendarId: String,
-    /** "create", "update", "move" or "delete". */
+    /** "create", "import", "update", "move" or "delete". */
     val operation: String,
     val payload: String?,
     val base: String? = null,
@@ -165,6 +165,8 @@ data class OutboxEntity(
 ) {
     companion object {
         const val CREATE = "create"
+        /** A new event that comes from a file: sent with events.import, which keeps its iCalUID. */
+        const val IMPORT = "import"
         const val UPDATE = "update"
         const val MOVE = "move"
         const val DELETE = "delete"

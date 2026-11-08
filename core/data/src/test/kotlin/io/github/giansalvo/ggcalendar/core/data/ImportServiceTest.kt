@@ -10,6 +10,7 @@ import io.github.giansalvo.ggcalendar.core.auth.GoogleAuthorizer
 import io.github.giansalvo.ggcalendar.core.database.CalendarEntity
 import io.github.giansalvo.ggcalendar.core.database.CalendarKind
 import io.github.giansalvo.ggcalendar.core.database.GGCalendarDatabase
+import io.github.giansalvo.ggcalendar.core.database.OutboxEntity
 import io.github.giansalvo.ggcalendar.core.model.Reminder
 import io.github.giansalvo.ggcalendar.core.model.ReminderMethod
 import io.github.giansalvo.ggcalendar.core.network.GoogleCalendarApi
@@ -67,7 +68,7 @@ class ImportServiceTest {
         remindersChanged = 0
         val hooks = ReminderHooks(setOf(ReminderHook { remindersChanged++ }))
         locals = LocalCalendars(db, hooks)
-        service = ImportService(context, db, IcsFetcher(client), engine, hooks, prefs, locals)
+        service = ImportService(context, db, IcsFetcher(client), engine, hooks, prefs, locals, SyncScheduler(context))
         home = runBlocking { locals.create("Casa", "#33B679") }
     }
 
@@ -158,13 +159,57 @@ class ImportServiceTest {
 
     // ---- the destination and what is written (U192, U193, U204, U205)
 
-    @Test fun `U192 only a local calendar is a destination`() = runTest {
+    private suspend fun googleCalendar(role: String = "owner", remote: String? = "primary"): String {
         db.accountDao().insert(io.github.giansalvo.ggcalendar.core.database.AccountEntity("me@x.com"))
-        db.calendarDao().upsert(CalendarEntity("me@x.com|primary", "me@x.com", "primary", "Me", "#1A73E8", "owner"))
-        val outcome = service.import(source(ics(vevent("a", "Uno"))), ImportTarget.Existing("me@x.com|primary"), ImportOptions())
-        assertEquals(ImportOutcome.Failed(ImportProblem.NOT_A_LOCAL_CALENDAR), outcome)
+        db.calendarDao().upsert(CalendarEntity("me@x.com|primary", "me@x.com", remote, "Me", "#1A73E8", role))
+        return "me@x.com|primary"
+    }
+
+    @Test fun `U192 a local calendar or a Google calendar the person can write in is a destination, no other`() = runTest {
+        val readOnly = googleCalendar(role = "reader")
+        assertEquals(ImportOutcome.Failed(ImportProblem.NOT_A_LOCAL_CALENDAR), service.import(source(ics(vevent("a", "Uno"))), ImportTarget.Existing(readOnly), ImportOptions()))
         assertEquals(ImportOutcome.Failed(ImportProblem.NOT_A_LOCAL_CALENDAR), service.import(source(ics(vevent("a", "Uno"))), ImportTarget.Existing("nowhere"), ImportOptions()))
-        assertTrue(db.eventDao().getForCalendar("me@x.com|primary").isEmpty())
+        assertTrue(db.eventDao().getForCalendar(readOnly).isEmpty())
+        assertTrue(db.outboxDao().getAll().isEmpty())
+    }
+
+    @Test fun `U208 into a Google calendar every new event is queued for events import, a series before its exceptions, nobody invited`() = runTest {
+        val google = googleCalendar()
+        val text = ics(exceptionOf("s", soon.plusDays(1)), vevent("a", "Uno"), vevent("s", "Serie", extra = "RRULE:FREQ=DAILY;COUNT=4\r\n"))
+        val done = run(text, ImportTarget.Existing(google))
+        assertEquals(2, done.imported)
+        val written = rows(google)
+        assertEquals(3, written.size)
+        assertTrue("no row has an id on Google yet", written.all { it.remoteId == null })
+        assertTrue("an event of a file is not an invitation", written.all { !it.sendInvites && it.attendees.isEmpty() })
+        val queue = db.outboxDao().getAll()
+        assertEquals(3, queue.size)
+        assertTrue("nobody is invited", queue.none { it.sendUpdates })
+        assertEquals("the series and the single event go with events.import", 2, queue.count { it.operation == OutboxEntity.IMPORT })
+        assertEquals("the exception is a change of an instance of the series", OutboxEntity.UPDATE, queue.last().operation)
+        val master = queue.first { it.operation == OutboxEntity.IMPORT && it.eventId.endsWith("|s") }
+        assertTrue("the series is queued before its exception", master.seq < queue.last().seq)
+    }
+
+    @Test fun `U209 into a Google calendar a duplicate is updated with a patch and a copy gets a UID of its own`() = runTest {
+        val google = googleCalendar()
+        run(ics(vevent("a", "Uno")), ImportTarget.Existing(google))
+        val first = rows(google).single()
+        // the first import reached Google: the row has its id there and the queue is empty
+        db.eventDao().upsert(listOf(first.copy(remoteId = "g1", etag = "e1")))
+        db.outboxDao().getAll().forEach { db.outboxDao().complete(it.seq) }
+        run(ics(vevent("a", "Uno cambiato")), ImportTarget.Existing(google), ImportOptions(duplicates = DuplicateAction.UPDATE))
+        val updated = rows(google).single()
+        assertEquals("g1", updated.remoteId)
+        val patch = db.outboxDao().getAll().single()
+        assertEquals(OutboxEntity.UPDATE, patch.operation)
+        db.outboxDao().complete(patch.seq)
+        run(ics(vevent("a", "Uno")), ImportTarget.Existing(google), ImportOptions(duplicates = DuplicateAction.AS_NEW))
+        val all = rows(google)
+        assertEquals(2, all.size)
+        val copy = all.first { it.id != updated.id }
+        assertTrue("the copy has another UID", copy.iCalUid != updated.iCalUid && copy.iCalUid!!.startsWith(updated.iCalUid!!))
+        assertEquals(OutboxEntity.IMPORT, db.outboxDao().getAll().single().operation)
     }
 
     @Test fun `U193 events, series and exceptions are written as events of the user with no outbox`() = runTest {
