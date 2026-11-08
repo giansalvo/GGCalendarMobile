@@ -93,8 +93,10 @@ class ImportPlan(
     val events: Int,
     /** Of those, how many are already in the destination (same UID there). */
     val duplicates: Int,
-    /** Over [ImportService.WARN_EVENTS]: the user is asked before it goes on. */
+    /** Over [ImportService.WARN_EVENTS] (or [ImportService.WARN_EVENTS_GOOGLE] for a Google calendar): the user is asked before it goes on. */
     val needsConfirmation: Boolean,
+    /** The destination is a Google calendar: every event is sent on its own and Google limits the requests. */
+    val toGoogle: Boolean = false,
 )
 
 sealed interface ImportOutcome {
@@ -124,6 +126,7 @@ class ImportService @Inject constructor(
     private val prefs: AppPreferences,
     private val locals: LocalCalendars,
     private val scheduler: SyncScheduler,
+    private val reports: ImportReports = ImportReports(),
 ) {
     // ---- reading
 
@@ -199,7 +202,8 @@ class ImportService @Inject constructor(
         val kept = keep(source, id, range, null) ?: return@withContext ImportPlan(0, 0, false)
         val existing = if (calendarId == null) emptySet() else db.eventDao().getForCalendar(calendarId).mapTo(HashSet()) { it.id }
         val roots = kept.filter { it.seriesMasterId == null }
-        ImportPlan(roots.size, roots.count { it.id in existing }, roots.size > WARN_EVENTS)
+        val google = calendarId != null && db.calendarDao().get(calendarId)?.syncsWithGoogle == true
+        ImportPlan(roots.size, roots.count { it.id in existing }, roots.size > (if (google) WARN_EVENTS_GOOGLE else WARN_EVENTS), google)
     }
 
     // ---- the import
@@ -273,7 +277,7 @@ class ImportService @Inject constructor(
                 }
             }
             if (toWrite.isNotEmpty()) db.eventDao().upsert(toWrite)
-            if (toGoogle) queueForGoogle(toWrite, existing, calendarId)
+            if (toGoogle) reports.begin(db.calendarDao().get(calendarId)?.name.orEmpty(), queueForGoogle(toWrite, existing, calendarId))
             val rootIds = toWrite.map { it.seriesMasterId ?: it.id }.toSet()
             if (rootIds.isNotEmpty()) engine.recomputeMany(rootIds)
             Counts(imported, updated, skipped, roots.size, toWrite)
@@ -292,9 +296,9 @@ class ImportService @Inject constructor(
      * is a change of an instance of the series, which Google must have already). A new event goes with events.import; one that is
      * already on Google (an update of a duplicate) with a patch. The events of a file are never sent with an invitation.
      */
-    private suspend fun queueForGoogle(rows: List<EventEntity>, existing: Map<String, EventEntity>, calendarId: String) {
+    private suspend fun queueForGoogle(rows: List<EventEntity>, existing: Map<String, EventEntity>, calendarId: String): List<Long> {
         val outbox = db.outboxDao()
-        rows.sortedBy { if (it.seriesMasterId == null) 0 else 1 }.forEach { row ->
+        return rows.sortedBy { if (it.seriesMasterId == null) 0 else 1 }.map { row ->
             val had = existing[row.id]
             val operation = if (row.seriesMasterId != null || had?.remoteId != null) OutboxEntity.UPDATE else OutboxEntity.IMPORT
             val base = if (operation == OutboxEntity.UPDATE && row.seriesMasterId == null) had?.let { OutboxPusher.JSON.encodeToString(it) } else null
@@ -368,6 +372,9 @@ class ImportService @Inject constructor(
     companion object {
         /** Over this many events (after the days) the user is asked before the import goes on. */
         const val WARN_EVENTS = 20_000
+
+        /** Into a Google calendar every event is a request: the user is asked from here, with the time it may take in mind. */
+        const val WARN_EVENTS_GOOGLE = 1_000
         private const val PREVIEW = "local:preview"
     }
 }

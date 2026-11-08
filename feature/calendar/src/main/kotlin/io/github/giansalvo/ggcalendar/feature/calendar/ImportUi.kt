@@ -115,7 +115,7 @@ internal fun ImportScreen(viewModel: ImportViewModel, onShow: (java.time.LocalDa
             modifier = Modifier.exposeTestTags(),
             onDismissRequest = viewModel::dismissLargeWarning,
             title = { Text(stringResource(R.string.import_large_title)) },
-            text = { Text(stringResource(R.string.import_large_text, state.plan?.events ?: 0), Modifier.testTag("import_large_text")) },
+            text = { Text(stringResource(if (state.plan?.toGoogle == true) R.string.import_large_text_google else R.string.import_large_text, state.plan?.events ?: 0), Modifier.testTag("import_large_text")) },
             confirmButton = { TextButton(modifier = Modifier.testTag("import_warn_continue"), onClick = { viewModel.startImport(confirmed = true) }) { Text(stringResource(R.string.import_continue)) } },
             dismissButton = { TextButton(modifier = Modifier.testTag("import_warn_change"), onClick = viewModel::dismissLargeWarning) { Text(stringResource(R.string.import_change_days)) } },
         )
