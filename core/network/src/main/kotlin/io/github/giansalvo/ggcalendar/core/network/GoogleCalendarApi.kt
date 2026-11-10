@@ -41,7 +41,7 @@ class GoogleApiException(val status: Int, message: String) : Exception(message) 
         get() = status == 429 || (status == 403 && RATE_LIMIT.containsMatchIn(message.orEmpty()))
 
     private companion object {
-        val RATE_LIMIT = Regex("rateLimitExceeded|userRateLimitExceeded|quotaExceeded|dailyLimitExceeded|usage limits exceeded", RegexOption.IGNORE_CASE)
+        val RATE_LIMIT = Regex("rateLimitExceeded|RATE_LIMIT_EXCEEDED|userRateLimitExceeded|quotaExceeded|dailyLimitExceeded|usage limits exceeded", RegexOption.IGNORE_CASE)
     }
 }
 

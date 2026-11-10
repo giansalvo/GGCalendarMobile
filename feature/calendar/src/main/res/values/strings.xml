@@ -72,6 +72,7 @@
     <string name="retry">Retry</string>
     <string name="message_account_missing">GGCalendar cannot sync %1$s because the account is not on this phone.</string>
     <string name="message_sync_error">Sync of %1$s failed: %2$s</string>
+    <string name="message_rate_limited">Too many requests to Google, try again in a minute.</string>
     <string name="account_add_action">Add</string>
     <string name="message_close">Close</string>
     <string name="local_calendars">On this phone</string>
