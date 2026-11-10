@@ -112,17 +112,28 @@ class SyncEngine @Inject constructor(
      * The same message is kept once while it is unread: a sync that fails every 15 minutes must not pile them up.
      */
     private suspend fun showError(email: String, e: Throwable, calendar: String? = null) {
-        val detail = e.message ?: e.toString()
-        if (detail.contains("matching credential", ignoreCase = true)) {
+        val (kind, text) = syncErrorMessage(e, calendar)
+        // The details (Google's JSON included) stay in the diagnostic log; the user sees a short sentence.
+        if (kind == "rate_limited") Diag.log { "sync ${Diag.who(email)} rate limited: ${e.message}" }
+        val stored = when (kind) {
+            "account_missing", "rate_limited" -> !messages.hasUnread(email, kind)
+            else -> !messages.hasUnreadText(email, kind, text)
+        }
+        if (stored) messages.insert(SyncMessageEntity(accountEmail = email, kind = kind, text = text))
+    }
+
+    internal companion object {
+        /**
+         * The message a sync error becomes: its kind and the data (never a finished sentence, see [showError]).
+         * "Too many requests" (429, or 403 with a rate-limit reason) is its own kind, with no text: Google's JSON is long and means
+         * nothing to the user, and the next sync (every 15 minutes) tries again by itself.
+         */
+        fun syncErrorMessage(e: Throwable, calendar: String? = null): Pair<String, String> {
+            if (e is GoogleApiException && e.isRateLimit) return "rate_limited" to ""
+            val detail = e.message ?: e.toString()
             // Google does not know the account on this phone (removed from Android, or signed out): it has to be added again.
-            if (!messages.hasUnread(email, "account_missing")) {
-                messages.insert(SyncMessageEntity(accountEmail = email, kind = "account_missing", text = ""))
-            }
-        } else {
-            val text = if (calendar != null) "$calendar: $detail" else detail
-            if (!messages.hasUnreadText(email, "sync_error", text)) {
-                messages.insert(SyncMessageEntity(accountEmail = email, kind = "sync_error", text = text))
-            }
+            if (detail.contains("matching credential", ignoreCase = true)) return "account_missing" to ""
+            return "sync_error" to if (calendar != null) "$calendar: $detail" else detail
         }
     }
 

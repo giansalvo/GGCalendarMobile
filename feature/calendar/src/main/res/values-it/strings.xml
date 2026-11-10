@@ -71,6 +71,7 @@
     <string name="retry">Riprova</string>
     <string name="message_account_missing">GGCalendar non può sincronizzare %1$s perché l\'account non è presente nel telefono.</string>
     <string name="message_sync_error">Sincronizzazione di %1$s non riuscita: %2$s</string>
+    <string name="message_rate_limited">Troppe richieste a Google, riprova tra un minuto.</string>
     <string name="account_add_action">Aggiungi</string>
     <string name="message_close">Chiudi</string>
     <string name="local_calendars">Su questo telefono</string>

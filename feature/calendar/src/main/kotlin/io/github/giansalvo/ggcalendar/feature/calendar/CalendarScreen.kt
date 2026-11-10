@@ -237,6 +237,7 @@ fun CalendarScreen(
     val missingText = stringResource(R.string.message_account_missing)
     val schemaResetText = stringResource(R.string.message_schema_reset)
     val syncErrorText = stringResource(R.string.message_sync_error)
+    val rateLimitedText = stringResource(R.string.message_rate_limited)
     val resources = LocalContext.current.resources
     val addLabel = stringResource(R.string.account_add_action)
     val closeLabel = stringResource(R.string.message_close)
@@ -248,6 +249,7 @@ fun CalendarScreen(
             "auth" -> authText.format(message.accountEmail)
             "account_missing" -> missingText.format(message.accountEmail)
             "sync_error" -> syncErrorText.format(message.accountEmail, message.text)
+            "rate_limited" -> rateLimitedText
             "schema_reset" -> schemaResetText
             // "sent|rejected|name" (the name may hold a bar: it is the last part)
             "import_result" -> message.text.split("|", limit = 3).let { parts ->
@@ -269,7 +271,8 @@ fun CalendarScreen(
                 actionLabel = if (isAuth) authAction else okText,
                 // An error or conflict is closed with OK alone; the "authorize again" message keeps the X, its other button not being a way out.
                 withDismissAction = isAuth,
-                duration = SnackbarDuration.Indefinite,
+                // "Too many requests" goes away by itself (the next sync tries again): it must not keep the screen waiting for OK.
+                duration = if (message.kind == "rate_limited") SnackbarDuration.Long else SnackbarDuration.Indefinite,
             )
         }
         if (result == SnackbarResult.ActionPerformed && isAuth) message.accountEmail?.let(viewModel::reauthorize)
