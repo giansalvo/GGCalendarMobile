@@ -24,7 +24,7 @@
 
 <main class="wrap doc">
 <h1>Privacy policy</h1>
-<p class="upd">GGCalendar app for Android (<code>io.github.giansalvo.ggcalendar</code>) · Last updated: 23 October 2026</p>
+<p class="upd">GGCalendar app for Android (<code>io.github.giansalvo.ggcalendar</code>) · Last updated: 9 November 2026</p>
 
 <h2>1. Data controller</h2>
 <p>Giansalvo Gusinu, Sassari (Italy), independent developer. Contact: <span class="mail" data-u="profgusinu+ggcalendar" data-d="gmail" data-t="com">profgusinu+ggcalendar [at] gmail [dot] com</span>.</p>
@@ -33,7 +33,7 @@
 <ul>
   <li>The app has no servers of the author. I do not collect, receive or store your data.</li>
   <li>No ads, no analytics or crash-reporting tools, no tracking.</li>
-  <li>Events, calendars and settings stay on your phone. If you connect a Google account, data travels only between the phone and Google.</li>
+  <li>Events, calendars and settings stay on your phone. If you connect a Google account, data travels only between the phone and Google. If you add a public calendar or import events from an address, the app also contacts the site at that address (see point 3).</li>
   <li>I do not sell or share data with third parties.</li>
   <li>The diagnostic log is off by default: if you turn it on, it stays on the phone and leaves it only when you send it (see point 3).</li>
 </ul>
@@ -44,9 +44,25 @@
   <li><strong>Authorisation.</strong> Access is handled by Google Play Services: the app neither sees nor stores your password and keeps no long-lived access tokens.</li>
   <li><strong>Contacts (optional).</strong> If you grant the permission, the app reads the address book on the phone to suggest guests and to show birthdays in a local calendar. Contacts are not sent to anyone and are not copied to Google. The email addresses of the guests you choose to add to an event are sent to Google together with the event.</li>
   <li><strong>Local calendars, settings, reminders.</strong> They are saved only on the phone, in a local database of the app. The app turns off Android automatic backup (<code>allowBackup=false</code>).</li>
-  <li><strong>Diagnostic log (optional, off by default).</strong> If you turn on the “Diagnostic log” option in Settings (Advanced section), the app writes a log file in the phone’s private storage, to help find problems. Each line has the date and time, the name of the thread and of the screen, and a description of what the app is doing; it also contains the <strong>event titles</strong> of reminders and the calendar names, with shortened email addresses (for example “pro*@gmail.com”), but no descriptions, places, participants or links. The file stays on the phone, keeps at most about 2 MB (older entries are discarded) and is deleted when you turn the option off. It is never sent on its own: it leaves only if you choose “Send diagnostic log” in the side menu, which opens your mail app with the file attached, addressed to the author, which you can see and edit or cancel before sending. If you have no mail app, you can save the file and send it from the contact page.</li>
+  <li><strong>Public calendars and import from an address (optional).</strong> If you add a public calendar or choose to import events “from an address”, the app downloads the iCal (.ics) file from the https address you give. The site that hosts it receives the request and therefore sees the phone’s IP address and the time; the app sends no cookies or credentials, only its own name (“GGCalendar”) as an identifier. For public calendars the download repeats automatically, even when the app is not open (by default every 60 minutes, at intervals you can change in Settings). Only https addresses are accepted, redirects included, and files up to 10 MB. The address, which may be confidential, is saved only on the phone and does not appear in the diagnostic log. If you remove the calendar from the app, its address and events are deleted from the phone. If you choose to import the events into a Google calendar, they are sent to Google like all the others.</li>
+  <li><strong>Attachments (links).</strong> Events can have links as attachments (https addresses only). The app uploads and downloads no files: it saves the link together with the event (also on Google, if the event is in a Google calendar) and, when you tap it, shows you the address and asks for confirmation before opening it with the browser or with the app that handles that kind of link. From then on the processing depends on that site or app.</li>
+  <li><strong>Diagnostic log (optional, off by default).</strong> If you turn on the “Diagnostic log” option in Settings (Advanced section), the app writes a log file in the phone’s private storage, to help find problems. Each line has the date and time, the name of the thread and of the screen, and a description of what the app is doing; it also contains the <strong>event titles</strong> (those of the reminders that fire and those you save while the log is on) and the calendar names, with shortened email addresses (for example “pro*@gmail.com”), but no descriptions, places, participants or links. The file stays on the phone, keeps at most about 2 MB (older entries are discarded) and is deleted when you turn the option off. It is never sent on its own: it leaves only if you choose “Send diagnostic log” in the side menu, which opens your mail app with the file attached, addressed to the author, which you can see and edit or cancel before sending. If you have no mail app, you can save the file and send it from the contact page.</li>
   <li><strong>Exported files.</strong> When you export or share an event (.ics, CSV), the file is handed to the app you choose. From then on the processing depends on that app.</li>
 </ul>
+
+<h3>3.1 Permissions requested on Android</h3>
+<p>The app declares these permissions. None of them is used to collect data for the author.</p>
+<ul>
+  <li><strong>Internet</strong> and <strong>Network state</strong>: to communicate with Google and with the addresses of the public calendars you add, and to know whether there is a connection.</li>
+  <li><strong>Contacts</strong> (optional): to suggest the email addresses of guests while you type and to show birthdays. Contacts are read only on the phone and are not sent to anyone, except the addresses you choose to add as guests.</li>
+  <li><strong>Notifications</strong>: to show reminders.</li>
+  <li><strong>Exact alarms</strong>: to fire reminders at the right time.</li>
+  <li><strong>Full-screen notifications</strong> and <strong>Display over other apps</strong>: to open the alarm screen even when the phone is locked or in use. You grant the latter once in the system settings; the app uses it only for its own alarm screen.</li>
+  <li><strong>Phone start-up</strong>: to schedule reminders again after a restart, even before the first unlock.</li>
+  <li><strong>Foreground service</strong>, <strong>Vibration</strong> and <strong>Prevent sleep</strong>: to make alarms ring and vibrate until you stop them.</li>
+  <li><strong>Ignore battery optimisations</strong>: the app may ask you to exclude it from battery saving, so that reminders are not delayed; the choice stays yours, in the system screen.</li>
+</ul>
+<p>The app does <strong>not</strong> ask for location, camera, microphone, SMS, general file access or the system calendar. Reminder sounds and .ics files are chosen with Android’s file picker: the app reads only the files you indicate.</p>
 
 <h2>4. How we use the data</h2>
 <p>Only to make the features you see work: showing and editing the calendar, syncing it with Google, even offline, and firing notifications and alarms. We do not use the data for advertising, profiling, training models or other purposes.</p>
@@ -55,12 +71,14 @@
 <p>GGCalendar’s use and transfer of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy" rel="noopener">Google API Services User Data Policy</a>, including the Limited Use requirements. In particular: Google Calendar data is used only to provide the features visible in the app; it is not transferred to third parties, except when needed to provide the feature you requested, for legal reasons or for security; it is not used for advertising; no person reads it, except with your explicit consent, for security needs or for legal reasons. Given how the app is built, the author has no access to this data in any case.</p>
 
 <h2>6. Recipients and transfers</h2>
-<p>The only recipient is Google (Google LLC and affiliates), which processes your account data under <a href="https://policies.google.com/privacy" rel="noopener">its own privacy policy</a>, including for sending reminder emails and invitations. There are no other third-party services in the app. Google may process data outside the European Economic Area, with the safeguards provided by Google.</p>
+<p>The recipients are Google (Google LLC and affiliates), which processes your account data under <a href="https://policies.google.com/privacy" rel="noopener">its own privacy policy</a>, including for sending reminder emails and invitations, and, only if you use public calendars or import from an address, the site that hosts that calendar, which processes the technical data of the request (for example the IP address) under its own rules. There are no other third-party services in the app. Google may process data outside the European Economic Area, with the safeguards provided by Google.</p>
+
+<p><strong>Distribution of the app.</strong> The app is distributed on Google Play and as an APK file on GitHub. Whoever downloads it from Google Play is subject to the terms and privacy policy of Google Play; whoever downloads it from GitHub, to those of GitHub, which processes the technical data of the download (such as the IP address) under its own policy. Updates come from Google Play or are downloaded by hand from GitHub: the app does not check by itself whether any exist.</p>
 
 <h2>7. Retention and deletion</h2>
 <ul>
   <li><strong>Diagnostic log:</strong> it is deleted by turning the option off in Settings; a log sent by email remains in your mailbox and with the author, who uses it only to understand the reported problem and deletes it when it is no longer needed.</li>
-  <li><strong>On the phone:</strong> data stays until you remove the account or uninstall the app. Removing an account from the app menu deletes its calendars and events from the phone. Uninstalling the app deletes everything.</li>
+  <li><strong>On the phone:</strong> data stays until you remove the account or uninstall the app. Removing an account from the app menu deletes its calendars and events from the phone. Removing a public calendar deletes its address and events from the phone. Uninstalling the app deletes everything.</li>
   <li><strong>Revoking access:</strong> at any time from <a href="https://myaccount.google.com/permissions" rel="noopener">myaccount.google.com/permissions</a>, by selecting GGCalendar.</li>
   <li><strong>On Google:</strong> events on your Google Calendar stay until you delete them; they are managed from Google Calendar.</li>
   <li><strong>With the author:</strong> there is no data to delete, because none is collected.</li>
@@ -70,7 +88,7 @@
 <p>You have the right of access, rectification, erasure, restriction, portability and objection (Arts. 15–22 GDPR), and to lodge a complaint with the <a href="https://www.garanteprivacy.it" rel="noopener">Italian Data Protection Authority (Garante per la protezione dei dati personali)</a>. Since the author does not hold your data, exercise your rights directly in the app and in your Google account. For any request write to the address given above.</p>
 
 <h2>9. Security</h2>
-<p>Communication with Google takes place over HTTPS. Local data is in the app’s private area, not accessible to other apps. Security also depends on your screen lock and on your device’s updates.</p>
+<p>Communication with Google takes place over HTTPS; public calendars are downloaded only from https addresses. Local data is in the app’s private area, not accessible to other apps. Security also depends on your screen lock and on your device’s updates.</p>
 
 <h2>10. Children</h2>
 <p>The app is not directed at children under 14 and does not knowingly collect data about them. The use of a Google account by a minor is subject to Google’s rules.</p>

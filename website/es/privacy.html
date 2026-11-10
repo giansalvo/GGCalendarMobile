@@ -24,7 +24,7 @@
 
 <main class="wrap doc">
 <h1>Política de privacidad</h1>
-<p class="upd">Aplicación GGCalendar para Android (<code>io.github.giansalvo.ggcalendar</code>) · Última actualización: 23 de octubre de 2026</p>
+<p class="upd">Aplicación GGCalendar para Android (<code>io.github.giansalvo.ggcalendar</code>) · Última actualización: 9 de noviembre de 2026</p>
 
 <h2>1. Responsable del tratamiento</h2>
 <p>Giansalvo Gusinu, Sassari (Italia), desarrollador independiente. Contacto: <span class="mail" data-u="profgusinu+ggcalendar" data-d="gmail" data-t="com">profgusinu+ggcalendar [arroba] gmail [punto] com</span>.</p>
@@ -33,7 +33,7 @@
 <ul>
   <li>La aplicación no tiene servidores del autor. No recojo, no recibo y no conservo tus datos.</li>
   <li>Sin publicidad, sin herramientas de análisis ni de notificación de fallos, sin rastreo.</li>
-  <li>Los eventos, los calendarios y los ajustes se quedan en tu teléfono. Si conectas una cuenta de Google, los datos viajan solo entre el teléfono y Google.</li>
+  <li>Los eventos, los calendarios y los ajustes se quedan en tu teléfono. Si conectas una cuenta de Google, los datos viajan solo entre el teléfono y Google. Si añades un calendario público o importas eventos desde una dirección, la aplicación contacta también con el sitio de esa dirección (véase el punto 3).</li>
   <li>No vendo ni comparto datos con terceros.</li>
   <li>El registro de diagnóstico está desactivado por defecto: si lo activas tú, se queda en el teléfono y solo sale cuando lo envías tú (véase el punto 3).</li>
 </ul>
@@ -44,9 +44,25 @@
   <li><strong>Autorización.</strong> El acceso lo gestiona Google Play Services: la aplicación no ve ni guarda tu contraseña y no conserva tokens de acceso de larga duración.</li>
   <li><strong>Contactos (opcional).</strong> Si concedes el permiso, la aplicación lee la agenda del teléfono para sugerir invitados y para mostrar los cumpleaños en un calendario local. Los contactos no se envían a nadie y no se copian en Google. Los correos de los invitados que decides añadir a un evento se envían a Google junto con el evento.</li>
   <li><strong>Calendarios locales, ajustes, recordatorios.</strong> Se guardan solo en el teléfono, en una base de datos local de la aplicación. La aplicación desactiva la copia de seguridad automática de Android (<code>allowBackup=false</code>).</li>
-  <li><strong>Registro de diagnóstico (opcional, desactivado por defecto).</strong> Si activas la opción «Registro de diagnóstico» en Ajustes (sección Avanzado), la aplicación escribe un archivo de registro en la memoria privada del teléfono, para ayudar a encontrar problemas. Cada línea tiene la fecha y la hora, el nombre del hilo y de la pantalla, y una descripción de lo que está haciendo la aplicación; contiene también los <strong>títulos de los eventos</strong> de los recordatorios y los nombres de los calendarios, con las direcciones de correo abreviadas (por ejemplo «pro*@gmail.com»), pero no descripciones, lugares, participantes ni enlaces. El archivo se queda en el teléfono, mantiene como máximo unos 2 MB (los avisos más antiguos se descartan) y se borra cuando desactivas la opción. Nunca se envía solo: sale únicamente si eliges la opción «Enviar registro de diagnóstico» del menú lateral, que abre tu aplicación de correo con el archivo adjunto, dirigido al autor, que ves y puedes modificar o cancelar antes de enviar. Si no tienes una aplicación de correo, puedes guardar el archivo y enviarlo desde la página de contacto.</li>
+  <li><strong>Calendarios públicos e importación desde una dirección (opcional).</strong> Si añades un calendario público o eliges importar eventos «desde una dirección», la aplicación descarga el archivo iCal (.ics) de la dirección https que indiques tú. El sitio que lo aloja recibe la solicitud y por tanto ve la dirección IP del teléfono y la hora; la aplicación no envía cookies ni credenciales, solo su propio nombre («GGCalendar») como identificador. En los calendarios públicos la descarga se repite automáticamente, incluso cuando la aplicación no está abierta (por defecto cada 60 minutos, a intervalos que puedes cambiar en Ajustes). Solo se aceptan direcciones https, también en las redirecciones, y archivos de hasta 10 MB. La dirección, que puede ser reservada, se guarda solo en el teléfono y no aparece en el registro de diagnóstico. Si quitas el calendario de la aplicación, su dirección y sus eventos se eliminan del teléfono. Si eliges importar los eventos a un calendario de Google, se envían a Google como todos los demás.</li>
+  <li><strong>Adjuntos (enlaces).</strong> Los eventos pueden tener enlaces como adjuntos (solo direcciones https). La aplicación no sube ni descarga archivos: guarda el enlace junto con el evento (también en Google, si el evento está en un calendario de Google) y, cuando lo tocas, te muestra la dirección y pide confirmación antes de abrirlo con el navegador o con la aplicación que gestiona ese tipo de enlace. A partir de ese momento el tratamiento depende de ese sitio o de esa aplicación.</li>
+  <li><strong>Registro de diagnóstico (opcional, desactivado por defecto).</strong> Si activas la opción «Registro de diagnóstico» en Ajustes (sección Avanzado), la aplicación escribe un archivo de registro en la memoria privada del teléfono, para ayudar a encontrar problemas. Cada línea tiene la fecha y la hora, el nombre del hilo y de la pantalla, y una descripción de lo que está haciendo la aplicación; contiene también los <strong>títulos de los eventos</strong> (los de los recordatorios que saltan y los de los eventos que guardas mientras el registro está activo) y los nombres de los calendarios, con las direcciones de correo abreviadas (por ejemplo «pro*@gmail.com»), pero no descripciones, lugares, participantes ni enlaces. El archivo se queda en el teléfono, mantiene como máximo unos 2 MB (los avisos más antiguos se descartan) y se borra cuando desactivas la opción. Nunca se envía solo: sale únicamente si eliges la opción «Enviar registro de diagnóstico» del menú lateral, que abre tu aplicación de correo con el archivo adjunto, dirigido al autor, que ves y puedes modificar o cancelar antes de enviar. Si no tienes una aplicación de correo, puedes guardar el archivo y enviarlo desde la página de contacto.</li>
   <li><strong>Archivos exportados.</strong> Cuando exportas o compartes un evento (.ics, CSV), el archivo se pasa a la aplicación que elijas tú. Desde ese momento el tratamiento depende de esa aplicación.</li>
 </ul>
+
+<h3>3.1 Permisos solicitados en Android</h3>
+<p>La aplicación declara estos permisos. Ninguno sirve para recoger datos para el autor.</p>
+<ul>
+  <li><strong>Internet</strong> y <strong>Estado de la red</strong>: para comunicarse con Google y con las direcciones de los calendarios públicos que añades, y para saber si hay conexión.</li>
+  <li><strong>Contactos</strong> (opcional): para sugerir las direcciones de correo de los invitados mientras escribes y para mostrar los cumpleaños. Los contactos se leen solo en el teléfono y no se envían a nadie, salvo las direcciones que decidas añadir como invitados.</li>
+  <li><strong>Notificaciones</strong>: para mostrar los recordatorios.</li>
+  <li><strong>Alarmas exactas</strong>: para hacer saltar los recordatorios a la hora correcta.</li>
+  <li><strong>Notificaciones a pantalla completa</strong> y <strong>Mostrar sobre otras aplicaciones</strong>: para abrir la pantalla de la alarma incluso con el teléfono bloqueado o en uso. El último permiso lo concedes tú una vez en los ajustes del sistema; la aplicación lo usa solo para su propia pantalla de alarma.</li>
+  <li><strong>Inicio del teléfono</strong>: para volver a programar los recordatorios tras un reinicio, incluso antes del primer desbloqueo.</li>
+  <li><strong>Servicio en primer plano</strong>, <strong>Vibración</strong> y <strong>Evitar la suspensión</strong>: para que las alarmas suenen y vibren hasta que las detengas.</li>
+  <li><strong>Ignorar las optimizaciones de batería</strong>: la aplicación puede pedirte que la excluyas del ahorro de energía, para que los recordatorios no se retrasen; la decisión es tuya, en la pantalla del sistema.</li>
+</ul>
+<p>La aplicación <strong>no</strong> pide la ubicación, la cámara, el micrófono, los SMS, el acceso general a los archivos ni el calendario del sistema. Los sonidos de los recordatorios y los archivos .ics se eligen con el selector de archivos de Android: la aplicación solo lee los archivos que indiques tú.</p>
 
 <h2>4. Cómo usamos los datos</h2>
 <p>Solo para hacer funcionar las funciones que ves: mostrar y modificar el calendario, sincronizarlo con Google, incluso sin conexión, y hacer saltar notificaciones y alarmas. No usamos los datos para publicidad, elaboración de perfiles, entrenamiento de modelos ni otras finalidades.</p>
@@ -55,12 +71,14 @@
 <p>El uso y la transferencia por parte de GGCalendar de la información recibida de las API de Google cumplen la <a href="https://developers.google.com/terms/api-services-user-data-policy" rel="noopener">Google API Services User Data Policy</a>, incluidos los requisitos de uso limitado (Limited Use). En particular: los datos de Google Calendar se usan solo para ofrecer las funciones visibles en la aplicación; no se transfieren a terceros, salvo cuando es necesario para prestar la función que solicitas, por obligación legal o por seguridad; no se usan para publicidad; ninguna persona los lee, salvo con tu consentimiento explícito, por necesidades de seguridad o por obligación legal. Por cómo está construida la aplicación, el autor no tiene en cualquier caso acceso a estos datos.</p>
 
 <h2>6. Destinatarios y transferencias</h2>
-<p>El único destinatario es Google (Google LLC y sociedades vinculadas), que trata los datos de tu cuenta según <a href="https://policies.google.com/privacy" rel="noopener">su propia política de privacidad</a>, también para el envío de los correos de recordatorio y de las invitaciones. No hay otros servicios de terceros en la aplicación. Google puede tratar los datos también fuera del Espacio Económico Europeo, con las garantías previstas por Google.</p>
+<p>Los destinatarios son Google (Google LLC y sociedades vinculadas), que trata los datos de tu cuenta según <a href="https://policies.google.com/privacy" rel="noopener">su propia política de privacidad</a>, también para el envío de los correos de recordatorio y de las invitaciones, y, solo si usas calendarios públicos o la importación desde una dirección, el sitio que aloja ese calendario, que trata los datos técnicos de la solicitud (por ejemplo la dirección IP) según sus propias normas. No hay otros servicios de terceros en la aplicación. Google puede tratar los datos también fuera del Espacio Económico Europeo, con las garantías previstas por Google.</p>
+
+<p><strong>Distribución de la aplicación.</strong> La aplicación se distribuye en Google Play y como archivo APK en GitHub. Quien la descarga de Google Play está sujeto a las condiciones y a la política de privacidad de Google Play; quien la descarga de GitHub, a las de GitHub, que trata los datos técnicos de la descarga (como la dirección IP) según su propia política. Las actualizaciones llegan por Google Play o se descargan a mano de GitHub: la aplicación no comprueba por sí sola si existen.</p>
 
 <h2>7. Conservación y eliminación</h2>
 <ul>
   <li><strong>Registro de diagnóstico:</strong> se borra desactivando la opción en Ajustes; un registro enviado por correo permanece en tu bandeja y en poder del autor, que lo usa solo para entender el problema comunicado y lo borra cuando ya no hace falta.</li>
-  <li><strong>En el teléfono:</strong> los datos permanecen hasta que quitas la cuenta o desinstalas la aplicación. Al quitar una cuenta desde el menú de la aplicación, sus calendarios y eventos se eliminan del teléfono. Al desinstalar la aplicación se borra todo.</li>
+  <li><strong>En el teléfono:</strong> los datos permanecen hasta que quitas la cuenta o desinstalas la aplicación. Al quitar una cuenta desde el menú de la aplicación, sus calendarios y eventos se eliminan del teléfono. Al quitar un calendario público, su dirección y sus eventos se eliminan del teléfono. Al desinstalar la aplicación se borra todo.</li>
   <li><strong>Revocación del acceso:</strong> en cualquier momento desde <a href="https://myaccount.google.com/permissions" rel="noopener">myaccount.google.com/permissions</a>, seleccionando GGCalendar.</li>
   <li><strong>En Google:</strong> los eventos de tu Google Calendar permanecen hasta que los eliminas; se gestionan desde Google Calendar.</li>
   <li><strong>En poder del autor:</strong> no existen datos que borrar, porque no se recogen.</li>
@@ -70,7 +88,7 @@
 <p>Tienes derecho de acceso, rectificación, supresión, limitación, portabilidad y oposición (arts. 15 a 22 del RGPD), y a presentar una reclamación ante la <a href="https://www.garanteprivacy.it" rel="noopener">autoridad italiana de protección de datos (Garante per la protezione dei dati personali)</a>. Como el autor no tiene tus datos, ejerce tus derechos directamente en la aplicación y en tu cuenta de Google. Para cualquier solicitud escribe a la dirección indicada arriba.</p>
 
 <h2>9. Seguridad</h2>
-<p>La comunicación con Google se realiza mediante HTTPS. Los datos locales están en el área privada de la aplicación, no accesible para otras aplicaciones. La seguridad depende también del bloqueo de pantalla y de las actualizaciones de tu dispositivo.</p>
+<p>La comunicación con Google se realiza mediante HTTPS; los calendarios públicos solo se descargan de direcciones https. Los datos locales están en el área privada de la aplicación, no accesible para otras aplicaciones. La seguridad depende también del bloqueo de pantalla y de las actualizaciones de tu dispositivo.</p>
 
 <h2>10. Menores</h2>
 <p>La aplicación no está dirigida a menores de 14 años y no recoge a sabiendas datos sobre ellos. El uso de una cuenta de Google por parte de un menor está sujeto a las normas de Google.</p>
