@@ -2,12 +2,13 @@
 
 Le modifiche di GGCalendar Mobile da una versione alla successiva, dalla più recente.
 
-## 1.0.8 (xx/11/2026)
+## 1.0.8 (12/11/2026)
 
-- Barra superiore più pulita: tolto il cerchio con l'iniziale dell'account, che mostrava sempre e solo il primo account
-- «Esporta» si apre con la pressione lunga su un calendario; si possono ancora aggiungerne altri. La voce è rimossa dal menu laterale
-- L'importazione di un file `.ics` può avere come destinazione anche un calendario Google (in cui si può scrivere), con la voce «Importa» nella pressione lunga di un calendario: gli eventi conservano il loro identificativo, non parte nessun invito, e organizzatore, invitati e indirizzo (`URL`) restano come testo in coda alla descrizione; a fine invio un messaggio dice quanti eventi Google ha preso e quanti no, e oltre 500 eventi l'app chiede conferma
-- Testi che prima erano scritti a mano ora seguono la lingua: riga «Google Meet» nel testo condiviso e frase letta da TalkBack, etichette degli allegati, nome proposto per un calendario senza nome, offset del fuso orario e data di «Ogni anno il…» nell'ordine della lingua
+- Barra superiore più pulita: tolto il cerchio con l'iniziale dell'account
+- «Esporta» si apre con la pressione lunga su un calendario
+- L'importazione di un file `.ics` può avere come destinazione anche un calendario Google 
+- Miglioramento dei testi
+- Correzione anomalie (bugfix)
 
 ## 1.0.7 (07/11/2026)
 
@@ -23,6 +24,7 @@ Le modifiche di GGCalendar Mobile da una versione alla successiva, dalla più re
 - Descrizione degli eventi anche in HTML
 - Possibilità di aggiungere link come allegati ad un evento
 - Menu laterale: la pressione lunga su un calendario visualizza il menu contestuale
+- Gestione dei calendari Google: con la pressione lunga si può creare un calendario, rinominarlo, o eliminarlo su tutti i dispositivi
 - Correzione di anomalie (bug)
 
 ## 1.0.5 (24/10/2026)
