@@ -73,8 +73,11 @@ fun NotificationSettingsSection(alarmMinutes: Int, onAlarmMinutesChange: (Int) -
                 context.open(checks.exactAlarmSettings())
             }
         }
-        PermissionRow(stringResource(R.string.perm_fullscreen), stringResource(R.string.perm_fullscreen_help), status.fullScreen) {
-            context.open(checks.fullScreenSettings())
+        // Not in the build for Google Play (-PenableFullScreen=false): status.fullScreen is null there.
+        status.fullScreen?.let { granted ->
+            PermissionRow(stringResource(R.string.perm_fullscreen), stringResource(R.string.perm_fullscreen_help), granted) {
+                context.open(checks.fullScreenSettings())
+            }
         }
         PermissionRow(stringResource(R.string.perm_overlay), stringResource(R.string.perm_overlay_help), status.overlay) {
             context.open(checks.overlaySettings())

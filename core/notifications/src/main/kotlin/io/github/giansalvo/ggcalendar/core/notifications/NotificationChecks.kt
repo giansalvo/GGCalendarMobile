@@ -14,8 +14,8 @@ data class ReminderPermissions(
     val notifications: Boolean,
     /** Notification reminders at the exact minute (always allowed from Android 13: calendar apps hold USE_EXACT_ALARM). */
     val exactAlarms: Boolean,
-    /** The alarm screen over the lock screen (Android 14 and later ask the user). */
-    val fullScreen: Boolean,
+    /** The alarm screen over the lock screen (Android 14 and later ask the user); null in the build without full screen (Google Play). */
+    val fullScreen: Boolean?,
     val batteryUnrestricted: Boolean,
     /** "Display over other apps": the alarm screen may open by itself while the phone is in use. */
     val overlay: Boolean,
@@ -28,7 +28,7 @@ class NotificationChecks(private val context: Context) {
     fun status(): ReminderPermissions {
         val notifications = context.getSystemService(NotificationManager::class.java).areNotificationsEnabled()
         val exact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || context.getSystemService(AlarmManager::class.java).canScheduleExactAlarms()
-        val fullScreen = Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
+        val fullScreen = if (!BuildConfig.FULL_SCREEN) null else Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
             context.getSystemService(NotificationManager::class.java).canUseFullScreenIntent()
         val battery = context.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(context.packageName)
         val overlay = Settings.canDrawOverlays(context)

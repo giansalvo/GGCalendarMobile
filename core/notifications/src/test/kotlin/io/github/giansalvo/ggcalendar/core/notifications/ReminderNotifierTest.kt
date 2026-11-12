@@ -47,9 +47,17 @@ class ReminderNotifierTest {
     }
 
     @Test
-    fun `the alarm still asks for the full-screen intent`() {
+    fun `the alarm asks for the full-screen intent only in the build that has it`() {
+        // (U335) -PenableFullScreen=false (Google Play) never sets it; the default build does, unless the caller says otherwise.
         val n = notifier.alarmNotification(alert("d"))
-        assertNotNull(n.fullScreenIntent)
+        if (BuildConfig.FULL_SCREEN) assertNotNull(n.fullScreenIntent) else assertNull(n.fullScreenIntent)
         assertNull(notifier.alarmNotification(alert("d"), fullScreen = false).fullScreenIntent)
+    }
+
+    @Test
+    fun `the permission status reports full screen as unavailable only in the build without it`() {
+        // (U336) null means "no such permission here": the settings row and the first-start question are skipped.
+        val status = NotificationChecks(context).status()
+        if (BuildConfig.FULL_SCREEN) assertNotNull(status.fullScreen) else assertNull(status.fullScreen)
     }
 }

@@ -41,6 +41,14 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       - name: Lint, unit tests, debug build
         run: ./gradlew lint test assembleDebug --stacktrace ${{ inputs.no_cache && '--no-build-cache --rerun-tasks' || '' }}
+      - name: Full-screen alarm only in the GitHub build (issue #52)
+        run: |
+          # Default build: the merged manifest declares USE_FULL_SCREEN_INTENT. Google Play build: it must not.
+          ./gradlew :app:processReleaseMainManifest --stacktrace
+          manifest=$(find app/build/intermediates -path '*release*' -name AndroidManifest.xml | grep -i merged_manifest | head -1)
+          grep -q USE_FULL_SCREEN_INTENT "$manifest" || { echo "Missing in the default build"; exit 1; }
+          ./gradlew :app:processReleaseMainManifest :core:notifications:testDebugUnitTest -PenableFullScreen=false --stacktrace
+          grep -q USE_FULL_SCREEN_INTENT "$manifest" && { echo "Present in the Google Play build"; exit 1; } || true
       - uses: actions/upload-artifact@v7
         if: always()
         with:

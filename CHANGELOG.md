@@ -1,4 +1,4 @@
-# Changelog
+# Novità di GGCalendar Mobile
 
 Le modifiche di GGCalendar Mobile da una versione alla successiva, dalla più recente.
 

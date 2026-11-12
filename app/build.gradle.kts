@@ -29,8 +29,8 @@ android {
         applicationId = "io.github.giansalvo.ggcalendar"
         minSdk = 26
         targetSdk = 37
-        versionCode = 21 // always up: Google Play refuses a code that is not higher than the published one (19, version 1.0.6)
-        versionName = "1.0.8"
+        versionCode = 22 // always up: Google Play refuses a code that is not higher than the published one (19, version 1.0.6)
+        versionName = "1.0.9"
         // A diagnostic build (-Pdiag=true, with --no-configuration-cache) writes log lines tagged GGCalDiag about the accounts and
         // the side menu; a normal build writes none.
         val diag = providers.gradleProperty("diag").orNull == "true"
@@ -39,6 +39,12 @@ android {
         // Shown in the About card and on the splash: the day of the last build.
         manifestPlaceholders["buildDate"] = providers.of(BuildDate::class.java) {}.get()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    // -PenableFullScreen=false (the Google Play build): the manifest of the variant removes USE_FULL_SCREEN_INTENT, declared by
+    // :core:notifications. Without the property, or with true, the app keeps the full-screen alarm.
+    if (providers.gradleProperty("enableFullScreen").orNull == "false") {
+        for (name in listOf("debug", "release")) sourceSets.getByName(name).manifest.srcFile("src/nofullscreen/AndroidManifest.xml")
     }
 
     signingConfigs {
@@ -58,6 +64,8 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.findByName("release")
+            // Native symbols of the AndroidX .so libraries: silences the Google Play warning about missing debug symbols.
+            ndk { debugSymbolLevel = "SYMBOL_TABLE" }
         }
     }
 
@@ -70,6 +78,13 @@ android {
         buildConfig = true
     }
     androidResources { generateLocaleConfig = true }
+    // AGP 9.5 creates a Compose Preview task that needs the compiled resources (without this, listing the tasks of :app fails).
+    testOptions { unitTests.isIncludeAndroidResources = true }
+}
+
+// ...and for every variant, release included, it also needs the unit-test variant enabled.
+androidComponents {
+    beforeVariants { it.hostTests[com.android.build.api.variant.HostTestBuilder.UNIT_TEST_TYPE]?.enable = true }
 }
 
 kotlin {
