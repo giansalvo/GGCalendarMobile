@@ -64,6 +64,18 @@ L'app usa le Google Calendar API tramite Google Play Services. Google riconosce 
 2. Crea un ID client OAuth di tipo **Android** con il nome del pacchetto e lo SHA-1 del tuo certificato (`.\gradlew.bat signingReport`).
 3. Se distribuisci una versione modificata, cambia anche `applicationId` (vedi i termini aggiuntivi sotto).
 
+### Versione per Google Play e versione per GitHub
+
+Google Play Console non accetta il permesso `USE_FULL_SCREEN_INTENT`. L'interruttore Gradle `-PenableFullScreen` sceglie se l'app ha la sveglia a schermo intero:
+
+| Comando | Risultato |
+|---|---|
+| `.\gradlew.bat assembleRelease` (anche `bundleRelease`, `installDebug`) | con schermo intero: versione per GitHub; senza la proprietà vale `true` |
+| `.\gradlew.bat bundleRelease -PenableFullScreen=false` | AAB per Google Play, senza il permesso, senza la riga nelle impostazioni e senza la domanda al primo avvio |
+| `.\gradlew.bat assembleRelease -PenableFullScreen=false` | lo stesso, in APK (anche `installDebug`, `test`) |
+
+Senza schermo intero la sveglia a telefono bloccato arriva come notifica in primo piano (heads-up). Cambiando il valore della proprietà la cache di configurazione di Gradle si rigenera da sola.
+
 ### Firma della release
 
 Crea un file `keystore.properties` nella radice del progetto (è escluso da git):

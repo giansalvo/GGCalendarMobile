@@ -67,7 +67,7 @@ class ReminderNotifier @Inject constructor(@ApplicationContext private val conte
             .addAction(0, context.getString(R.string.snooze_minutes, AppPreferences.DEFAULT_SNOOZE_MINUTES), snoozeIntent(alert, AppPreferences.DEFAULT_SNOOZE_MINUTES))
             .addAction(0, context.getString(R.string.dismiss), dismissIntent(alert))
         if (quiet) return builder.build() // the alarm screen is open: no banner over it
-        if (fullScreen) builder.setFullScreenIntent(screen, true)
+        if (BuildConfig.FULL_SCREEN && fullScreen) builder.setFullScreenIntent(screen, true)
         builder.setCustomHeadsUpContentView(headsUp(alert))
         return builder.build()
     }

@@ -140,7 +140,7 @@ fun PermissionsIntro(viewModel: PermissionsIntroViewModel = hiltViewModel()) {
         buildList {
             if (!status.notifications) add(Ask.NOTIFICATIONS)
             if (!status.overlay) add(Ask.OVERLAY)
-            if (!status.fullScreen) add(Ask.FULLSCREEN)
+            if (status.fullScreen == false) add(Ask.FULLSCREEN)
             if (!status.batteryUnrestricted) add(Ask.BATTERY)
         }
     }

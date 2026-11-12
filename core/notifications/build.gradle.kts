@@ -8,12 +8,21 @@ plugins {
 android {
     namespace = "io.github.giansalvo.ggcalendar.core.notifications"
     compileSdk = 37
-    defaultConfig { minSdk = 26 }
+    defaultConfig {
+        minSdk = 26
+        // -PenableFullScreen=false (the Google Play build) removes the full-screen alarm: no permission in the manifest (see
+        // :app) and no code, rows or questions about it. Without the property, or with true, nothing changes.
+        val fullScreen = providers.gradleProperty("enableFullScreen").orNull != "false"
+        buildConfigField("boolean", "FULL_SCREEN", fullScreen.toString())
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
     testOptions {
         unitTests.isIncludeAndroidResources = true
         // Robolectric downloads Android at test time: on Windows trust the system certificates (HTTPS inspection
