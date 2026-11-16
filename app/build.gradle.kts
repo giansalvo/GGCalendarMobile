@@ -29,8 +29,8 @@ android {
         applicationId = "io.github.giansalvo.ggcalendar"
         minSdk = 26
         targetSdk = 37
-        versionCode = 22 // always up: Google Play refuses a code that is not higher than the published one (19, version 1.0.6)
-        versionName = "1.0.8"
+        versionCode = 23 // always up: Google Play refuses a code that is not higher than the published one (19, version 1.0.6)
+        versionName = "1.0.9-alpha"
         // A diagnostic build (-Pdiag=true, with --no-configuration-cache) writes log lines tagged GGCalDiag about the accounts and
         // the side menu; a normal build writes none.
         val diag = providers.gradleProperty("diag").orNull == "true"
@@ -100,6 +100,7 @@ dependencies {
     implementation(project(":feature:calendar"))
     implementation(project(":feature:event"))
     implementation(project(":feature:settings"))
+    implementation(project(":feature:widget"))
     implementation(libs.androidx.hilt.work)
     ksp(libs.androidx.hilt.compiler)
 

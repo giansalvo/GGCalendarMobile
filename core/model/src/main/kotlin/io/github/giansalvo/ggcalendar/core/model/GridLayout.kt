@@ -1,6 +1,5 @@
-package io.github.giansalvo.ggcalendar.feature.calendar
+package io.github.giansalvo.ggcalendar.core.model
 
-import io.github.giansalvo.ggcalendar.core.model.EventInstance
 import java.time.DayOfWeek
 import java.time.Duration
 import java.time.LocalDate

@@ -1,5 +1,9 @@
 package io.github.giansalvo.ggcalendar.feature.calendar
 
+import io.github.giansalvo.ggcalendar.core.model.isBar
+import io.github.giansalvo.ggcalendar.core.model.Span
+import io.github.giansalvo.ggcalendar.core.model.Lanes
+import io.github.giansalvo.ggcalendar.core.model.weekStart
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

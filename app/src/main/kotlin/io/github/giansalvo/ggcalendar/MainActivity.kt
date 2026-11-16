@@ -19,10 +19,12 @@ import androidx.lifecycle.lifecycleScope
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.giansalvo.ggcalendar.core.data.AppPreferences
+import io.github.giansalvo.ggcalendar.core.model.AppLinks
 import io.github.giansalvo.ggcalendar.core.model.Diag
 import io.github.giansalvo.ggcalendar.core.notifications.Reminders
 import io.github.giansalvo.ggcalendar.feature.calendar.CalendarScreen
 import io.github.giansalvo.ggcalendar.feature.calendar.EventLink
+import io.github.giansalvo.ggcalendar.feature.calendar.NewEventLink
 import kotlinx.coroutines.flow.MutableStateFlow
 import javax.inject.Inject
 import io.github.giansalvo.ggcalendar.ui.theme.GGCalendarTheme
@@ -33,6 +35,12 @@ class MainActivity : ComponentActivity() {
 
     // The occurrence a tapped reminder notification asks to show.
     private val link = MutableStateFlow<EventLink?>(null)
+
+    // A widget's "+": the editor opens on a new event (the day it starts on, or null for the default one).
+    private val newEvent = MutableStateFlow<NewEventLink?>(null)
+
+    // The day the day view must open on (the tap on an event of the month widget).
+    private val openDay = MutableStateFlow<java.time.LocalDate?>(null)
 
     // A calendar file another app opened or shared with us: the import shows its summary and writes nothing until the user says so.
     private val importUri = MutableStateFlow<android.net.Uri?>(null)
@@ -46,6 +54,8 @@ class MainActivity : ComponentActivity() {
         // a fresh install goes straight to the calendar. A normal start never has the extra.
         if (intent.getBooleanExtra(EXTRA_SKIP_INTRO, false)) lifecycleScope.launch { prefs.setPermissionsIntroSeen() }
         readLink(intent)
+        readNewEvent(intent)
+        readOpenDay(intent)
         readImport(intent)
         // Read once before the first frame so that a chosen dark or light theme does not flash the other one.
         val first = runBlocking { prefs.appearance.first() }
@@ -67,7 +77,14 @@ class MainActivity : ComponentActivity() {
             GGCalendarTheme(darkTheme = dark, dynamicColor = appearance.dynamicColor) {
                 val open by link.collectAsState()
                 val file by importUri.collectAsState()
-                CalendarScreen(link = open, onLinkHandled = { link.value = null }, importUri = file, onImportHandled = { importUri.value = null })
+                val create by newEvent.collectAsState()
+                val day by openDay.collectAsState()
+                CalendarScreen(
+                    link = open, onLinkHandled = { link.value = null },
+                    newEvent = create, onNewEventHandled = { newEvent.value = null },
+                    openDay = day, onOpenDayHandled = { openDay.value = null },
+                    importUri = file, onImportHandled = { importUri.value = null },
+                )
             }
         }
     }
@@ -107,6 +124,8 @@ class MainActivity : ComponentActivity() {
         Diag.log { "activity onNewIntent action=${intent.action}" }
         setIntent(intent)
         readLink(intent)
+        readNewEvent(intent)
+        readOpenDay(intent)
         readImport(intent)
     }
 
@@ -127,6 +146,21 @@ class MainActivity : ComponentActivity() {
         // The same intent must not import again when the activity is recreated.
         intent.data = null
         intent.action = Intent.ACTION_MAIN
+    }
+
+    private fun readNewEvent(intent: Intent) {
+        if (!intent.hasExtra(AppLinks.EXTRA_NEW_EVENT_DAY)) return
+        val day = intent.getLongExtra(AppLinks.EXTRA_NEW_EVENT_DAY, -1L)
+        newEvent.value = NewEventLink(if (day >= 0) java.time.LocalDate.ofEpochDay(day) else null)
+        // Like the calendar file, it must not open the editor again when the activity is recreated.
+        intent.removeExtra(AppLinks.EXTRA_NEW_EVENT_DAY)
+    }
+
+    private fun readOpenDay(intent: Intent) {
+        if (!intent.hasExtra(AppLinks.EXTRA_OPEN_DAY)) return
+        openDay.value = java.time.LocalDate.ofEpochDay(intent.getLongExtra(AppLinks.EXTRA_OPEN_DAY, 0L))
+        // Like the new event, it must not open the day again when the activity is recreated.
+        intent.removeExtra(AppLinks.EXTRA_OPEN_DAY)
     }
 
     private fun readLink(intent: Intent) {

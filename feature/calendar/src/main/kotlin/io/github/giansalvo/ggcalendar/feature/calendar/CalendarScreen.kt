@@ -124,10 +124,18 @@ import java.util.Locale
 /** An occurrence to open on arrival (the tap on a reminder notification). */
 data class EventLink(val eventId: String, val beginUtc: Long)
 
+/** The editor to open on arrival on a new event (the "+" of a home screen widget): [day] is the day it starts on, null for the default. */
+data class NewEventLink(val day: java.time.LocalDate?)
+
 @Composable
 fun CalendarScreen(
     link: EventLink? = null,
     onLinkHandled: () -> Unit = {},
+    newEvent: NewEventLink? = null,
+    onNewEventHandled: () -> Unit = {},
+    /** A day to open the day view on (the tap on an event of the month widget). */
+    openDay: java.time.LocalDate? = null,
+    onOpenDayHandled: () -> Unit = {},
     /** A calendar file another app sent (open with, share): the window of the import opens on its summary. */
     importUri: android.net.Uri? = null,
     onImportHandled: () -> Unit = {},
@@ -157,6 +165,22 @@ fun CalendarScreen(
         if (link != null) {
             viewModel.openLink(link)
             onLinkHandled()
+        }
+    }
+    LaunchedEffect(openDay) {
+        if (openDay != null) {
+            viewModel.openDay(openDay)
+            onOpenDayHandled()
+        }
+    }
+    LaunchedEffect(newEvent) {
+        if (newEvent != null) {
+            val now = java.time.LocalDateTime.now()
+            val day = newEvent.day
+            // Same start as the "+" of the month + list view: the next hour today, 9:00 on another day.
+            val start = if (day == null) null else day.atTime(if (day == now.toLocalDate()) minOf(now.hour + 1, 23) else 9, 0)
+            viewModel.openEditor(EditorRequest.New(start))
+            onNewEventHandled()
         }
     }
     val context0 = LocalContext.current

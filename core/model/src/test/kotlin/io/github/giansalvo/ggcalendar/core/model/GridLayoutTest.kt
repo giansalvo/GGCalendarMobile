@@ -1,6 +1,5 @@
-package io.github.giansalvo.ggcalendar.feature.calendar
+package io.github.giansalvo.ggcalendar.core.model
 
-import io.github.giansalvo.ggcalendar.core.model.EventInstance
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

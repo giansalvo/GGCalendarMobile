@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_agenda_label">Programma</string>
+    <string name="widget_agenda_description">Oggi e i prossimi eventi</string>
+    <string name="widget_month_label">Mese</string>
+    <string name="widget_month_description">Il mese con i suoi eventi</string>
+    <string name="widget_nothing_scheduled">Niente in programma</string>
+    <string name="widget_add_event">Nuovo evento</string>
+    <string name="widget_previous_month">Mese precedente</string>
+    <string name="widget_next_month">Mese successivo</string>
+    <string name="widget_loading">Caricamento…</string>
+</resources>
