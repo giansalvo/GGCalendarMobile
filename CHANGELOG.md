@@ -4,7 +4,7 @@ Le modifiche di GGCalendar Mobile da una versione alla successiva, dalla più re
 
 ## 1.0.9 (xx/11/2026)
 
-- Aggiunta dei Widget: giornaliero, mensile
+- Nuovi widget per la schermata iniziale: Programma e Mese
 
 ## 1.0.8 (12/11/2026)
 
