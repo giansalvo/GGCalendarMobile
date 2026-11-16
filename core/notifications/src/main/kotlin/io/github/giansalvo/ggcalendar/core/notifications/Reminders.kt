@@ -9,8 +9,8 @@ object Reminders {
     const val EXTRA_SNOOZE_MINUTES = "snooze.minutes"
 
     /** Extras of the intent that opens the app on an occurrence (the tap on a notification). */
-    const val EXTRA_OPEN_EVENT = "open.event"
-    const val EXTRA_OPEN_BEGIN = "open.begin"
+    const val EXTRA_OPEN_EVENT = io.github.giansalvo.ggcalendar.core.model.AppLinks.EXTRA_OPEN_EVENT
+    const val EXTRA_OPEN_BEGIN = io.github.giansalvo.ggcalendar.core.model.AppLinks.EXTRA_OPEN_BEGIN
 
     /** Reminders firing within this time are registered with AlarmManager; a daily worker moves the horizon. */
     const val HORIZON_MILLIS = 48L * 60 * 60 * 1000

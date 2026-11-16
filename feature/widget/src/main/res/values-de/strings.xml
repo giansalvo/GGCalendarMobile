@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_agenda_label">Terminübersicht</string>
+    <string name="widget_agenda_description">Heute und die nächsten Termine</string>
+    <string name="widget_month_label">Monat</string>
+    <string name="widget_month_description">Der Monat mit seinen Terminen</string>
+    <string name="widget_nothing_scheduled">Nichts geplant</string>
+    <string name="widget_add_event">Neuer Termin</string>
+    <string name="widget_previous_month">Vorheriger Monat</string>
+    <string name="widget_next_month">Nächster Monat</string>
+    <string name="widget_loading">Wird geladen …</string>
+</resources>

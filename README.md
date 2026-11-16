@@ -20,14 +20,14 @@
 
 ## Funzionalità
 
-- Viste programma, giorno, 6 giorni, settimana e mese
+- Viste programma, giorno, 6 giorni, settimana, mese, anno
 - Sincronizzazione bidirezionale con uno o più account Google Calendar, anche offline, con gestione dei conflitti
 - Eventi ricorrenti, invitati, link Google Meet
 - Promemoria con notifica, sveglia ed email inviata da Google
-- Condivisione ed esportazione (`.ics`, CSV)
+- Condivisione: importazione ed esportazione (.ics)
 - Calendari locali sul telefono con eventi, ricorrenze e promemoria come gli altri
 - Abbonamento a calendari pubblici in sola lettura
-- Importazione di un file `.ics` o di un indirizzo iCal in un calendario locale
+- Widget mensile e annuale
 - Secondo fuso orario
 - Registro diagnostico facoltativo inviabile per mail dal menu laterale
 - Lingue supportate: Italiano, inglese, spagnolo, tedesco e francese
