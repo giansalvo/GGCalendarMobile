@@ -36,6 +36,18 @@ abstract class WidgetModule {
  */
 class WidgetTickReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        // Only the system actions declared in the manifest: anything else is ignored.
+        if (intent.action !in ACTIONS) return
         WidgetUpdater.request(context)
+    }
+
+    private companion object {
+        val ACTIONS = setOf(
+            Intent.ACTION_DATE_CHANGED,
+            Intent.ACTION_TIME_CHANGED,
+            Intent.ACTION_TIMEZONE_CHANGED,
+            Intent.ACTION_LOCALE_CHANGED,
+            "android.intent.action.APPLICATION_LOCALE_CHANGED",
+        )
     }
 }
