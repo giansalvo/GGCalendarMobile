@@ -31,6 +31,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
@@ -179,7 +180,10 @@ private fun DayCell(day: LocalDate, inMonth: Boolean, isToday: Boolean, onClick:
     Box(
         modifier
             .padding(1.5.dp)
-            .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(8.dp))
+            .background(
+                if (inMonth) lerp(MaterialTheme.colorScheme.surfaceContainerHighest, MaterialTheme.colorScheme.primary, 0.12f) else MaterialTheme.colorScheme.surfaceContainer,
+                RoundedCornerShape(8.dp),
+            )
             .clickable(onClick = onClick)
             .alpha(if (inMonth) 1f else 0.5f),
         contentAlignment = Alignment.TopCenter,

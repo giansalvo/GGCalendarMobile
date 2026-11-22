@@ -91,6 +91,13 @@ object MonthModel {
             if (lane == week.rows - 1) week.hidden.mapIndexedNotNull { col, n -> if (n > 0) LaneItem(col, col + 1, null, n) else null } else emptyList())
             .sortedBy { it.start }
 
+    /** Whether [day] belongs to [month] (and not to the end of the month before or the start of the next one). */
+    fun inMonth(day: LocalDate, month: YearMonth): Boolean = YearMonth.from(day) == month
+
+    /** Whether a piece of event of [week] is drawn at full strength: it is when its first or its last day is of [month]. */
+    fun pieceInMonth(week: MonthWeek, item: LaneItem, month: YearMonth): Boolean =
+        inMonth(week.days[item.start], month) || inMonth(week.days[item.end - 1], month)
+
     /** How many rows of events fit in a day cell of [cellHeightDp], after the number of the day and given each row's height. */
     fun slotsFor(cellHeightDp: Float, dayNumberDp: Float, rowDp: Float): Int =
         if (rowDp <= 0f) 0 else ((cellHeightDp - dayNumberDp) / rowDp).toInt().coerceAtLeast(0)

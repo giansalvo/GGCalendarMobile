@@ -6,4 +6,5 @@
     <color name="widget_primary">#6750A4</color>
     <color name="widget_on_primary">#FFFFFF</color>
     <color name="widget_line">#CAC4D0</color>
+    <color name="widget_cell_in">#DAD2E2</color>
 </resources>

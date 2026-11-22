@@ -5,8 +5,9 @@ Le modifiche di GGCalendar Mobile da una versione alla successiva, dalla più re
 ## 1.0.9 (xx/11/2026)
 
 - Nuovi widget per la schermata iniziale: Programma e Mese
-- Elimina in automatico promemoria di eventi terminati
+- Elimina in automatico i promemoria di eventi terminati
 - Mostra nome account e nome calendario nei promemoria
+- Vista mese e widget Mese: i giorni del mese hanno uno sfondo più evidente di quelli dei mesi adiacenti
 
 ## 1.0.8 (12/11/2026)
 
