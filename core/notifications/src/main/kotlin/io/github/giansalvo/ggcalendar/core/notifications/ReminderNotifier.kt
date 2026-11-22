@@ -48,6 +48,7 @@ class ReminderNotifier @Inject constructor(@ApplicationContext private val conte
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(true)
             .setContentIntent(openApp(alert))
+            .apply { if (!alert.isAlarm) expiry(alert)?.let(::setTimeoutAfter) }
             .addAction(0, context.getString(R.string.snooze_minutes, AppPreferences.DEFAULT_SNOOZE_MINUTES), snoozeIntent(alert, AppPreferences.DEFAULT_SNOOZE_MINUTES))
         alert.meetLink?.let { builder.addAction(0, context.getString(R.string.join_meet), viewIntent(alert, it)) }
         manager.notify(alert.notificationId, builder.build())
@@ -95,13 +96,17 @@ class ReminderNotifier @Inject constructor(@ApplicationContext private val conte
     fun showMissed(alert: ReminderAlert) {
         if (!manager.areNotificationsEnabled()) return
         val notification = base(alert, CHANNEL_MISSED)
-            .setContentTitle(context.getString(R.string.missed_alarm) + ": " + alert.title)
+            // "Missed alarm" sits next to the app name, short enough never to be cut; the title is the event, as in every other notification.
+            .setSubText(context.getString(R.string.missed_alarm))
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(true)
             .setContentIntent(openApp(alert))
+            .apply { expiry(alert)?.let(::setTimeoutAfter) }
             .build()
         manager.notify(alert.notificationId + 1, notification)
     }
+
+    private fun expiry(alert: ReminderAlert): Long? = expiresAfter(alert, System.currentTimeMillis())
 
     fun cancel(alert: ReminderAlert) = manager.cancel(alert.notificationId)
 
@@ -111,7 +116,7 @@ class ReminderNotifier @Inject constructor(@ApplicationContext private val conte
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(alert.title.ifBlank { context.getString(R.string.alarm_title) })
             .setContentText(whenText)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(listOf(whenText, alert.location).filter { it.isNotBlank() }.joinToString("\n")))
+            .setStyle(NotificationCompat.BigTextStyle().bigText(bodyLines(alert, whenText).joinToString("\n")))
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setWhen(alert.beginUtc)
             .setShowWhen(false)
@@ -159,12 +164,45 @@ class ReminderNotifier @Inject constructor(@ApplicationContext private val conte
         const val CHANNEL_MISSED = "missed"
         private const val FLAGS = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
 
-        /** "in 10 min. · 10:00 – 11:00", with the time left counted when the reminder is shown. */
-        fun whenText(context: Context, alert: ReminderAlert): String {
-            val now = System.currentTimeMillis()
+        /**
+         * Milliseconds from [now] to the end of the event: the notification of a reminder removes itself then (issue #62), unless the user did first.
+         * Null when the event has already ended: such a notification keeps the old behaviour (no timeout) rather than vanishing as soon as it appears.
+         */
+        fun expiresAfter(alert: ReminderAlert, now: Long): Long? = (alert.endUtc - now).takeIf { it > 0 }
+
+        /**
+         * "Today, 16:00–20:00", "Tomorrow, 16:00–20:00" or "Monday 23/11/2026, 16:00–20:00": the day of the event, never the time left (issue #59):
+         * a notification seen long after it appeared would still say "in 29 min". The day is judged when the reminder is shown.
+         */
+        fun whenText(context: Context, alert: ReminderAlert, now: Long = System.currentTimeMillis()): String {
             val range = if (alert.allDay) context.getString(R.string.all_day)
             else DateUtils.formatDateRange(context, alert.beginUtc, alert.endUtc, DateUtils.FORMAT_SHOW_TIME)
-            return relative(context, alert.beginUtc, now) + " · " + range
+            return dayLabel(context, alert.beginUtc, now) + ", " + range
+        }
+
+        /**
+         * The calendar and the account of the event, one per line (issue #59), each once and only when known. They go in the body, not in the
+         * line under the app name: there a long calendar name is cut and takes the name of the app with it ("GGCale...").
+         */
+        fun sourceLines(alert: ReminderAlert): List<String> =
+            listOfNotNull(alert.calendarName.trim(), alert.accountEmail?.trim()).filter { it.isNotEmpty() }.distinctBy { it.lowercase() }
+
+        /** The lines of the expanded notification: when, where, calendar, account. */
+        fun bodyLines(alert: ReminderAlert, whenText: String): List<String> =
+            (listOf(whenText, alert.location) + sourceLines(alert)).filter { it.isNotBlank() }
+
+        /** "Today", "Tomorrow" (and "Yesterday", for a reminder shown after midnight), otherwise the weekday and the full date. */
+        fun dayLabel(context: Context, begin: Long, now: Long): String {
+            val zone = java.time.ZoneId.systemDefault()
+            val days = java.time.temporal.ChronoUnit.DAYS.between(
+                java.time.Instant.ofEpochMilli(now).atZone(zone).toLocalDate(),
+                java.time.Instant.ofEpochMilli(begin).atZone(zone).toLocalDate(),
+            )
+            return if (days in -1L..1L) DateUtils.getRelativeTimeSpanString(begin, now, DateUtils.DAY_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE).toString()
+            else DateUtils.formatDateTime(
+                context, begin,
+                DateUtils.FORMAT_SHOW_WEEKDAY or DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_YEAR or DateUtils.FORMAT_NUMERIC_DATE,
+            )
         }
 
         fun relative(context: Context, begin: Long, now: Long): String =

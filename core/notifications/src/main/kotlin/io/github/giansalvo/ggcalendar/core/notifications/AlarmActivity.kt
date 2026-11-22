@@ -148,7 +148,8 @@ private fun AlarmScreen(alert: ReminderAlert, durationMinutes: Int, onStop: () -
     ) {
         Text(
             if (alert.allDay) stringResource(R.string.all_day) else DateFormat.getTimeFormat(context).format(Date(alert.beginUtc)),
-            fontSize = 88.sp,
+            // The words "All day" must stay smaller than the title of the event (34 sp); only the hour is the big number.
+            fontSize = if (alert.allDay) 24.sp else 88.sp,
             fontWeight = FontWeight.Light,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onBackground,
