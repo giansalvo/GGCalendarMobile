@@ -20,6 +20,9 @@ data class ReminderAlert(
     val meetLink: String?,
     val method: ReminderMethod,
     val minutes: Int,
+    /** Where the event comes from, for the line under the app name (issue #59). Empty / null for what was saved before this existed. */
+    val calendarName: String = "",
+    val accountEmail: String? = null,
 ) {
     val isAlarm: Boolean get() = method == ReminderMethod.ALARM
 
@@ -29,12 +32,12 @@ data class ReminderAlert(
     fun putInto(intent: Intent): Intent = intent
         .putExtra(KEY, key).putExtra(EVENT, eventId).putExtra(BEGIN, beginUtc).putExtra(END, endUtc)
         .putExtra(ALL_DAY, allDay).putExtra(TITLE, title).putExtra(LOCATION, location).putExtra(DESCRIPTION, description).putExtra(MEET, meetLink)
-        .putExtra(METHOD, method.name).putExtra(MINUTES, minutes)
+        .putExtra(METHOD, method.name).putExtra(MINUTES, minutes).putExtra(CALENDAR, calendarName).putExtra(ACCOUNT, accountEmail)
 
     fun toJson(): JSONObject = JSONObject()
         .put("key", key).put("event", eventId).put("begin", beginUtc).put("end", endUtc).put("allDay", allDay)
         .put("title", title).put("location", location).put("description", description).put("meet", meetLink)
-        .put("method", method.name).put("minutes", minutes)
+        .put("method", method.name).put("minutes", minutes).put("calendar", calendarName).put("account", accountEmail)
 
     companion object {
         private const val KEY = "reminder.key"
@@ -51,6 +54,8 @@ data class ReminderAlert(
         private const val MAX_DESCRIPTION = 1_500
         private const val METHOD = "reminder.method"
         private const val MINUTES = "reminder.minutes"
+        private const val CALENDAR = "reminder.calendar"
+        private const val ACCOUNT = "reminder.account"
 
         fun of(due: DueReminder): ReminderAlert = of(due.row, due.reminder)
 
@@ -59,6 +64,7 @@ data class ReminderAlert(
             eventId = row.eventId, beginUtc = row.beginUtc, endUtc = row.endUtc, allDay = row.allDay,
             title = row.title, location = row.location, description = row.description.take(MAX_DESCRIPTION), meetLink = row.meetLink,
             method = reminder.method, minutes = reminder.minutes,
+            calendarName = row.calendarName, accountEmail = row.accountEmail,
         )
 
         private fun due(row: ReminderRow, reminder: Reminder) = DueReminder.keyOf(row.eventId, row.beginUtc, reminder)
@@ -76,6 +82,8 @@ data class ReminderAlert(
                 meetLink = if (json.isNull("meet")) null else json.getString("meet"),
                 method = runCatching { ReminderMethod.valueOf(json.optString("method")) }.getOrDefault(ReminderMethod.POPUP),
                 minutes = json.optInt("minutes"),
+                calendarName = json.optString("calendar"),
+                accountEmail = if (json.isNull("account")) null else json.optString("account").ifBlank { null },
             )
         }.getOrNull()
 
@@ -93,6 +101,8 @@ data class ReminderAlert(
                 meetLink = intent.getStringExtra(MEET),
                 method = runCatching { ReminderMethod.valueOf(intent.getStringExtra(METHOD).orEmpty()) }.getOrDefault(ReminderMethod.POPUP),
                 minutes = intent.getIntExtra(MINUTES, 0),
+                calendarName = intent.getStringExtra(CALENDAR).orEmpty(),
+                accountEmail = intent.getStringExtra(ACCOUNT),
             )
         }
     }
