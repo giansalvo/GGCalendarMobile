@@ -180,9 +180,12 @@ internal object MonthWidgetRenderer {
             week.days.forEachIndexed { i, day ->
                 rv.setOnClickPendingIntent(COLUMNS[i], dayIntent(day))
                 rv.setContentDescription(COLUMNS[i], dateFormat.format(day))
+                val inMonth = MonthModel.inMonth(day, month)
+                // The days of the month have a background of their own; the others keep the one of the widget.
+                if (inMonth) rv.setInt(COLUMNS[i], "setBackgroundResource", R.drawable.widget_cell_lines_in)
                 val layout = when {
                     day == today -> R.layout.widget_month_day_today
-                    day.month == month.month && day.year == month.year -> R.layout.widget_month_day_in
+                    inMonth -> R.layout.widget_month_day_in
                     else -> R.layout.widget_month_day_out
                 }
                 val cell = RemoteViews(pkg, layout)
@@ -202,7 +205,9 @@ internal object MonthWidgetRenderer {
                 var column = 0
                 for (item in items) {
                     if (item.start > column) laneViews.addView(R.id.lane_root, RemoteViews(pkg, GAPS[item.start - column - 1]))
-                    laneViews.addView(R.id.lane_root, chip(pkg, item, dayIntent(week.days[item.start])))
+                    // Dimmed like in the month view of the app when it is all outside the month.
+                    val inMonth = MonthModel.pieceInMonth(week, item, month)
+                    laneViews.addView(R.id.lane_root, chip(pkg, item, dayIntent(week.days[item.start]), inMonth))
                     column = item.end
                 }
                 rv.addView(R.id.lanes, laneViews)
@@ -213,7 +218,7 @@ internal object MonthWidgetRenderer {
     }
 
     /** A bar of an event (the color of its calendar, taller for an all-day or multi-day one), or the "+N" of a day. */
-    private fun chip(pkg: String, item: MonthModel.LaneItem, tap: PendingIntent): RemoteViews {
+    private fun chip(pkg: String, item: MonthModel.LaneItem, tap: PendingIntent, inMonth: Boolean): RemoteViews {
         val event = item.event
         if (event == null) {
             return RemoteViews(pkg, R.layout.widget_month_more).apply {
@@ -228,6 +233,7 @@ internal object MonthWidgetRenderer {
             setTextViewText(R.id.chip_text, event.title.ifBlank { "–" })
             setTextColor(R.id.chip_text, WidgetColors.textOn(color).toArgb())
             setOnClickPendingIntent(R.id.chip_root, tap)
+            if (!inMonth) setFloat(R.id.chip_root, "setAlpha", 0.5f)
         }
     }
 

@@ -2,6 +2,7 @@ package io.github.giansalvo.ggcalendar.feature.widget
 
 import io.github.giansalvo.ggcalendar.core.model.EventInstance
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.DayOfWeek
@@ -99,5 +100,36 @@ class MonthModelTest {
     @Test fun slotsFor() {
         assertEquals(3, MonthModel.slotsFor(cellHeightDp = 66f, dayNumberDp = 20f, rowDp = 15f))
         assertEquals(0, MonthModel.slotsFor(cellHeightDp = 10f, dayNumberDp = 20f, rowDp = 15f))
+    }
+
+    @Test fun inMonthTellsTheDaysOfTheMonthFromTheOthers() {
+        assertTrue(MonthModel.inMonth(LocalDate.of(2026, 11, 1), november))
+        assertTrue(MonthModel.inMonth(LocalDate.of(2026, 11, 30), november))
+        assertFalse(MonthModel.inMonth(LocalDate.of(2026, 10, 31), november))
+        assertFalse(MonthModel.inMonth(LocalDate.of(2026, 12, 1), november))
+        // the same day of another year is not of the month
+        assertFalse(MonthModel.inMonth(LocalDate.of(2025, 11, 10), november))
+    }
+
+    @Test fun thePiecesOutsideTheMonthAreDimmed() {
+        val grid = MonthModel.build(november, listOf(
+            timed("Prima", LocalDate.of(2026, 10, 28), 9),
+            timed("Dentro", LocalDate.of(2026, 11, 4), 9),
+            timed("Dopo", LocalDate.of(2026, 12, 2), 9),
+        ), DayOfWeek.MONDAY, 3)
+        fun inMonth(week: Int) = MonthModel.laneItems(grid.weeks[week], 0).map { MonthModel.pieceInMonth(grid.weeks[week], it, november) }
+        assertEquals(listOf(false), inMonth(0))
+        assertEquals(listOf(true), inMonth(1))
+        assertEquals(listOf(false), inMonth(grid.weeks.size - 1))
+    }
+
+    @Test fun aBarAcrossTheBorderOfTheMonthIsNotDimmed() {
+        // 30 October to 3 November: it starts in October but ends in November (and the first week has the 1st)
+        val bar = allDay("Ponte", LocalDate.of(2026, 10, 30), LocalDate.of(2026, 11, 3))
+        val week = MonthModel.build(november, listOf(bar), DayOfWeek.MONDAY, 3).weeks[0]
+        assertTrue(MonthModel.pieceInMonth(week, MonthModel.laneItems(week, 0).single(), november))
+        // 26 to 29 October is all outside the month
+        val before = MonthModel.build(november, listOf(allDay("Prima", LocalDate.of(2026, 10, 26), LocalDate.of(2026, 10, 29))), DayOfWeek.MONDAY, 3).weeks[0]
+        assertFalse(MonthModel.pieceInMonth(before, MonthModel.laneItems(before, 0).single(), november))
     }
 }
