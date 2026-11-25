@@ -15,8 +15,8 @@
 
 ---
 
-> **Stato:** ultima versione pubblicata 1.0.8, disponibile su [Google Play](https://play.google.com/store/apps/details?id=io.github.giansalvo.ggcalendar). L'APK firmato è nella pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases).
-> **Status:** latest release 1.0.8, available on [Google Play](https://play.google.com/store/apps/details?id=io.github.giansalvo.ggcalendar). The signed APK is on the [Releases](https://github.com/giansalvo/GGCalendarMobile/releases) page.
+> **Stato:** ultima versione pubblicata 1.0.9, disponibile su [Google Play](https://play.google.com/store/apps/details?id=io.github.giansalvo.ggcalendar). L'APK firmato è nella pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases).
+> **Status:** latest release 1.0.9, available on [Google Play](https://play.google.com/store/apps/details?id=io.github.giansalvo.ggcalendar). The signed APK is on the [Releases](https://github.com/giansalvo/GGCalendarMobile/releases) page.
 
 ## Funzionalità
 
@@ -27,7 +27,8 @@
 - Condivisione: importazione ed esportazione (.ics)
 - Calendari locali sul telefono con eventi, ricorrenze e promemoria come gli altri
 - Abbonamento a calendari pubblici in sola lettura
-- Widget mensile e annuale
+- Widget per la schermata iniziale: Programma e Mese
+- Sveglia a schermo intero anche con il telefono bloccato
 - Secondo fuso orario
 - Registro diagnostico facoltativo inviabile per mail dal menu laterale
 - Lingue supportate: Italiano, inglese, spagnolo, tedesco e francese
@@ -37,7 +38,7 @@
 
 ## Installazione e primo accesso
 
-1. Installa l'app da [Google Play](https://play.google.com/store/apps/details?id=io.github.giansalvo.ggcalendar), oppure scarica l'APK (`GGCalendar-<versione>.apk`) dalla pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases) e, se vuoi, controlla l'impronta con il file `.sha256` (`certutil -hashfile GGCalendar-<versione>.apk SHA256` su Windows, `sha256sum` su Linux e macOS).
+1. Installa l'app da [Google Play](https://play.google.com/store/apps/details?id=io.github.giansalvo.ggcalendar), oppure scarica l'APK (`GGCalendar-<versione>-fullscreen.apk`) dalla pagina [Release](https://github.com/giansalvo/GGCalendarMobile/releases) e, se vuoi, controlla l'impronta con il file `.sha256` (`certutil -hashfile GGCalendar-<versione>-fullscreen.apk SHA256` su Windows, `sha256sum` su Linux e macOS).
 2. Apri il file sul telefono e consenti l'installazione da questa fonte quando Android lo chiede. Serve Android 8 o successivo.
 3. Se vuoi aggiungi il tuo account Google dal menu dell'app.
 
@@ -64,14 +65,14 @@ L'app usa le Google Calendar API tramite Google Play Services. Google riconosce 
 2. Crea un ID client OAuth di tipo **Android** con il nome del pacchetto e lo SHA-1 del tuo certificato (`.\gradlew.bat signingReport`).
 3. Se distribuisci una versione modificata, cambia anche `applicationId` (vedi i termini aggiuntivi sotto).
 
-### Versione per Google Play e versione per GitHub
+### Sveglia a schermo intero
 
-Google Play Console non accetta il permesso `USE_FULL_SCREEN_INTENT`. L'interruttore Gradle `-PenableFullScreen` sceglie se l'app ha la sveglia a schermo intero:
+Dalla 1.0.9 la versione su Google Play e l'APK su GitHub hanno entrambi la sveglia a schermo intero (permesso `USE_FULL_SCREEN_INTENT`). Chi vuole una build senza il permesso usa l'interruttore Gradle `-PenableFullScreen`:
 
 | Comando | Risultato |
 |---|---|
-| `.\gradlew.bat assembleRelease` (anche `bundleRelease`, `installDebug`) | con schermo intero: versione per GitHub; senza la proprietà vale `true` |
-| `.\gradlew.bat bundleRelease -PenableFullScreen=false` | AAB per Google Play, senza il permesso, senza la riga nelle impostazioni e senza la domanda al primo avvio |
+| `.\gradlew.bat assembleRelease` (anche `bundleRelease`, `installDebug`) | con schermo intero: versione pubblicata; senza la proprietà vale `true` |
+| `.\gradlew.bat bundleRelease -PenableFullScreen=false` | AAB senza il permesso, senza la riga nelle impostazioni e senza la domanda al primo avvio |
 | `.\gradlew.bat assembleRelease -PenableFullScreen=false` | lo stesso, in APK (anche `installDebug`, `test`) |
 
 Senza schermo intero la sveglia a telefono bloccato arriva come notifica in primo piano (heads-up). Cambiando il valore della proprietà la cache di configurazione di Gradle si rigenera da sola.

@@ -2,7 +2,7 @@
 
 Le modifiche di GGCalendar Mobile da una versione alla successiva, dalla più recente.
 
-## 1.0.9-RC1 (22/11/2026)
+## 1.0.9 (25/11/2026)
 
 - Nuovi widget per la schermata iniziale: Programma e Mese
 - Elimina in automatico i promemoria di eventi terminati
